@@ -1,0 +1,5 @@
+train: /path/to/images/train/
+val: /path/to/images/val/
+
+nc: 2 # 카테고리 수 (예: "question number", "answer")
+names: ["question number", "answer"]
