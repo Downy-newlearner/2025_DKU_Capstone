@@ -1,5 +1,5 @@
-train: /path/to/images/train/
-val: /path/to/images/val/
+train: "/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/dataset/labels/train"
+val: "/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/dataset/labels/val"
 
 nc: 2 # 카테고리 수 (예: "question number", "answer")
 names: ["question number", "answer"]

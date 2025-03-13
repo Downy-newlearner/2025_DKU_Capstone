@@ -526,13 +526,13 @@ def train(hyp, opt, device, tb_writer=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='/home/kimsy9587/yolov7/ckpt/yolov7.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='/home/kimsy9587/yolov7/cfg/training/yolov7.yaml', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='/home/kimsy9587/yolov7/CADP/k_fold_2/dataset5.yaml', help='data.yaml path')
-    parser.add_argument('--hyp', type=str, default='/home/kimsy9587/yolov7/data/hyp.scratch.custom.yaml', help='hyperparameters path')
+    parser.add_argument('--weights', type=str, default='./weights/yolov7-e6e.pt', help='initial weights path')
+    parser.add_argument('--cfg', type=str, default='./cfg/training/yolov7.yaml', help='model.yaml path')
+    parser.add_argument('--data', type=str, default='./data.yaml', help='data.yaml path')
+    parser.add_argument('--hyp', type=str, default='./data/hyp.scratch.custom.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
+    parser.add_argument('--batch-size', type=int, default=32, help='total batch size for all GPUs')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes') # 이미지가 자동으로 resize되어서 들어감(따로 조절할 필요 없음) -다훈 0313
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
