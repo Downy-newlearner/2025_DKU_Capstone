@@ -66,9 +66,31 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Logging- Doing this before checking the dataset. Might update data_dict
     loggers = {'wandb': None}  # loggers dict
+
+    ''' 다훈 0314
+    `rank`는 분산 학습(distributed training) 환경에서 각 프로세스의 고유한 식별자 역할을 합니다. 분산 학습에서는 여러 GPU나 여러 노드를 사용하여 모델을 병렬로 학습시키는데, 이때 각 프로세스가 서로 다른 작업을 수행할 수 있도록 `rank`를 사용하여 구분합니다.
+
+    ### `rank`의 역할
+
+    1. 프로세스 식별:
+    - 각 프로세스는 고유한 `rank`를 가지며, 이를 통해 프로세스를 식별할 수 있습니다. 예를 들어, `rank=0`은 일반적으로 메인 프로세스를 나타내며, 주로 로깅이나 모델 저장과 같은 작업을 수행합니다.
+
+    2. 작업 분배:
+    - `rank`를 사용하여 데이터나 작업을 분배할 수 있습니다. 예를 들어, 데이터셋을 여러 프로세스에 나누어 할당할 때 `rank`를 기준으로 분배할 수 있습니다.
+
+    3. 통신 및 동기화:
+    - 분산 학습에서는 프로세스 간의 통신과 동기화가 필요합니다. `rank`는 이러한 통신을 조정하는 데 사용됩니다. 예를 들어, `torch.distributed` 모듈에서는 `rank`를 사용하여 프로세스 간의 메시지를 주고받습니다.
+
+    4. 조건부 실행:
+    - 특정 작업을 특정 프로세스에서만 실행하고 싶을 때 `rank`를 사용하여 조건을 설정할 수 있습니다. 예를 들어, 로그를 기록하거나 모델을 저장하는 작업은 일반적으로 `rank=0`에서만 수행됩니다.
+
+    이러한 이유로 `rank`는 분산 학습 환경에서 매우 중요한 역할을 하며, 각 프로세스가 올바르게 작동하도록 돕습니다.
+
+    '''
+
     if rank in [-1, 0]:
         opt.hyp = hyp  # add hyperparameters
-        run_id = torch.load(weights, map_location=device).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None
+        run_id = torch.load(weights, map_location=device, weights_only=False).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None # weights_only=False 추가함(weights_only=True 일 경우 모델 파일만 로드되어 오류 발생) - 다훈 0314
         wandb_logger = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
         loggers['wandb'] = wandb_logger.wandb
         data_dict = wandb_logger.data_dict
@@ -84,7 +106,7 @@ def train(hyp, opt, device, tb_writer=None):
     if pretrained:
         with torch_distributed_zero_first(rank):
             attempt_download(weights)  # download if not found locally
-        ckpt = torch.load(weights, map_location=device)  # load checkpoint
+        ckpt = torch.load(weights, map_location=device, weights_only=False)  # load checkpoint
         model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
         exclude = ['anchor'] if (opt.cfg or hyp.get('anchors')) and not opt.resume else []  # exclude keys
         state_dict = ckpt['model'].float().state_dict()  # to FP32
