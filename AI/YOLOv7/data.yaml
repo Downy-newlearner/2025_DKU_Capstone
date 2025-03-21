@@ -1,5 +1,8 @@
-train: "../dataset/labels/train"
-val: "../dataset/labels/val"
+# train: "../dataset/labels/train"
+# val: "../dataset/labels/val"
+
+train: "../dataset/temp_train"
+val: "../dataset/temp_val"
 
 nc: 2 # 카테고리 수 (예: "question number", "answer")
 names: ["question number", "answer"]

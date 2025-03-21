@@ -7,6 +7,7 @@ import time
 from copy import deepcopy
 from pathlib import Path
 from threading import Thread
+import numpy
 
 import numpy as np
 import torch.distributed as dist
@@ -34,6 +35,11 @@ from utils.loss import ComputeLoss, ComputeLossOTA
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, is_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
+
+import torch.serialization
+
+# 필요한 글로벌 허용
+torch.serialization.add_safe_globals([numpy.core.multiarray._reconstruct]) # 파일을 신뢰함을 명시함 -다훈 0319
 
 logger = logging.getLogger(__name__)
 
@@ -549,11 +555,11 @@ def train(hyp, opt, device, tb_writer=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='./weights/yolov7-e6e.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='./cfg/training/yolov7.yaml', help='model.yaml path')
+    parser.add_argument('--cfg', type=str, default='./cfg/training/yolov7-e6e.yaml', help='model.yaml path')
     parser.add_argument('--data', type=str, default='./data.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='./data/hyp.scratch.custom.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--batch-size', type=int, default=32, help='total batch size for all GPUs')
+    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes') # 이미지가 자동으로 resize되어서 들어감(따로 조절할 필요 없음) -다훈 0313
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')

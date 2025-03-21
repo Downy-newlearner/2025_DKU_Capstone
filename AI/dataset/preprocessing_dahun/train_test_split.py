@@ -3,8 +3,9 @@ import shutil
 import random
 from pathlib import Path
 
+
 # 데이터 경로 설정
-data_dir = Path("/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/dataset/labels/train")
+data_dir = Path("/home/jdh251425/2025_DKU_Capstone/AI/dataset/labels/train")
 
 # 저장할 폴더 경로 설정
 base_save_dir = data_dir.parent

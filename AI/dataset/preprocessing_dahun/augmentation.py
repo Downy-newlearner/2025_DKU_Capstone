@@ -7,7 +7,7 @@ from PIL import Image
 import random
 
 # 경로 설정
-base_path = "/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/dataset/labels/train"
+base_path = "/home/jdh251425/2025_DKU_Capstone/AI/dataset/labels/train"
 
 def augment_image(img, annotations, suffix):
     # 이미지 저장
