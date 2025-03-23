@@ -1,0 +1,12 @@
+train: /home/elicer/yolov10/data/images/train  # train images
+val: /home/elicer/yolov10/data/images/val  # val images
+test: /home/elicer/yolov10/data/images/test  # test images
+
+nc: 2  # number of classes
+names: ['question number', 'answer']
+
+# 추가 (라벨 경로 설정)
+labels:
+  train: /home/elicer/yolov10/data/labels/train
+  val: /home/elicer/yolov10/data/labels/val
+  test: /home/elicer/yolov10/data/labels/test

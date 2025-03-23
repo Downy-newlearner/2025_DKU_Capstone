@@ -1,0 +1,7 @@
+1. 다음 명령어를 사용하여 test에 있는 image의 bbox를 txt로 추출
+
+yolo predict model=/home/elicer/yolov10/runs/detect/train/weights/best.pt source=/home/elicer/yolov10/data/test/images save_json=True save_txt=True project=results name=exp1
+
+2. chmod +x combine.sh 로 권한 부여
+
+3. ./combine.sh

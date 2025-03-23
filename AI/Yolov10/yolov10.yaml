@@ -1,0 +1,7 @@
+names:
+    0: 'question number'
+    1: 'answer'
+
+test: /home/elicer/yolov10/data/test/
+train: /home/elicer/yolov10/data/train/
+val: /home/elicer/yolov10/data/val/

@@ -1,0 +1,13 @@
+train: /home/elicer/yolov10/data/train/images
+val: /home/elicer/yolov10/data/valid/images
+test: /home/elicer/yolov10/data/test/images
+
+nc: 2
+names: ['question number', 'answer']
+
+roboflow:
+  workspace: yooseok-7gkiz
+  project: dku_annotation
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/yooseok-7gkiz/dku_annotation/dataset/1
