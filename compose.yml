@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # Spring Boot 애플리케이션
+  app:
+    image: woniwory/capstone
+    container_name: capstone
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://root:example@mongodb:27017/capstone?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - test_net
+
+  # MongoDB 컨테이너
+  mongodb:
+    image: mongo:5.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: test
+    networks:
+      - test_net
+
+networks:
+  test_net:
+    driver: bridge
