@@ -3,31 +3,43 @@ import { Card, CardContent } from "./ui/card";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
-import Modal from "./Modal";
 import "./main.css";
 
 const Main = () => {
   const navigate = useNavigate();
-  const [openModal, setOpenModal] = useState(false);
 
   return (
     <div className="flex justify-center w-full min-h-screen bg-white">
-      <Modal openModal={openModal} setOpenModal={setOpenModal} />
       <div className="relative w-full max-w-[1440px] h-[900px]">
         {/* Header Section */}
         <header className="absolute w-full h-[253px] top-0 left-0">
           {/* Navigation */}
           <nav className="flex justify-end items-center p-4 space-x-4">
-            <button
-              className="font-['Poppins-Regular'] text-xl"
+            <Button
+              variant="link"
+              className="font-normal text-xl text-black"
               onClick={() => {
-                setOpenModal(true);
+              const confirmLogout = window.confirm("로그아웃하시겠습니까?");
+              if (confirmLogout) {
+                  // 🔐 로그인 유지용 토큰 삭제
+                  localStorage.removeItem("token");
+
+                  // ✉️ 쿠키 기반이면 쿠키도 삭제 필요 (예시)
+                  // document.cookie = "your_cookie_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+                  // 🔄 로그인 페이지로 이동
+                  navigate("/");
+              }
               }}
-            >
+          >
               Logout
-            </button>
+          </Button>
             <div className="border-l border-black h-6"></div>
-            <div className="font-['Poppins-Regular'] text-xl">Mypage</div>
+            <button className="font-['Poppins-Regular'] text-xl"
+              onClick={() => {navigate("/mypage")}} // 클릭 시 mypage로 이동
+              >
+                Mypage
+            </button>
           </nav>
 
           {/* Logo + Underline */}
