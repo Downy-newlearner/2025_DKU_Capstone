@@ -6,5 +6,9 @@ const API = axios.create({
   withCredentials: true, // 세션 기반이면 추가
 });
 
-export const signup = (data) => API.post('/sign-up', data);
+export const signup = (data) => API.post('/sign-up', data, {
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 export const login = (data) => API.post('/sign-in', data);

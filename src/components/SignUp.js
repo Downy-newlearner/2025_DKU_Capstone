@@ -38,6 +38,8 @@ const SignUp = () => {
       return;
     }
 
+    console.log("📦 회원가입 요청 데이터:", form);
+    
     try {
       await signup({
         email: form.email,    //email
@@ -118,9 +120,9 @@ const SignUp = () => {
                       onClick={togglePasswordVisibility}
                     >
                       {showPassword ? (
-                        <EyeIcon className="w-[21px] h-[21px]" />
+                        <EyeIcon className="w-[21px] h-[21px] text-gray-500" />
                       ) : (
-                        <EyeOffIcon className="w-[21px] h-[21px]" />
+                        <EyeOffIcon className="w-[21px] h-[21px] text-gray-500" />
                       )}
                     </button>
                   </div>
@@ -144,9 +146,9 @@ const SignUp = () => {
                       onClick={toggleConfirmPasswordVisibility}
                     >
                       {showConfirmPassword ? (
-                        <EyeIcon className="w-[21px] h-[21px]" />
+                        <EyeIcon className="w-[21px] h-[21px] text-gray-500" />
                       ) : (
-                        <EyeOffIcon className="w-[21px] h-[21px]" />
+                        <EyeOffIcon className="w-[21px] h-[21px] text-gray-500" />
                       )}
                     </button>
                   </div>

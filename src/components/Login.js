@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"; // 페이지 이동을 위한 Ho
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
-import { EyeOff } from "lucide-react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 console.log(Button);
 
 const Login = () => {
@@ -26,7 +26,10 @@ const Login = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // 필요 시
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          email : form.email,
+          password : form.password
+        }),
       });
 
       if (!response.ok) {
@@ -108,8 +111,16 @@ const Login = () => {
                         value={form.password}
                         onChange={handleChange}
                       />
-                      
-                      <EyeOff className="absolute right-4 top-1/2 -translate-y-1/2 w-[21px] h-[21px] text-gray-500" />
+                       <button
+                          className="absolute right-[28px] top-[50%] transform -translate-y-1/2"
+                          onClick={() => setShowPassword(!showPassword)}
+                      >
+                          {showPassword ? (
+                              <EyeOffIcon className="absolute right-1 top-1/2 -translate-y-1/2 w-[21px] h-[21px] text-gray-500" />
+                          ) : (
+                              <EyeIcon className="absolute right-1 top-1/2 -translate-y-1/2 w-[21px] h-[21px] text-gray-500" />
+                          )}
+                      </button>
                     </div>
                   </div>
                 </div>

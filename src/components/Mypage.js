@@ -7,37 +7,39 @@ import { useNavigate } from "react-router-dom";
 export const Mypage = () => {
     const navigate = useNavigate();
     const [userData, setUserData] = useState({
-        email: "hellocheckmate@naver.com",
-        username: "administer",
+        email: "",
+        username: "",
     });
 
-  // 로그인된 사용자 정보 불러오기 (예: JWT 토큰을 통해 인증)
-//   useEffect(() => {
-//     const fetchUserData = async () => {
-//       try {
-//         const res = await fetch("http://localhost:8080/api/user", {
-//           method: "GET",
-//           credentials: "include", // 쿠키 기반 인증
-//           headers: {
-//             "Content-Type": "application/json",
-//             Authorization: `Bearer ${localStorage.getItem("token")}`,
-//           },
-//         });
+  {/* 로그인된 사용자 정보 불러오기 (예: JWT 토큰을 통해 인증) */}
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/user", {
+          method: "GET",
+          credentials: "include", // 쿠키 기반 인증
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
 
-//         if (!res.ok) throw new Error("사용자 정보를 불러오는데 실패했습니다.");
+        if (!res.ok) throw new Error("사용자 정보를 불러오는데 실패했습니다.");
 
-//         const data = await res.json();
-//         setUserData({
-//           email: data.email,
-//           username: data.name || data.username,
-//         });
-//       } catch (error) {
-//         console.error("유저 데이터 에러:", error.message);
-//       }
-//     };
+        const data = await res.json();
+        setUserData({
+          email: data.email,
+          username: data.name,
+        });
+      } catch (error) {
+        console.error("유저 데이터 에러:", error.message);
+        alert("사용자 정보를 불러올 수 없습니다. 다시 로그인해주세요.");
+        navigate("/"); // 실패 시 로그인 페이지로 이동
+      }
+    };
 
-//     fetchUserData();
-//   }, []);
+    fetchUserData();
+  }, [navigate]);
 
   return (
     <div className="bg-white flex flex-row justify-center w-full min-h-screen">
