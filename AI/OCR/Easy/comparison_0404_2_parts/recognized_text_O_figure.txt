@@ -1,0 +1,8 @@
+Detected Text: answer
+Confidence: 1.0000
+Normalized xywh: (0.496487, 0.019350, 0.091335, 0.015480)
+
+Detected Text: '
+Confidence: 0.2864
+Normalized xywh: (0.442037, 0.681889, 0.039572, 0.147041)
+

@@ -1,0 +1,96 @@
+Detected Text: Signals and Systems
+Confidence: 0.7919
+Normalized xywh: (0.231855, 0.098774, 0.172581, 0.018529)
+
+Detected Text: Final Exam (Portion: 30%)
+Confidence: 0.8457
+Normalized xywh: (0.437500, 0.097064, 0.217742, 0.013968)
+
+Detected Text: 2017.12.07
+Confidence: 0.9919
+Normalized xywh: (0.715323, 0.097064, 0.081452, 0.013968)
+
+Detected Text: 13.00*14:15
+Confidence: 0.6122
+Normalized xywh: (0.814315, 0.096351, 0.091532, 0.014253)
+
+Detected Text: answer
+Confidence: 1.0000
+Normalized xywh: (0.545161, 0.220639, 0.058871, 0.010262)
+
+Detected Text: Za)
+Confidence: 0.5155
+Normalized xywh: (0.191532, 0.280359, 0.034677, 0.012828)
+
+Detected Text: 2b)
+Confidence: 0.9878
+Normalized xywh: (0.191935, 0.312856, 0.036290, 0.013968)
+
+Detected Text: 2(c)
+Confidence: 0.9767
+Normalized xywh: (0.191532, 0.344783, 0.035484, 0.013968)
+
+Detected Text: 2d)
+Confidence: 0.9898
+Normalized xywh: (0.191532, 0.376710, 0.035484, 0.013968)
+
+Detected Text: 2(e)
+Confidence: 0.9910
+Normalized xywh: (0.191532, 0.408922, 0.035484, 0.013968)
+
+Detected Text: 3
+Confidence: 0.8964
+Normalized xywh: (0.191532, 0.440564, 0.011290, 0.010547)
+
+Detected Text: 4
+Confidence: 0.7283
+Normalized xywh: (0.192137, 0.472919, 0.012500, 0.009692)
+
+Detected Text: 5
+Confidence: 0.4748
+Normalized xywh: (0.191532, 0.504133, 0.011290, 0.011117)
+
+Detected Text: 6
+Confidence: 1.0000
+Normalized xywh: (0.190524, 0.555017, 0.011694, 0.011403)
+
+Detected Text: 7ka)
+Confidence: 0.5767
+Normalized xywh: (0.190524, 0.605046, 0.035081, 0.013968)
+
+Detected Text: 7(b)
+Confidence: 0.9647
+Normalized xywh: (0.189315, 0.634692, 0.037500, 0.013968)
+
+Detected Text: 8(a)
+Confidence: 0.9749
+Normalized xywh: (0.188710, 0.664339, 0.036290, 0.013968)
+
+Detected Text: 8(b)
+Confidence: 0.9897
+Normalized xywh: (0.188105, 0.693985, 0.037500, 0.013968)
+
+Detected Text: 9
+Confidence: 0.9857
+Normalized xywh: (0.187097, 0.722919, 0.011290, 0.011403)
+
+Detected Text: 10
+Confidence: 1.0000
+Normalized xywh: (0.187702, 0.753706, 0.022177, 0.012543)
+
+Detected Text: 11
+Confidence: 0.9999
+Normalized xywh: (0.186694, 0.783495, 0.020161, 0.012828)
+
+Detected Text: 12
+Confidence: 1.0000
+Normalized xywh: (0.187097, 0.813141, 0.020968, 0.012828)
+
+Detected Text: 13
+Confidence: 1.0000
+Normalized xywh: (0.187702, 0.842360, 0.022177, 0.011973)
+
+Detected Text: 14
+Confidence: 0.5169
+Normalized xywh: (0.188105, 0.871722, 0.021371, 0.012543)
+
