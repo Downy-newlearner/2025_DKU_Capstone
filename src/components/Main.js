@@ -67,7 +67,8 @@ const Main = () => {
             <Card className="rounded-xl border-gray-400 shadow-md w-full">
               <CardContent className="py-8 px-6 flex flex-col items-center">
                 <p className="text-xl mb-6 text-center">시험지 채점이 필요하다면?</p>
-                <Button className="w-[180px] h-[60px] bg-[#c2afe8] text-white text-2xl rounded-md hover:bg-[#b399e0]">
+                <Button className="w-[180px] h-[60px] bg-[#c2afe8] text-white text-2xl rounded-md hover:bg-[#b399e0]"
+                onClick={() => navigate("/grading")}>
                   채점하기
                 </Button>
               </CardContent>
