@@ -4,6 +4,8 @@ import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
+
 
 const Grading = () => {
   const navigate = useNavigate();
@@ -28,9 +30,19 @@ const Grading = () => {
     }
   };
 
+  const formatAnswer = (text, type) => {
+    if (type === "ox") {
+      if (text.trim() === "O") return "True";
+      if (text.trim() === "X") return "False";
+    }
+    return text;
+  };
+  
   const handleSubmit = () => {
+
+    console.log("현재 토큰:", localStorage.getItem("token"));
     const payload = {
-      exam_date: examDate,
+      exam_date: new Date(examDate).toISOString().split("T")[0] + "T00:00:00",
       subject: subject,
       questions: [],
     };
@@ -41,7 +53,7 @@ const Grading = () => {
         question_number: mainIndex + 1,
         sub_question_number: null,
         question_type: convertType(answer.type),
-        answer: answer.text,
+        answer: formatAnswer(answer.text, answer.type),
       });
 
       // 꼬리문제 추가
@@ -50,13 +62,18 @@ const Grading = () => {
           question_number: mainIndex + 1,
           sub_question_number: subIdx + 1,
           question_type: "short_answer",
-          answer: q.text,
+          answer: formatAnswer(q.text, "단답형"),
         });
       });
     });
 
     console.log("제출 데이터:", payload);
-    // axios.post("/api/submit", payload);
+    axios.post("/exams", payload, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
   };
 
   const addAnswerField = () => {
