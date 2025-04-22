@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -34,10 +35,12 @@ public class UserController {
 
     @PostMapping("/sign-in")
     public JwtToken UserSignin(@RequestBody SignInDto signInDto){
+
         String id = signInDto.getEmail();
         String password = signInDto.getPassword();
 
         JwtToken jwtToken = userService.UserSignin(id, password);
+
         if(jwtToken == null){
             log.info("인증 실패");
             return null;
@@ -46,6 +49,7 @@ public class UserController {
             return jwtToken;
         }
     }
+
 
     @GetMapping("/user")
     public ResponseEntity<UserDto> getUser(){
@@ -69,4 +73,4 @@ public class UserController {
 
 
 
-}
+

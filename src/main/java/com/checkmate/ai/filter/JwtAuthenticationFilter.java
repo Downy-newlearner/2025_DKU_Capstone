@@ -30,13 +30,16 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
 
         String requestURI = httpRequest.getRequestURI();
 
+
         // 로그인과 회원가입 요청은 필터를 거치지 않음
         if (requestURI.equals("/sign-in") || requestURI.equals("/sign-up") || requestURI.equals("/quiz/create") || requestURI.equals("/make-data")) {
+
             chain.doFilter(request, response);
             return;
         }
 
         // 1. Request Header에서 JWT 토큰 추출
+
         String token = resolveToken(httpRequest);
         log.info("Extracted Token: {}", token);
 
@@ -61,6 +64,7 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
             return;
         }
 
+
         chain.doFilter(request, response);
     }
 
@@ -81,4 +85,5 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         response.getWriter().write("{\"error\": \"" + message + "\"}");
         response.getWriter().flush();
     }
+
 }

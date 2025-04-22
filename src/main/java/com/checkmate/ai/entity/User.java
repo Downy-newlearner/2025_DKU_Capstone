@@ -7,6 +7,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
+
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -25,11 +26,13 @@ public class User{
     private String password;
 
     private String name;
+
     @CreatedDate
     private LocalDateTime created_at;
 
     @LastModifiedDate
     private LocalDateTime update_at;
+
 
     public User(String email, String password, String name) {
         this.email = email;
