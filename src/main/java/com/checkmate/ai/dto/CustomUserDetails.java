@@ -9,19 +9,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class CustomUserDetails implements UserDetails {
 
-    //기본으로 가져야 하는 정보
-    private String username;
-    private String password;
 
-    //내가 추가하고 싶은 정보
-    private String member_id;
+    private String email;
+    private String password;
+    private String objectId;
     private String name;
 
     @Builder.Default
@@ -30,9 +27,13 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.emptyList();
-//        return this.roles.stream()
-//                .map(SimpleGrantedAuthority::new)
-//                .collect(Collectors.toList());
+
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+
     }
 
     @Override

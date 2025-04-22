@@ -1,14 +1,13 @@
 package com.checkmate.ai.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
-@Data
-@AllArgsConstructor
+@Getter
 @Builder
 public class JwtToken {
-    private String grantType; //Bearer
+    private String grantType;
     private String accessToken;
     private String refreshToken;
 }
+

@@ -1,0 +1,19 @@
+
+spring:
+  application:
+    name: checkmate_backend
+  data:
+    mongodb:
+      uri: mongodb://root:example@localhost:27017/capstone?authSource=admin
+
+
+  jpa:
+    hibernate:
+      ddl-auto: update #create update none
+    show-sql: true
+    generate-ddl: true
+
+jwt:
+  secret: "fhuiahfhaf98ahf89dshf8ahs9f8df89ahf89dshafffdfaf8as9fh89ashf98dashf9as8hfa89fhas89fhaf98dashfsa89fhdsa89fahf8d9sahfsa9f8hf8"
+
+

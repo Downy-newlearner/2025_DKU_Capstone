@@ -5,7 +5,7 @@ import com.checkmate.ai.dto.JwtToken;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,33 +23,32 @@ import java.util.List;
 public class JwtTokenProvider {
     private final Key key;
 
-    // application.yml에서 secret 값 가져와서 key에 저장
+
+
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {
+        log.info("JWT Secret Key: {}", secretKey); // 로그 추가
+
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // CustomUserDetails 정보를 가지고 AccessToken, RefreshToken을 생성하는 메서드
+
+
     public JwtToken generateToken(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        // 권한 가져오기
-//        String authorities = authentication.getAuthorities().stream()
-//                .map(GrantedAuthority::getAuthority)
-//                .collect(Collectors.joining(","));
-
         long now = (new Date()).getTime();
-        // Access Token 생성
         Date accessTokenExpiresIn = new Date(now + 86400000);
         String accessToken = Jwts.builder()
-                .setSubject(authentication.getName())
+                .setSubject(userDetails.getEmail())
                 .claim("name", userDetails.getName())
-                .claim("member_id", userDetails.getMember_id())
+                .claim("objectId", userDetails.getObjectId())
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        // Refresh Token 생성
+
+
         String refreshToken = Jwts.builder()
                 .setExpiration(new Date(now + 86400000))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -62,31 +61,21 @@ public class JwtTokenProvider {
                 .build();
     }
 
-    // Jwt 토큰을 복호화하여 토큰에 들어있는 정보를 꺼내는 메서드
-    public Authentication getAuthentication(String accessToken) {
-        // Jwt 토큰 복호화
-        Claims claims = parseClaims(accessToken);
-        //role을 사용 안하더라도 최소한의 role이 있어야 인가에 성공함.
-        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
-        // 클레임에서 권한 정보 가져오기
-//        Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
-//                .map(SimpleGrantedAuthority::new)
-//                .collect(Collectors.toList());
 
-        // CustomUserDetails 생성
+    public Authentication getAuthentication(String accessToken) {
+        Claims claims = parseClaims(accessToken);
+        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+
         CustomUserDetails principal = CustomUserDetails.builder()
-                .name(claims.get("name", String.class)) // idx 추가
-                .username(claims.getSubject())
-                .password("") // 비밀번호는 포함하지 않음
-                .member_id(claims.get("member_id", String.class))
-//                .roles(authorities.stream()
-//                        .map(GrantedAuthority::getAuthority)
-//                        .collect(Collectors.toList()))
+                .name(claims.get("name", String.class))
+                .email(claims.getSubject())
+                .password("")
+                .objectId(claims.get("objectId", String.class))
                 .build();
-        return new UsernamePasswordAuthenticationToken(principal, "",authorities);
+        return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
 
-    // 토큰 정보를 검증하는 메서드
+
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -94,15 +83,17 @@ public class JwtTokenProvider {
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (SignatureException e) {
+
+        } catch (Exception e) {
+
             log.info("Invalid JWT Token", e);
         }
         return false;
     }
 
 
-    // accessToken
-    private Claims parseClaims(String accessToken) { //토큰 파싱, 검증 수행
+    private Claims parseClaims(String accessToken) {
+
         try {
             return Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -115,3 +106,4 @@ public class JwtTokenProvider {
     }
 
 }
+

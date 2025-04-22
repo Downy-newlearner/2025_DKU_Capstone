@@ -29,30 +29,40 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         String requestURI = httpRequest.getRequestURI();
-        if (requestURI.equals("/sign-in") || requestURI.equals("/sign-up") || requestURI.equals("/quiz/create")|| requestURI.equals("/make-data")) {
+
+
+        // 로그인과 회원가입 요청은 필터를 거치지 않음
+        if (requestURI.equals("/sign-in") || requestURI.equals("/sign-up") || requestURI.equals("/quiz/create") || requestURI.equals("/make-data")) {
+
             chain.doFilter(request, response);
             return;
         }
 
         // 1. Request Header에서 JWT 토큰 추출
-        String token = resolveToken((HttpServletRequest) request);
-        log.info("token: {}", token);
+
+        String token = resolveToken(httpRequest);
+        log.info("Extracted Token: {}", token);
+
         // 2. validateToken으로 토큰 유효성 검사
-        try {
-            if (token != null && jwtTokenProvider.validateToken(token)) {
-                // 토큰이 유효할 경우 토큰에서 Authentication 객체를 가지고 와서 SecurityContext에 저장
-                Authentication authentication = jwtTokenProvider.getAuthentication(token);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }else{
-                throw new JwtException("Invalid token");
+        if (token != null) {
+            try {
+                if (jwtTokenProvider.validateToken(token)) {
+                    // 토큰이 유효하면 SecurityContext에 Authentication 저장
+                    Authentication authentication = jwtTokenProvider.getAuthentication(token);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    throw new JwtException("Invalid token");
+                }
+            } catch (JwtException e) {
+                log.error("JWT 검증 실패: {}", e.getMessage());
+                handleUnauthorizedResponse(httpResponse, "Invalid JWT Token");
+                return;
             }
-        }catch (JwtException e) {
-            httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401 반환
-            httpResponse.setContentType("application/json");
-            httpResponse.getWriter().write("{\"error\": \"Invalid JWT Token\"}");
+        } else {
+            log.warn("JWT 토큰이 제공되지 않았습니다.");
+            handleUnauthorizedResponse(httpResponse, "JWT token is missing");
             return;
         }
-
 
 
         chain.doFilter(request, response);
@@ -61,9 +71,19 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
     // Request Header에서 토큰 정보 추출
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
-            return bearerToken.substring(7);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7).trim(); // 공백 제거
         }
         return null;
     }
+
+    // 401 Unauthorized 응답 처리
+    private void handleUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write("{\"error\": \"" + message + "\"}");
+        response.getWriter().flush();
+    }
+
 }
