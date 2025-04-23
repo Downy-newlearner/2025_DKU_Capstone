@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         String requestURI = httpRequest.getRequestURI();
 
         // 로그인과 회원가입 요청은 필터를 거치지 않음
-        if (requestURI.equals("/sign-in") || requestURI.equals("/sign-up") || requestURI.equals("/quiz/create") || requestURI.equals("/make-data")) {
+        if (requestURI.equals("/sign-in") || requestURI.equals("/sign-up")) {
             chain.doFilter(request, response);
             return;
         }

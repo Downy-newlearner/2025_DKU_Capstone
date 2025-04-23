@@ -1,9 +1,8 @@
 package com.checkmate.ai.service;
 
-import com.checkmate.ai.dto.CustomUserDetails;
-import com.checkmate.ai.dto.JwtToken;
-import com.checkmate.ai.dto.UserDto;
+import com.checkmate.ai.dto.*;
 import com.checkmate.ai.entity.User;
+import com.checkmate.ai.mapper.UserMapper;
 import com.checkmate.ai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,19 +19,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
 
-
     private final UserRepository userRepository;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
-
-
 
     @Transactional
     public String UserSignup(String email, String password, String name) {
@@ -40,25 +37,21 @@ public class UserService {
             return "User ID already exists!";
         }
 
-        String encodedPassword = passwordEncoder.encode(password); // 🔥 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(password);
         User currentUser = new User(email, encodedPassword, name);
         userRepository.save(currentUser);
-
-
         return "Sign-up successful";
     }
 
     @Transactional
-    public JwtToken UserSignin(String email, String rawPassword) { // ✅ email로 로그인
+    public JwtToken UserSignin(String email, String rawPassword) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("이메일을 찾을 수 없습니다."));
 
-        // ✅ 비밀번호 검증 (평문 vs 암호화된 비밀번호 비교)
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             throw new BadCredentialsException("비밀번호가 일치하지 않습니다.");
         }
 
-        // Spring Security 인증 처리
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(email, rawPassword);
 
@@ -78,31 +71,51 @@ public class UserService {
     }
 
     public UserDto getUser() {
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Optional<User> currentOptionalUser = userRepository.findByEmail(userDetails.getEmail());
 
-        if(currentOptionalUser.isEmpty()){
+        Optional<User> currentUser = userRepository.findByEmail(userDetails.getEmail());
+
+        if (currentUser.isEmpty()) {
             log.info("조회된 User가 없습니다");
             return null;
         }
-        // 현재 멤버의 objectId를 가져옴
 
-        User currntUser = currentOptionalUser.get();
-
-        return new UserDto(currntUser.getEmail(), currntUser.getName());
+        return UserMapper.toDto(currentUser.get());
     }
 
+    public List<UserDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(UserMapper::toDto)
+                .collect(Collectors.toList());
+    }
 
+    public boolean changePassword(PasswordChangeRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-    public List<User> getAllUsers(){
-        return userRepository.findAll();
+        Optional<User> optionalUser = userRepository.findByEmail(userDetails.getEmail());
+
+        if (optionalUser.isEmpty()) {
+            log.warn("비밀번호 변경 실패: 사용자 정보 없음");
+            return false;
+        }
+
+        User user = optionalUser.get();
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            log.warn("비밀번호 변경 실패: 현재 비밀번호 불일치");
+            return false;
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        log.info("비밀번호 변경 성공: {}", user.getEmail());
+        return true;
     }
 
     public void deleteAll() {
         userRepository.deleteAll();
     }
-
-
 }

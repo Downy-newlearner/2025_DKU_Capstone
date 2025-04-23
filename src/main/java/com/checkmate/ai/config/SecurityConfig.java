@@ -54,6 +54,8 @@ public class SecurityConfig {
         return source;
     }
 
+
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();  // 🔥 비밀번호 암호화용 Bean 등록

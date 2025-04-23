@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "Users")
+@Document(collection = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,6 +25,7 @@ public class User{
     private String password;
 
     private String name;
+
     @CreatedDate
     private LocalDateTime created_at;
 
