@@ -1,0 +1,4 @@
+Detected Text: 1
+Confidence: 0.9996
+Normalized xywh: (0.492537, 0.492537, 0.313433, 0.432836)
+

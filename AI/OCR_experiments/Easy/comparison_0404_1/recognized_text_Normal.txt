@@ -1,0 +1,188 @@
+Detected Text: Sionals
+Confidence: 0.9983
+Normalized xywh: (0.178831, 0.109892, 0.060081, 0.011117)
+
+Detected Text: and
+Confidence: 0.8991
+Normalized xywh: (0.229032, 0.109892, 0.029839, 0.011117)
+
+Detected Text: Svstems
+Confidence: 0.9993
+Normalized xywh: (0.283871, 0.110462, 0.069355, 0.012258)
+
+Detected Text: Final
+Confidence: 0.9999
+Normalized xywh: (0.353427, 0.110319, 0.042339, 0.010262)
+
+Detected Text: Fxam
+Confidence: 0.9135
+Normalized xywh: (0.403226, 0.110889, 0.047581, 0.011973)
+
+Detected Text: (Portinn:
+Confidence: 0.9803
+Normalized xywh: (0.467339, 0.110604, 0.069355, 0.012543)
+
+Detected Text: 309)
+Confidence: 0.6528
+Normalized xywh: (0.527419, 0.110319, 0.041129, 0.010262)
+
+Detected Text: 2017 12 07
+Confidence: 0.9602
+Normalized xywh: (0.715927, 0.110319, 0.077823, 0.010262)
+
+Detected Text: 1300*14:15
+Confidence: 0.5300
+Normalized xywh: (0.812097, 0.110034, 0.088710, 0.012543)
+
+Detected Text: answer
+Confidence: 1.0000
+Normalized xywh: (0.548387, 0.232326, 0.058871, 0.010262)
+
+Detected Text: 2
+Confidence: 0.9968
+Normalized xywh: (0.266129, 0.258552, 0.025806, 0.021665)
+
+Detected Text: 2(a)
+Confidence: 0.8215
+Normalized xywh: (0.195968, 0.292332, 0.035484, 0.013968)
+
+Detected Text: 5
+Confidence: 0.9999
+Normalized xywh: (0.258266, 0.292902, 0.022984, 0.024230)
+
+Detected Text: 2(b)
+Confidence: 0.9761
+Normalized xywh: (0.195363, 0.324116, 0.035887, 0.012543)
+
+Detected Text: 1
+Confidence: 0.9596
+Normalized xywh: (0.259073, 0.321836, 0.030242, 0.026796)
+
+Detected Text: 2(c)
+Confidence: 0.9284
+Normalized xywh: (0.195968, 0.355616, 0.035484, 0.013968)
+
+Detected Text: 2
+Confidence: 0.9995
+Normalized xywh: (0.265121, 0.356043, 0.026210, 0.021665)
+
+Detected Text: 2(d)
+Confidence: 0.8407
+Normalized xywh: (0.196371, 0.388540, 0.036290, 0.014253)
+
+Detected Text: 2
+Confidence: 0.9995
+Normalized xywh: (0.262298, 0.386260, 0.030242, 0.024515)
+
+Detected Text: 2(e)
+Confidence: 0.9456
+Normalized xywh: (0.196976, 0.420610, 0.035081, 0.013968)
+
+Detected Text: 3
+Confidence: 0.8208
+Normalized xywh: (0.259476, 0.417902, 0.022984, 0.021095)
+
+Detected Text: 3
+Confidence: 1.0000
+Normalized xywh: (0.196976, 0.451824, 0.011694, 0.011403)
+
+Detected Text: 5
+Confidence: 0.9999
+Normalized xywh: (0.198589, 0.515821, 0.015726, 0.011688)
+
+Detected Text: 2
+Confidence: 0.9999
+Normalized xywh: (0.332460, 0.548603, 0.007661, 0.007697)
+
+Detected Text: 2i+jw
+Confidence: 0.3392
+Normalized xywh: (0.369960, 0.547463, 0.039919, 0.011117)
+
+Detected Text: {+w )w+i)
+Confidence: 0.2690
+Normalized xywh: (0.454032, 0.544897, 0.095161, 0.021380)
+
+Detected Text: (~I< 0 )
+Confidence: 0.5190
+Normalized xywh: (0.566129, 0.544042, 0.090323, 0.015678)
+
+Detected Text: 6
+Confidence: 1.0000
+Normalized xywh: (0.197581, 0.566705, 0.010484, 0.009692)
+
+Detected Text: Yljw):
+Confidence: 0.6322
+Normalized xywh: (0.276008, 0.559578, 0.071371, 0.025656)
+
+Detected Text: 2
+Confidence: 0.7644
+Normalized xywh: (0.329234, 0.564994, 0.012500, 0.015964)
+
+Detected Text: +
+Confidence: 0.7515
+Normalized xywh: (0.396976, 0.565849, 0.011694, 0.007982)
+
+Detected Text: 3,& ) (-wtt)
+Confidence: 0.3066
+Normalized xywh: (0.456250, 0.566990, 0.102016, 0.022235)
+
+Detected Text: (0<w<1)
+Confidence: 0.6511
+Normalized xywh: (0.567742, 0.565137, 0.092742, 0.021950)
+
+Detected Text: oleywig)
+Confidence: 0.4870
+Normalized xywh: (0.572379, 0.583951, 0.075403, 0.021950)
+
+Detected Text: 7(a)
+Confidence: 0.6835
+Normalized xywh: (0.196976, 0.616733, 0.035081, 0.013968)
+
+Detected Text: 7(b)
+Confidence: 0.7157
+Normalized xywh: (0.197581, 0.645952, 0.036290, 0.014823)
+
+Detected Text: 8(a)
+Confidence: 0.7191
+Normalized xywh: (0.196976, 0.675171, 0.035081, 0.013968)
+
+Detected Text: 0
+Confidence: 0.9810
+Normalized xywh: (0.553831, 0.672891, 0.030242, 0.021380)
+
+Detected Text: 8(b)
+Confidence: 0.9933
+Normalized xywh: (0.197581, 0.704818, 0.036290, 0.013968)
+
+Detected Text: 9
+Confidence: 1.0000
+Normalized xywh: (0.197581, 0.733466, 0.012903, 0.010262)
+
+Detected Text: 10
+Confidence: 1.0000
+Normalized xywh: (0.199194, 0.763540, 0.021774, 0.013968)
+
+Detected Text: 11
+Confidence: 0.9999
+Normalized xywh: (0.198790, 0.792474, 0.020161, 0.011973)
+
+Detected Text: 12
+Confidence: 1.0000
+Normalized xywh: (0.200403, 0.820981, 0.020968, 0.012543)
+
+Detected Text: 13
+Confidence: 1.0000
+Normalized xywh: (0.201411, 0.849772, 0.021371, 0.012543)
+
+Detected Text: 3
+Confidence: 0.9492
+Normalized xywh: (0.260484, 0.847064, 0.017742, 0.017959)
+
+Detected Text: 14
+Confidence: 1.0000
+Normalized xywh: (0.201411, 0.877993, 0.021371, 0.012543)
+
+Detected Text: ~51Jw
+Confidence: 0.1479
+Normalized xywh: (0.365524, 0.568130, 0.037550, 0.015898)
+
