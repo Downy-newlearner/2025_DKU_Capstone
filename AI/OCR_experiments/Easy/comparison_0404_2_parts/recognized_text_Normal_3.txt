@@ -1,0 +1,48 @@
+Detected Text: answer
+Confidence: 1.0000
+Normalized xywh: (0.497647, 0.016279, 0.094118, 0.015504)
+
+Detected Text: K
+Confidence: 0.1739
+Normalized xywh: (0.248235, 0.207752, 0.042353, 0.041860)
+
+Detected Text: 3
+Confidence: 0.9995
+Normalized xywh: (0.071765, 0.295349, 0.030588, 0.023256)
+
+Detected Text: 6
+Confidence: 0.3458
+Normalized xywh: (0.272941, 0.293798, 0.037647, 0.041860)
+
+Detected Text: Y(w)
+Confidence: 0.2562
+Normalized xywh: (0.232941, 0.482946, 0.061176, 0.020155)
+
+Detected Text: 1
+Confidence: 0.7092
+Normalized xywh: (0.094118, 0.694574, 0.037647, 0.068217)
+
+Detected Text: 5
+Confidence: 1.0000
+Normalized xywh: (0.096471, 0.759690, 0.032941, 0.034109)
+
+Detected Text: 3
+Confidence: 0.9686
+Normalized xywh: (0.096471, 0.803876, 0.028235, 0.023256)
+
+Detected Text: 3
+Confidence: 0.9990
+Normalized xywh: (0.096471, 0.848062, 0.028235, 0.021705)
+
+Detected Text: 4
+Confidence: 1.0000
+Normalized xywh: (0.100000, 0.892248, 0.035294, 0.026357)
+
+Detected Text: 3
+Confidence: 1.0000
+Normalized xywh: (0.095294, 0.937984, 0.023529, 0.020155)
+
+Detected Text: 0
+Confidence: 0.8545
+Normalized xywh: (0.091765, 0.975194, 0.028235, 0.027907)
+

@@ -1,0 +1,72 @@
+Detected Text: answer
+Confidence: 1.0000
+Normalized xywh: (0.496829, 0.018362, 0.090909, 0.014124)
+
+Detected Text: 2
+Confidence: 0.9997
+Normalized xywh: (0.054968, 0.059322, 0.040169, 0.035311)
+
+Detected Text: 5
+Confidence: 0.9503
+Normalized xywh: (0.041226, 0.132768, 0.046512, 0.086158)
+
+Detected Text: 3
+Confidence: 0.9942
+Normalized xywh: (0.045455, 0.224929, 0.063425, 0.092514)
+
+Detected Text: 3
+Confidence: 0.9974
+Normalized xywh: (0.044397, 0.295198, 0.040169, 0.038136)
+
+Detected Text: t
+Confidence: 0.6331
+Normalized xywh: (0.033827, 0.395480, 0.040169, 0.038136)
+
+Detected Text: 2 ( -2i+jw
+Confidence: 0.3794
+Normalized xywh: (0.197674, 0.487994, 0.099366, 0.018362)
+
+Detected Text: 3+ Jw+i)
+Confidence: 0.3448
+Normalized xywh: (0.347780, 0.483051, 0.152220, 0.029661)
+
+Detected Text: (-Iw< 0 )
+Confidence: 0.3424
+Normalized xywh: (0.524313, 0.482345, 0.145877, 0.025424)
+
+Detected Text: Ylw):
+Confidence: 0.7745
+Normalized xywh: (0.067653, 0.504944, 0.109937, 0.035311)
+
+Detected Text: 4 (~314
+Confidence: 0.2743
+Normalized xywh: (0.190803, 0.514831, 0.104651, 0.029661)
+
+Detected Text: 35 ) (-wtt)
+Confidence: 0.5614
+Normalized xywh: (0.349894, 0.516949, 0.162791, 0.033898)
+
+Detected Text: (0<w<1)
+Confidence: 0.6554
+Normalized xywh: (0.526956, 0.514831, 0.144820, 0.031073)
+
+Detected Text: ofleywig )
+Confidence: 0.5948
+Normalized xywh: (0.533298, 0.541667, 0.117336, 0.031073)
+
+Detected Text: 0
+Confidence: 0.9945
+Normalized xywh: (0.500000, 0.716808, 0.042283, 0.033898)
+
+Detected Text: 5
+Confidence: 0.9999
+Normalized xywh: (0.029598, 0.766949, 0.029598, 0.031073)
+
+Detected Text: 8
+Confidence: 0.9996
+Normalized xywh: (0.031712, 0.805791, 0.040169, 0.033898)
+
+Detected Text: 5
+Confidence: 0.1891
+Normalized xywh: (0.040169, 0.915254, 0.040169, 0.069209)
+
