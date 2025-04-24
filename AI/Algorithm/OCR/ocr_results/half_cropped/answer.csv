@@ -1,3 +1,2 @@
-qn_or_ans,y_top,y_bottom,confident,recognition_result
-ans,7,23,0.992,onswerr
-ans,28,60,0.995,answer
+image_name,recognized_text,confidence
+10_answer.jpeg,answer 눕 5 2 2 나 2,0.7906525601285804

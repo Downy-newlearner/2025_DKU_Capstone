@@ -1,3 +1,4 @@
+# 프로젝트 특정 파일 무시
 HELP.md
 .gradle
 build/
@@ -5,7 +6,20 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### STS ###
+# 대용량 파일 무시
+AI/deep-text-recognition-benchmark/
+AI/deep-text-recognition-benchmark/MNIST/
+AI/deep-text-recognition-benchmark/MNIST/output/
+AI/deep-text-recognition-benchmark/MNIST/output/images/
+AI/deep-text-recognition-benchmark/MNIST/training/
+AI/deep-text-recognition-benchmark/saved_models/
+AI/Algorithm/OCR/use_ocr/model/craft_mlt_25k.pth
+AI/yolov10/
+AI/OCR_experiments/
+AI/dataset/
+
+# IDE 및 에디터 설정
+## STS
 .apt_generated
 .classpath
 .factorypath
@@ -17,8 +31,8 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
-### IntelliJ IDEA ###
-.idea
+## IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -26,12 +40,67 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
-### NetBeans ###
+## NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
+## VS Code
 .vscode/
+
+# 프로그래밍 언어 관련 파일
+## Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 모델 가중치 파일
+*.pth
+*.h5
+*.weights
+*.pb
+*.onnx
+*.tflite
+
+# 데이터셋
+*.csv
+*.tsv
+*.sqlite
+*.db
+
+# 로그 파일
+logs/
+*.log
+
+# 시스템 파일
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# 기타 무시할 파일
+*.swp
+*.swo
+
