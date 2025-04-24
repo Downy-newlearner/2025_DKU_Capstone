@@ -10,7 +10,7 @@ OUTPUT_DIR = "cropped_images"  # 결과물 저장 디렉토리
 def extract_and_save_bbox(image_path, bbox, class_id, output_path, output_filename):
     # Open the image
     img = Image.open(image_path)
-    width, height = img.size
+    width, height = img.size-415
     
     # Convert normalized bbox coordinates to pixel coordinates
     x_center, y_center, bbox_width, bbox_height = bbox

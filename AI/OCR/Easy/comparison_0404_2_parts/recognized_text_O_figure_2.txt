@@ -1,4 +1,0 @@
-Detected Text: answer
-Confidence: 0.9973
-Normalized xywh: (0.500000, 0.017857, 0.093240, 0.015528)
-
