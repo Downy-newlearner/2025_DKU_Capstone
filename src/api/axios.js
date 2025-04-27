@@ -8,6 +8,7 @@ const instance = axios.create({
   withCredentials: true,
   headers: {
     Authorization: token ? `Bearer ${token}` : "", // ✅ 여기에 기본 Authorization 설정
+
   },
 });
 

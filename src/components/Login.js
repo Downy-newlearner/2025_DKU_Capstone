@@ -126,7 +126,9 @@ const Login = () => {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <button className="font-light text-[#4c4c4c] text-xs">
+                  <button className="font-light text-[#4c4c4c] text-xs"
+                  onClick={() => navigate("/forgetpassword")} // 클릭 시 이동
+                  >
                     Forgot Password?
                   </button>
                 </div>

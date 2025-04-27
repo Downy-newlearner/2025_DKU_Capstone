@@ -143,7 +143,8 @@ export const Mypage = () => {
 
         {/* 비밀번호 변경 버튼 */}
         <div className="absolute w-[330px] h-14 top-[810px] left-[560px]">
-          <Button className="w-[278px] h-14 bg-[#c7aee7] hover:bg-[#b79ad3] rounded-[5px] text-3xl font-medium text-white">
+          <Button className="w-[278px] h-14 bg-[#c7aee7] hover:bg-[#b79ad3] rounded-[5px] text-3xl font-medium text-white"
+          onClick={() => navigate("/changepassword")}>
             비밀번호 변경하기
           </Button>
         </div>
