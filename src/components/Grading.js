@@ -6,13 +6,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 
-
 const Grading = () => {
   const navigate = useNavigate();
   const [examDate, setExamDate] = useState("");
   const [subject, setSubject] = useState("");
   const [answers, setAnswers] = useState([
-    { text: "", type: "객관식", multiple: false, tailQuestions: [] },
+    { text: "", type: "객관식", multiple: false, point: 0, tailQuestions: [] },
   ]);
 
   const convertType = (type) => {
@@ -37,9 +36,8 @@ const Grading = () => {
     }
     return text;
   };
-  
-  const handleSubmit = () => {
 
+  const handleSubmit = () => {
     console.log("현재 토큰:", localStorage.getItem("token"));
     const payload = {
       exam_date: new Date(examDate).toISOString().split("T")[0] + "T00:00:00",
@@ -54,6 +52,7 @@ const Grading = () => {
         sub_question_number: null,
         question_type: convertType(answer.type),
         answer: formatAnswer(answer.text, answer.type),
+        point: answer.point,
       });
 
       // 꼬리문제 추가
@@ -63,6 +62,7 @@ const Grading = () => {
           sub_question_number: subIdx + 1,
           question_type: "short_answer",
           answer: formatAnswer(q.text, "단답형"),
+          point: q.point,
         });
       });
     });
@@ -79,7 +79,7 @@ const Grading = () => {
   const addAnswerField = () => {
     setAnswers([
       ...answers,
-      { text: "", type: "객관식", multiple: false, tailQuestions: [] },
+      { text: "", type: "객관식", multiple: false, point: 0, tailQuestions: [] },
     ]);
   };
 
@@ -93,7 +93,7 @@ const Grading = () => {
 
   const addTailQuestion = (index) => {
     const updated = [...answers];
-    updated[index].tailQuestions.push({ text: "", multiple: false });
+    updated[index].tailQuestions.push({ text: "", multiple: false, point: 0 });
     setAnswers(updated);
   };
 
@@ -126,27 +126,15 @@ const Grading = () => {
           className="absolute w-32 h-[30px] top-[29px] left-[52px]"
           onClick={() => navigate("/main")}
         >
-          <img
-            src="/Checkmate5.png"
-            alt="CheckMate Logo"
-            className="w-full h-full object-cover"
-          />
+          <img src="/Checkmate5.png" alt="CheckMate Logo" className="w-full h-full object-cover" />
         </button>
         <div className="absolute w-[383px] h-[90px] top-[38px] left-[532px]">
-          <img
-            src="/Checkmate5.png"
-            alt="CheckMate"
-            className="w-full h-full object-cover mb-2"
-          />
-          <img
-            src="/Vector 9.png"
-            alt="밑줄"
-            className="w-[400px] object-contain"
-          />
+          <img src="/Checkmate5.png" alt="CheckMate" className="w-full h-full object-cover mb-2" />
+          <img src="/Vector 9.png" alt="밑줄" className="w-[400px] object-contain" />
         </div>
 
         {/* 안내 문구 */}
-        <div className="top-[220px] left-9 font-normal text-black text-xl absolute text-center font-['Poppins-Regular','Helvetica']">
+        <div className="top-[220px] left-9 font-normal text-black text-xl absolute text-center">
           * 채점을 위한 정보를 입력해주세요.
         </div>
 
@@ -171,7 +159,7 @@ const Grading = () => {
             </div>
             <div className="relative w-full">
               <Input
-                className="w-full text-[20px] placeholder:text-gray-400 border-none rounded-none focus-visible:ring-0 font-['Poppins-Regular','Helvetica']"
+                className="w-full text-[20px] placeholder:text-gray-400 border-none rounded-none focus-visible:ring-0"
                 placeholder="Enter your subject name"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
@@ -181,17 +169,17 @@ const Grading = () => {
           </CardContent>
         </Card>
 
-        {/* 메인 문제 & 꼬리문제 입력 */}
+        {/* 문제 입력 */}
         <div className="absolute left-[575px] top-[284px]">
           {answers.map((answer, index) => (
             <div key={index} className="mb-6">
               <div className="flex items-center mb-2">
                 <span className="text-3xl font-bold mr-4 w-8">{index + 1}.</span>
 
-                {/* 메인 문제 입력칸은 꼬리문제가 없을 때만 보여줌 */}
+                {/* 꼬리문제 없는 경우에만 답변/배점/체크박스 보여줌 */}
                 {answer.tailQuestions.length === 0 && (
                   <>
-                    <div className="w-[500px] border-b-2 border-black">
+                    <div className="w-[400px] border-b-2 border-black">
                       <input
                         type="text"
                         placeholder="Enter the answer"
@@ -201,23 +189,36 @@ const Grading = () => {
                           updated[index].text = e.target.value;
                           setAnswers(updated);
                         }}
-                        className="w-full text-xl placeholder-gray-400 bg-transparent focus:outline-none"
+                        className="w-full text-xl bg-transparent focus:outline-none placeholder-gray-400"
                       />
                     </div>
-                    {(answer.type === "객관식" || answer.type === "단답형") && (
-                      <label className="ml-4 flex items-center space-x-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={answer.multiple}
-                          onChange={(e) => {
-                            const updated = [...answers];
-                            updated[index].multiple = e.target.checked;
-                            setAnswers(updated);
-                          }}
-                        />
-                        <span>답 2개 이상</span>
-                      </label>
-                    )}
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        value={answer.point}
+                        onChange={(e) => {
+                          const updated = [...answers];
+                          updated[index].point = parseInt(e.target.value) || 0;
+                          setAnswers(updated);
+                        }}
+                        className="w-[100px] border-b-2 border-black bg-transparent text-lg focus:outline-none ml-2"
+                        placeholder="Point"
+                      />
+                      {(answer.type === "객관식" || answer.type === "단답형") && (
+                        <label className="ml-4 flex items-center space-x-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={answer.multiple}
+                            onChange={(e) => {
+                              const updated = [...answers];
+                              updated[index].multiple = e.target.checked;
+                              setAnswers(updated);
+                            }}
+                          />
+                          <span>답 2개 이상</span>
+                        </label>
+                      )}
+                    </div>
                   </>
                 )}
 
@@ -242,34 +243,51 @@ const Grading = () => {
               <div className="ml-10 flex flex-col items-start">
                 {answer.tailQuestions.map((q, idx) => (
                   <div key={idx} className="flex items-center mb-2">
-                    <span className="text-lg font-semibold mr-2">
-                      ({idx + 1})
-                    </span>
+                    <span className="text-lg font-semibold mr-2">({idx + 1})</span>
+
+                    {/* 꼬리문제 답변 입력 */}
                     <input
                       type="text"
                       value={q.text}
                       onChange={(e) => {
                         const updated = [...answers];
-                        updated[index].tailQuestions[idx].text =
-                          e.target.value;
+                        updated[index].tailQuestions[idx].text = e.target.value;
                         setAnswers(updated);
                       }}
                       className="w-[400px] border-b-2 border-black text-lg bg-transparent focus:outline-none mr-2"
                       placeholder="Enter the answer"
                     />
-                    <label className="flex items-center space-x-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={q.multiple}
-                        onChange={(e) => {
-                          const updated = [...answers];
-                          updated[index].tailQuestions[idx].multiple =
-                            e.target.checked;
-                          setAnswers(updated);
-                        }}
-                      />
-                      <span>답 2개 이상</span>
-                    </label>
+
+                    {/* 꼬리문제 배점 입력 */}
+                    <input
+                      type="number"
+                      value={q.point}
+                      onChange={(e) => {
+                        const updated = [...answers];
+                        updated[index].tailQuestions[idx].point = parseInt(e.target.value) || 0;
+                        setAnswers(updated);
+                      }}
+                      className="w-[100px] border-b-2 border-black text-lg bg-transparent focus:outline-none mr-2"
+                      placeholder="Enter point"
+                    />
+
+                    {/* 꼬리문제 체크박스: 메인문제 타입이 객관식/단답형일 때만 */}
+                    {(answer.type === "객관식" || answer.type === "단답형") && (
+                      <label className="flex items-center space-x-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={q.multiple}
+                          onChange={(e) => {
+                            const updated = [...answers];
+                            updated[index].tailQuestions[idx].multiple = e.target.checked;
+                            setAnswers(updated);
+                          }}
+                        />
+                        <span>답 2개 이상</span>
+                      </label>
+                    )}
+
+                    
                   </div>
                 ))}
 
