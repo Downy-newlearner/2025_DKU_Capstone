@@ -4,9 +4,13 @@ import com.checkmate.ai.dto.*;
 import com.checkmate.ai.entity.User;
 import com.checkmate.ai.mapper.UserMapper;
 import com.checkmate.ai.repository.UserRepository;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -30,6 +34,13 @@ public class UserService {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final JavaMailSender mailSender;
+
+    @Value("${app.reset-password.url}")
+    private String resetPasswordUrl;
+
+    @Value("${spring.mail.from}")
+    private String mailFrom;
 
     @Transactional
     public String UserSignup(String email, String password, String name) {
@@ -103,19 +114,42 @@ public class UserService {
 
         User user = optionalUser.get();
 
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getCurrent_password(), user.getPassword())) {
             log.warn("비밀번호 변경 실패: 현재 비밀번호 불일치");
             return false;
         }
 
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPassword(passwordEncoder.encode(request.getNew_password()));
         userRepository.save(user);
 
         log.info("비밀번호 변경 성공: {}", user.getEmail());
         return true;
     }
 
+    public boolean sendRedirectEmail(String toEmail) {
+        try {
+            String resetLink = resetPasswordUrl;
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(mailFrom); // << 여기 변경!
+            helper.setTo(toEmail);
+            helper.setSubject("🔒 비밀번호 재설정 링크");
+            helper.setText("<p>비밀번호를 재설정하려면 아래 링크를 클릭하세요:</p>"
+                    + "<a href=\"" + resetLink + "\">비밀번호 재설정</a>", true);
+
+            mailSender.send(message);
+            log.info("비밀번호 재설정 이메일 전송 완료: {}", toEmail);
+            return true;
+
+        } catch (MessagingException e) {
+            log.error("이메일 전송 실패", e);
+            throw new RuntimeException("이메일 전송에 실패했습니다.");
+        }
+    }
+
     public void deleteAll() {
         userRepository.deleteAll();
     }
+
 }

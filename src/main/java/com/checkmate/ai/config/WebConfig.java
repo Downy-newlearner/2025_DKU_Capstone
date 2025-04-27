@@ -15,4 +15,6 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowCredentials(true);  // 쿠키 허용
     }
+
+
 }

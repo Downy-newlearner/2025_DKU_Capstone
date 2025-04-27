@@ -1,19 +1,34 @@
-
 spring:
+  mail:
+    host: smtp.naver.com
+    port: 465
+    username: "woniwory"
+    password: "Woodpecker1324@"
+    protocol: smtps
+    from: "woniwory@naver.com"  # 발신자 이메일 추가
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+
   application:
     name: checkmate_backend
+
   data:
     mongodb:
       uri: mongodb://root:example@localhost:27017/capstone?authSource=admin
 
-
   jpa:
     hibernate:
-      ddl-auto: update #create update none
+      ddl-auto: update
     show-sql: true
     generate-ddl: true
 
+app:
+  reset-password:
+    url: ${RESET_PASSWORD_URL:http://localhost:3000/reset-password?token=}
+
 jwt:
   secret: "fhuiahfhaf98ahf89dshf8ahs9f8df89ahf89dshafffdfaf8as9fh89ashf98dashf9as8hfa89fhas89fhaf98dashfsa89fhdsa89fahf8d9sahfsa9f8hf8"
-
-

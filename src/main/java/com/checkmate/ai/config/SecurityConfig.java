@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .csrf((cs) -> cs.disable())  // CSRF 비활성화
                 .sessionManagement((sm) -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // 세션 사용 안 함
                 .authorizeHttpRequests((ahr) -> ahr
-                        .requestMatchers("/sign-up", "/sign-in", "/make-data").permitAll()  // 인증 제외 경로
+                        .requestMatchers("/sign-up", "/sign-in", "/reset-request","/error").permitAll()  // 인증 제외 경로
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)

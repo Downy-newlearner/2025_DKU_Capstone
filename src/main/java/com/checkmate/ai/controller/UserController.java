@@ -45,6 +45,17 @@ public class UserController {
         }
     }
 
+    @PostMapping("/reset-request")
+    public ResponseEntity<String> sendRedirectEmail(@RequestBody ResetRequestDto resetRequestDto) {
+        boolean result = userService.sendRedirectEmail(resetRequestDto.getEmail());
+        if (result) {
+            return ResponseEntity.ok("📩 이메일이 성공적으로 전송되었습니다.");
+        } else {
+            return ResponseEntity.badRequest().body("❌ 이메일 전송에 실패하였습니다.");
+        }
+    }
+
+
     @GetMapping("/user")
     public ResponseEntity<UserDto> getUser() {
         return ResponseEntity.ok(userService.getUser());
