@@ -9,6 +9,8 @@ import lombok.Setter;
 public class PasswordChangeRequest {
     private String current_password;
     private String new_password;
+    private String token;
+
 }
 
 

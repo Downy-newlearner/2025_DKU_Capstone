@@ -14,4 +14,6 @@ public class Question {
     private int sub_question_number; // optional (null 허용)
     private String answer;
     private int point;
+
+
 }

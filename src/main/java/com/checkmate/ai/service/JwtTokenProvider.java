@@ -16,19 +16,16 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
-
 @Slf4j
 @Component
 public class JwtTokenProvider {
     private final Key key;
-
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {
         log.info("JWT Secret Key: {}", secretKey); // 로그 추가
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
-
 
     public JwtToken generateToken(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -68,17 +65,27 @@ public class JwtTokenProvider {
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
 
-    public boolean validateToken(String token) {
+
+
+    // 비밀번호 재설정용 토큰 생성
+    public String generateResetPasswordToken(String email) {
+        long now = (new Date()).getTime();
+        Date resetTokenExpiration = new Date(now + 3600000); // 1시간 후 만료
+        return Jwts.builder()
+                .setSubject(email)
+                .setExpiration(resetTokenExpiration)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // 토큰 유효성 검사 및 파싱
+    public Claims verifyResetToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
+            return parseClaims(token);  // 기존의 parseClaims 메서드를 사용하여 토큰을 파싱
         } catch (Exception e) {
-            log.info("Invalid JWT Token", e);
+            log.error("Token validation failed", e);
+            return null;  // 파싱 실패 시 null을 반환
         }
-        return false;
     }
 
     private Claims parseClaims(String accessToken) {
@@ -91,5 +98,17 @@ public class JwtTokenProvider {
         } catch (ExpiredJwtException e) {
             return e.getClaims();
         }
+    }
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            log.info("Invalid JWT Token", e);
+        }
+        return false;
     }
 }

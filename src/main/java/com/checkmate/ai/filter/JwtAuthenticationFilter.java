@@ -1,7 +1,10 @@
 package com.checkmate.ai.filter;
 
+import com.checkmate.ai.dto.CustomUserDetails;
 import com.checkmate.ai.service.JwtTokenProvider;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -10,12 +13,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
 
 import java.io.IOException;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -32,7 +39,7 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         log.info("Request URI: {}", requestURI); // 로그 추가
 
         // 로그인과 회원가입 요청은 필터를 거치지 않음
-        if (requestURI.equals("/sign-in") || requestURI.equals("/sign-up") || requestURI.equals("/reset-request")) {
+        if (requestURI.equals("/sign-in") || requestURI.equals("/sign-up") || requestURI.equals("/reset-request") || requestURI.equals("/reset-password")) {
             chain.doFilter(request, response);
             return;
         }
@@ -73,6 +80,11 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         }
         return null;
     }
+
+
+
+
+
 
     // 401 Unauthorized 응답 처리
     private void handleUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {

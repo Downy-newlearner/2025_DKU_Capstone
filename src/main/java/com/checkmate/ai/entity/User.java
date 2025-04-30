@@ -31,10 +31,10 @@ public class User{
 
     @LastModifiedDate
     private LocalDateTime update_at;
+    private int total_score;
 
-
-    private String resetToken;
-    private LocalDateTime tokenExpiry;
+//    private String resetToken;
+//    private LocalDateTime tokenExpiry;
 
 
     public User(String email, String password, String name) {

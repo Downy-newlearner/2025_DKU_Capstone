@@ -1,6 +1,7 @@
 package com.checkmate.ai.service;
 
 import com.checkmate.ai.dto.ExamDto;
+import com.checkmate.ai.dto.StudentAnswerUpdateDto;
 import com.checkmate.ai.entity.Exam;
 import com.checkmate.ai.mapper.ExamMapper;
 import com.checkmate.ai.repository.ExamRepository;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ExamService {
@@ -32,7 +34,11 @@ public class ExamService {
                 .map(ExamMapper::toDto)
                 .toList();
     }
+
+
 }
+
+
 
 //    public Exam addStudentResponse(String examId, StudentResponse newResponse) {
 //        Optional<Exam> optionalExam = examRepository.findById(examId);
