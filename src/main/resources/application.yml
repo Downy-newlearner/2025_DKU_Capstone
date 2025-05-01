@@ -1,9 +1,5 @@
 spring:
 
-  redis:
-    host: localhost
-    port: 6379
-
   session:
     store-type: redis
     timeout: 1800s # 세션 만료시간 (30분)
@@ -29,6 +25,10 @@ spring:
   data:
     mongodb:
       uri: mongodb://root:example@localhost:27017/capstone?authSource=admin
+
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: 6379
 
   jpa:
     hibernate:

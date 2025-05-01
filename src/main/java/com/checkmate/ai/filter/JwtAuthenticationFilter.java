@@ -1,10 +1,8 @@
 package com.checkmate.ai.filter;
 
-import com.checkmate.ai.dto.CustomUserDetails;
 import com.checkmate.ai.service.JwtTokenProvider;
-import io.jsonwebtoken.Claims;
+import com.checkmate.ai.service.TokenService;
 import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -13,46 +11,49 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
 
 import java.io.IOException;
-import java.util.List;
 
 @RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends GenericFilterBean {
     private final JwtTokenProvider jwtTokenProvider;
-
+    private final TokenService tokenService;
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         String requestURI = httpRequest.getRequestURI();
-        log.info("Request URI: {}", requestURI); // 로그 추가
+        log.info("Request URI: {}", requestURI);
 
-        // 로그인과 회원가입 요청은 필터를 거치지 않음
-        if (requestURI.equals("/sign-in") || requestURI.equals("/sign-up") || requestURI.equals("/reset-request") || requestURI.equals("/reset-password")) {
+        // 🔑 인증 예외 경로 설정
+        if (isPublicURI(requestURI)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 1. Request Header에서 JWT 토큰 추출
-        String token = resolveToken(httpRequest);
+        // 1. JWT 토큰 추출
+        String token = jwtTokenProvider.resolveToken(httpRequest);
         log.info("Extracted Token: {}", token);
 
-        // 2. validateToken으로 토큰 유효성 검사
         if (token != null) {
             try {
+                // 2. 토큰 유효성 및 블랙리스트 검사
                 if (jwtTokenProvider.validateToken(token)) {
-                    // 토큰이 유효하면 SecurityContext에 Authentication 저장
+                    if (tokenService.isTokenBlacklisted(token)) {
+                        log.warn("블랙리스트된 토큰: {}", token);
+                        handleUnauthorizedResponse(httpResponse, "Token is blacklisted");
+                        return;
+                    }
+
+                    // 3. 유효한 토큰일 경우 인증 처리
                     Authentication authentication = jwtTokenProvider.getAuthentication(token);
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 } else {
@@ -72,19 +73,14 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         chain.doFilter(request, response);
     }
 
-    // Request Header에서 토큰 정보 추출
-    private String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7).trim(); // 공백 제거
-        }
-        return null;
+    // ✅ 인증 예외 대상 URI (로그인, 회원가입, 비밀번호 재설정 등)
+    private boolean isPublicURI(String uri) {
+        return uri.startsWith("/sign-in")
+                || uri.startsWith("/sign-up")
+                || uri.startsWith("/reset-request")
+                || uri.startsWith("/reset-password")
+                || uri.startsWith("/error");
     }
-
-
-
-
-
 
     // 401 Unauthorized 응답 처리
     private void handleUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {

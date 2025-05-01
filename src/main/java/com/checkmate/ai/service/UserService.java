@@ -9,9 +9,13 @@ import com.checkmate.ai.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -26,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +44,8 @@ public class UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
+    private final RedisTemplate<String, String> redisTemplate;
+
 
     @Value("${app.reset-password.url}")
     private String resetPasswordUrl;
@@ -47,7 +54,7 @@ public class UserService {
     private String mailFrom;
 
     @Transactional
-    public String UserSignup(SignUpDto signUpDto) {
+    public String userSignup(SignUpDto signUpDto) {
         if (userRepository.findByEmail(signUpDto.getEmail()).isPresent()) {
             return "User ID already exists!";
         }
@@ -59,7 +66,7 @@ public class UserService {
     }
 
     @Transactional
-    public JwtToken UserSignin(SignInDto signInDto) {
+    public JwtToken userSignin(SignInDto signInDto) {
         User user = userRepository.findByEmail(signInDto.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("이메일을 찾을 수 없습니다."));
 
@@ -131,11 +138,15 @@ public class UserService {
         return true;
     }
 
-    public boolean sendRedirectEmail(String toEmail,String token) {
+    public boolean sendRedirectEmail(String toEmail, String token) {
         try {
             // 토큰을 포함한 비밀번호 재설정 링크 생성
             String resetLink = resetPasswordUrl + token;
 
+            // Redis에 토큰 저장 (토큰과 만료 시간 설정)
+            redisTemplate.opsForValue().set("password-reset:" + token, toEmail, 1, TimeUnit.HOURS);  // 1시간 유효
+
+            // 이메일 전송 설정
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom(mailFrom); // 발신자 이메일 설정
@@ -144,6 +155,7 @@ public class UserService {
             helper.setText("<p>비밀번호를 재설정하려면 아래 링크를 클릭하세요:</p>"
                     + "<a href=\"" + resetLink + "\">비밀번호 재설정</a>", true);
 
+            // 이메일 전송
             mailSender.send(message);
             log.info("비밀번호 재설정 이메일 전송 완료: {}", toEmail);
             return true;
@@ -162,55 +174,62 @@ public class UserService {
 
     @Transactional
     public boolean resetPassword(String token, String newPassword) {
+        // Redis에서 유효한 토큰을 확인했다면, 해당 토큰에 대한 유저 정보를 가져옵니다
+        String storedToken =  redisTemplate.opsForValue().get("password-reset:" + token);
+
+        if (storedToken == null) {
+            return false; // 유효하지 않으면 false 반환
+        }
+
+        // 유저 정보 찾기 (토큰에 저장된 이메일 또는 ID로)
+        User user = userRepository.findByEmail(storedToken).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        String encryptedPassword = passwordEncoder.encode(newPassword);
+        // 비밀번호 변경 로직
+        user.setPassword(encryptedPassword);  // 비밀번호 변경
+        userRepository.save(user);  // DB에 저장
+
+        // Redis에서 토큰 삭제
+        redisTemplate.delete("password-reset:" + token);
+
+        return true;
+    }
+
+    @Transactional
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        // HTTP 요청에서 토큰 추출
+        String token = jwtTokenProvider.resolveToken(request);
+        if (token == null) {
+            log.warn("로그아웃 실패: 토큰이 존재하지 않음");
+            return ResponseEntity.badRequest().body("토큰이 없습니다.");
+        }
+
         // 토큰 유효성 검사
-        Claims claims = jwtTokenProvider.verifyResetToken(token); // 토큰 파싱 및 유효성 검사
-
-        if (claims == null) {
-            log.warn("유효하지 않은 토큰");
-            return false; // 유효하지 않은 토큰
+        if (!jwtTokenProvider.validateToken(token)) {
+            log.warn("로그아웃 실패: 유효하지 않은 토큰");
+            return ResponseEntity.badRequest().body("유효하지 않은 토큰입니다.");
         }
 
-        // 토큰에서 이메일 추출
-        String email = claims.getSubject();
+        try {
+            // 만료 시간을 토대로 블랙리스트에 토큰 추가
+            long expiration = jwtTokenProvider.getExpiration(token);
+            redisTemplate.opsForValue().set(token, "blacklisted", expiration, TimeUnit.MILLISECONDS);
 
-        // 이메일에 해당하는 유저 찾기
-        Optional<User> user = userRepository.findByEmail(email);
+            // 로그아웃 성공 시 SecurityContext 비우기
+            SecurityContextHolder.clearContext();
 
-        if (user.isPresent()) {
-            User existingUser = user.get();
-            existingUser.setPassword(passwordEncoder.encode(newPassword)); // 비밀번호 암호화
-            userRepository.save(existingUser); // 비밀번호 저장
-
-            // 토큰을 사용한 후 삭제 (이미 사용된 토큰을 지움)
-            Optional<ResetToken> resetToken = resetTokenRepository.findByToken(token);
-            resetToken.ifPresent(resetTokenRepository::delete); // Optional이 비어있지 않으면 삭제
-
-            log.info("비밀번호 변경 성공: {}", email);
-            return true; // 비밀번호 변경 성공
+            log.info("로그아웃 성공: 토큰 블랙리스트 추가됨");
+            return ResponseEntity.ok("로그아웃 되었습니다.");
+        } catch (Exception e) {
+            log.error("로그아웃 처리 중 오류 발생: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("로그아웃 처리 중 오류가 발생했습니다.");
         }
-
-        log.warn("사용자가 존재하지 않음: {}", email);
-        return false; // 유저가 없을 경우
     }
 
-    public boolean verifyResetToken(String token) {
-        // 토큰 파싱 및 유효성 검사
-        Claims claims = jwtTokenProvider.verifyResetToken(token);  // 토큰 파싱 및 유효성 검사
 
-        if (claims == null) {
-            // 유효하지 않은 토큰
-            return false;
-        }
 
-        // 토큰에서 이메일 추출
-        String email = claims.getSubject();
 
-        // 이메일을 사용하여 데이터베이스에서 해당 사용자가 존재하는지 확인
-        Optional<User> user = userRepository.findByEmail(email);
 
-        // 사용자 존재 여부 체크
-        return user.isPresent(); // 사용자가 존재하면 true, 아니면 false
-    }
 
 }
 

@@ -5,6 +5,7 @@ import com.checkmate.ai.dto.JwtToken;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.security.Key;
 import java.util.Date;
@@ -111,4 +113,29 @@ public class JwtTokenProvider {
         }
         return false;
     }
+
+    public String getUserEmail(String token) {
+        return Jwts.parser().setSigningKey(key).parseClaimsJws(token)
+                .getBody().getSubject();
+    }
+
+    public long getExpiration(String token) {
+        Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
+        return claims.getExpiration().getTime() - System.currentTimeMillis();
+    }
+
+
+    // Request Header에서 토큰 정보 추출
+    public String resolveToken(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7).trim(); // 공백 제거
+        }
+        return null;
+    }
+
+
+
 }
+
+

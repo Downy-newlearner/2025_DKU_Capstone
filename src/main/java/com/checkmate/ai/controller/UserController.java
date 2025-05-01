@@ -1,9 +1,13 @@
 package com.checkmate.ai.controller;
 import com.checkmate.ai.dto.*;
 import com.checkmate.ai.service.JwtTokenProvider;
+import com.checkmate.ai.service.TokenService;
 import com.checkmate.ai.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,6 +23,8 @@ import java.util.UUID;
 public class UserController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisTemplate redisTemplate;
+    private final TokenService tokenService;
 
     @GetMapping("/test")
     public String test() {
@@ -26,22 +33,38 @@ public class UserController {
 
     @PostMapping("/sign-up")
     public ResponseEntity<String> userSignup(@RequestBody SignUpDto signUpDto) {
-        String result = userService.UserSignup(signUpDto);
+        String result = userService.userSignup(signUpDto);
         log.info("회원가입 결과: {}", result);
         return ResponseEntity.ok(result);
     }
 
+
     @PostMapping("/sign-in")
-    public ResponseEntity<JwtToken> userSignin(@RequestBody SignInDto signInDto) {
-        JwtToken jwtTokenDto = userService.UserSignin(signInDto);
+    public ResponseEntity<JwtToken> userSignin(@RequestBody SignInDto signInDto, HttpSession session) {
+        JwtToken jwtTokenDto = userService.userSignin(signInDto);
+
         if (jwtTokenDto == null) {
             log.info("인증 실패");
             return ResponseEntity.badRequest().build();
         } else {
             log.info("로그인 성공");
+
+            // 세션에 사용자 이메일 저장
+            session.setAttribute("userEmail", signInDto.getEmail());
+
             return ResponseEntity.ok(jwtTokenDto);
         }
     }
+
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        return userService.logout(request);
+    }
+
+
+
+
 
     @PostMapping("/reset-request")
     public ResponseEntity<String> sendResetPasswordEmail(@RequestBody ResetRequestDto resetRequestDto) {
@@ -65,7 +88,7 @@ public class UserController {
         String newPassword = resetRequestDto.getNew_password();
 
         // 토큰 검증
-        boolean isTokenValid = userService.verifyResetToken(token);
+        boolean isTokenValid = tokenService.verifyResetToken(token);
         if (!isTokenValid) {
             return ResponseEntity.badRequest().body("잘못된 토큰입니다. 토큰이 만료되었거나 유효하지 않습니다.");
         }
