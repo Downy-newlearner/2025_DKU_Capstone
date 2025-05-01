@@ -38,14 +38,14 @@ const AuthenticatePassword = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/auth/reset-password", {
+      const response = await fetch("http://localhost:8080/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          token: token,          // ⭐ 토큰도 같이 보냄
-          new_password: newPassword,
+          token: token,               // ✅ 바디에 token 포함
+          new_password: newPassword,  // ✅ 같이 전송
         }),
       });
 
@@ -53,8 +53,9 @@ const AuthenticatePassword = () => {
         alert("비밀번호가 성공적으로 변경되었습니다!");
         navigate("/");
       } else {
-        const errorData = await response.json();
-        alert(`변경 실패: ${errorData.message || "알 수 없는 오류"}`);
+        const errorText = await response.text();  // 텍스트로 에러 파싱
+        console.error("에러 응답:", errorText);
+        alert(`변경 실패: ${errorText}`);
       }
     } catch (error) {
       console.error("에러 발생:", error);

@@ -38,6 +38,16 @@ const Grading = () => {
   };
 
   const handleSubmit = () => {
+    if (!examDate) {
+      alert("시험 날짜를 입력해주세요.");
+      return;
+    }
+  
+    const dateObj = new Date(examDate);
+    if (isNaN(dateObj)) {
+      alert("유효하지 않은 날짜입니다.");
+      return;
+    }
     console.log("현재 토큰:", localStorage.getItem("token"));
     const payload = {
       exam_date: new Date(examDate).toISOString().split("T")[0] + "T00:00:00",
@@ -73,6 +83,13 @@ const Grading = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
+    })
+    .then(() => {
+      navigate("/grading-info");  // ✅ 제출 성공 시 페이지 이동
+    })
+    .catch((error) => {
+      console.error("제출 실패:", error);
+      alert("제출 중 오류가 발생했습니다.");
     });
   };
 
