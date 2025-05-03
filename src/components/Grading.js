@@ -2,11 +2,49 @@ import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 
 const Grading = () => {
+  const location = useLocation();
+  const examData = location.state;
+
+  useEffect(() => {
+    if (examData) {
+      setExamDate(examData.exam_date?.split("T")[0] || "");
+      setSubject(examData.subject || "");
+      if (examData.questions) {
+        // 문제 번호별로 메인과 꼬리문제를 그룹화
+        const grouped = {};
+        examData.questions.forEach((q) => {
+          const num = q.question_number;
+          if (!grouped[num]) {
+            grouped[num] = [];
+          }
+          grouped[num].push(q);
+        });
+  
+        const formatted = Object.values(grouped).map((questions) => {
+          const main = questions.find((q) => q.sub_question_number === 0 || q.sub_question_number === null);
+          const tails = questions.filter((q) => q.sub_question_number !== 0 && q.sub_question_number !== null);
+          return {
+            text: main?.answer || "",
+            type: convertTypeReverse(main?.question_type || ""),
+            multiple: main?.answer?.includes(",") || false,
+            point: main?.point || 0,
+            tailQuestions: tails.map((t) => ({
+              text: t.answer,
+              point: t.point,
+              multiple: t.answer?.includes(",") || false,
+            })),
+          };
+        });
+  
+        setAnswers(formatted);
+      }
+    }
+  }, [examData]);
   const navigate = useNavigate();
   const [examDate, setExamDate] = useState("");
   const [subject, setSubject] = useState("");
@@ -29,6 +67,21 @@ const Grading = () => {
     }
   };
 
+  const convertTypeReverse = (type) => {
+    switch (type) {
+      case "multiple_choice":
+        return "객관식";
+      case "short_answer":
+        return "단답형";
+      case "descriptive":
+        return "주관식";
+      case "TF":
+        return "ox";
+      default:
+        return "단답형";
+    }
+  };
+  
   const formatAnswer = (text, type) => {
     if (type === "ox") {
       if (text.trim() === "O") return "True";
@@ -70,7 +123,7 @@ const Grading = () => {
         payload.questions.push({
           question_number: mainIndex + 1,
           sub_question_number: subIdx + 1,
-          question_type: "short_answer",
+          question_type: convertType(answer.type),
           answer: formatAnswer(q.text, "단답형"),
           point: q.point,
         });
