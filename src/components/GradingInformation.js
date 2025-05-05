@@ -146,7 +146,19 @@ const GradingInformation = () => {
             </Button>
             <Button
               className="bg-[#c7aee7] hover:bg-[#b79dd6] text-white text-xl px-4 py-2 rounded"
-              onClick={handleFinalSubmit}
+              onClick={() => {
+                axios.post("/exams/final", { examId: data.id }, {
+                  headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                  },
+                })
+                .then(() => {
+                  navigate("/upload-answer", { state: { examId: data.id } });
+                })
+                .catch(() => {
+                  alert("최종 제출 중 오류가 발생했습니다.");
+                });
+              }}
             >
               최종 제출
             </Button>

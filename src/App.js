@@ -10,6 +10,8 @@ import ForgetPassword from "./components/ForgetPassword";
 import AuthenticatePassword from "./components/AuthenticatePassword";
 import GradingInformation from "./components/GradingInformation";
 import GradingPending from "./components/GradingPending";
+import UploadStudentAnswer from "./components/UploadStudentAnswer";
+import ReviewLowConfidenceAnswers from "./components/ReviewLowConfidenceAnswers";
 
 import './App.css'; // Tailwind를 적용하기 위해 유지
 
@@ -17,6 +19,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/review-answers" element={<ReviewLowConfidenceAnswers />} />
+        <Route path="/upload-answer" element={<UploadStudentAnswer />} />
         <Route path="/grading-pending" element={<GradingPending />} />
         <Route path="/grading-info" element={<GradingInformation />} />
         <Route path="/reset-password" element={<AuthenticatePassword />} />
