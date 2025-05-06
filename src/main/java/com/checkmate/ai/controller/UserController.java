@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -102,6 +103,7 @@ public class UserController {
         }
     }
 
+
     @GetMapping("/user")
     public ResponseEntity<UserDto> getUser() {
         return ResponseEntity.ok(userService.getUser());
@@ -128,4 +130,3 @@ public class UserController {
         return ResponseEntity.ok("✅ 모든 유저 정보가 삭제되었습니다.");
     }
 }
-

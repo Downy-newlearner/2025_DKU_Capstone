@@ -15,6 +15,7 @@ import java.util.List;
 @Builder
 public class CustomUserDetails implements UserDetails {
 
+
     private String email;
     private String password;
     private String objectId;
@@ -26,11 +27,13 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.emptyList();
+
     }
 
     @Override
     public String getUsername() {
         return email;
+
     }
 
     @Override

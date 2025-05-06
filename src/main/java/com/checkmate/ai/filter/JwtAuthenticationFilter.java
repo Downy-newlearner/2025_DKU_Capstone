@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
             return;
         }
 
-        // 1. JWT 토큰 추출
+
         String token = jwtTokenProvider.resolveToken(httpRequest);
         log.info("Extracted Token: {}", token);
 
@@ -70,6 +70,7 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
             return;
         }
 
+
         chain.doFilter(request, response);
     }
 
@@ -90,4 +91,7 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         response.getWriter().write("{\"error\": \"" + message + "\"}");
         response.getWriter().flush();
     }
+
 }
+
+

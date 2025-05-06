@@ -23,11 +23,14 @@ import java.util.List;
 public class JwtTokenProvider {
     private final Key key;
 
+
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {
         log.info("JWT Secret Key: {}", secretKey); // 로그 추가
+
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
+
 
     public JwtToken generateToken(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -42,6 +45,8 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
+
+
         String refreshToken = Jwts.builder()
                 .setExpiration(new Date(now + 86400000))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -53,6 +58,7 @@ public class JwtTokenProvider {
                 .refreshToken(refreshToken)
                 .build();
     }
+
 
     public Authentication getAuthentication(String accessToken) {
         Claims claims = parseClaims(accessToken);
@@ -66,7 +72,6 @@ public class JwtTokenProvider {
                 .build();
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
-
 
 
     // 비밀번호 재설정용 토큰 생성
@@ -90,7 +95,9 @@ public class JwtTokenProvider {
         }
     }
 
+
     private Claims parseClaims(String accessToken) {
+
         try {
             return Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -101,6 +108,7 @@ public class JwtTokenProvider {
             return e.getClaims();
         }
     }
+
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -137,5 +145,6 @@ public class JwtTokenProvider {
 
 
 }
+
 
 
