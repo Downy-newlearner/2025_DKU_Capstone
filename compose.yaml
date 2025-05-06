@@ -11,13 +11,14 @@ services:
       - SPRING_DATA_MONGODB_URI=mongodb://root:example@mongodb:27017/capstone?authSource=admin
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       - mongodb
       - redis
+      - kafka
     networks:
       - test_net
 
-  # MongoDB 컨테이너
   mongodb:
     image: mongo:5.0
     container_name: mongodb
@@ -26,16 +27,41 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
-      MONGO_INITDB_DATABASE: test
     networks:
       - test_net
 
-  # Redis 컨테이너 추가
+  # Redis 컨테이너
   redis:
     image: redis:7.2
     container_name: redis
     ports:
       - "6379:6379"
+    networks:
+      - test_net
+
+  # Zookeeper 컨테이너
+  zookeeper:
+    image: wurstmeister/zookeeper:3.4.6
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - test_net
+
+  # Kafka 컨테이너
+  kafka:
+    image: wurstmeister/kafka:latest
+
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+    depends_on:
+      - zookeeper
     networks:
       - test_net
 

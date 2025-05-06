@@ -1,13 +1,20 @@
 package com.checkmate.ai.service;
 
-import com.checkmate.ai.dto.StudentAnswerUpdateDto;
+import com.checkmate.ai.dto.KafkaStudentResponseDto;
+import com.checkmate.ai.dto.QuestionDto;
 import com.checkmate.ai.entity.StudentResponse;
+import com.checkmate.ai.mapper.KafkaStudentResponseMapper;
+import com.checkmate.ai.mapper.StudentResponseMapper;
 import com.checkmate.ai.repository.StudentResponseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+
+// 서비스 클래스
 
 @Service
 public class StudentResponseService {
@@ -15,46 +22,75 @@ public class StudentResponseService {
     @Autowired
     private StudentResponseRepository studentResponseRepository;
 
-    // Create
-    public StudentResponse createStudentResponse(StudentResponse studentResponse) {
-        return studentResponseRepository.save(studentResponse);
+    @Autowired
+    private StudentResponseMapper studentResponseMapper;
+
+    @Autowired
+    private KafkaStudentResponseMapper kafkaStudentResponseMapper;
+
+    public boolean isAnswerCorrect(KafkaStudentResponseDto.ExamResponseDto answer, QuestionDto question) {
+        return answer.getStudentAnswer() != null &&
+                answer.getStudentAnswer().equalsIgnoreCase(question.getAnswer());
     }
 
-    // Read (By ID)
-    public Optional<StudentResponse> getStudentResponseById(String id) {
-        return studentResponseRepository.findById(id);
-    }
+    public int gradeWithAnswerChecking(KafkaStudentResponseDto dto, List<QuestionDto> questions) {
+        int totalScore = 0;
 
-    // Read (All)
-    public List<StudentResponse> getAllStudentResponses() {
-        return studentResponseRepository.findAll();
-    }
+        for (KafkaStudentResponseDto.ExamResponseDto answer : dto.getAnswers()) {
+            QuestionDto question = findQuestionByNumber(questions, answer.getQuestionNumber());
 
-    // Update method to modify the student response
-    public Optional<StudentResponse> updateStudentResponse(StudentAnswerUpdateDto studentAnswerUpdateDto) {
-        // 학생 ID와 질문 번호를 기반으로 해당 StudentResponse를 찾음
-        Optional<StudentResponse> optionalStudentResponse = studentResponseRepository.findById(studentAnswerUpdateDto.getStudent_id());
+            if (question != null) {
+                if (answer.getConfidence() >= 85) {
+                    if (isAnswerCorrect(answer, question)) {
+                        answer.setScore(question.getPoint());
+                        answer.setCorrect(true);
+                    } else {
+                        answer.setScore(0);
+                        answer.setCorrect(false);
+                    }
+                    totalScore += answer.getScore();
+                } else {
+                    answer.setScore(-1); // 미채점 상태로 설정
+                }
 
-        if (optionalStudentResponse.isPresent()) {
-            StudentResponse studentResponse = optionalStudentResponse.get();
-
-            // 해당 학생의 answers에서 질문 번호에 맞는 답변을 찾음
-            studentResponse.getAnswers().stream()
-                    .filter(answer -> answer.getQuestion_number() == studentAnswerUpdateDto.getQuestion_number())
-                    .findFirst()
-                    .ifPresent(answer -> {
-                        // 답변을 수정
-                        answer.setStudent_answer(studentAnswerUpdateDto.getStudent_answer());
-                    });
-
-            // 수정된 StudentResponse 저장
-            return Optional.of(studentResponseRepository.save(studentResponse));
+                saveStudentResponse(answer); // DB에 저장
+            }
         }
-        return Optional.empty();  // 해당 학생이 존재하지 않는 경우
+
+        return totalScore;
     }
 
-    // Delete
-    public void deleteStudentResponse(String id) {
-        studentResponseRepository.deleteById(id);
+    public int gradeReviewedAnswers(List<KafkaStudentResponseDto.ExamResponseDto> reviewedAnswers, List<QuestionDto> questions) {
+        int totalScore = 0;
+
+        for (KafkaStudentResponseDto.ExamResponseDto answer : reviewedAnswers) {
+            QuestionDto question = findQuestionByNumber(questions, answer.getQuestionNumber());
+
+            if (question != null) {
+                if (isAnswerCorrect(answer, question)) {
+                    answer.setScore(question.getPoint());
+                    answer.setCorrect(true);
+                } else {
+                    answer.setScore(0);
+                    answer.setCorrect(false);
+                }
+                totalScore += answer.getScore();
+            }
+        }
+
+        return totalScore;
+    }
+
+    private QuestionDto findQuestionByNumber(List<QuestionDto> questions, int questionNumber) {
+        return questions.stream()
+                .filter(q -> q.getQuestion_number() == questionNumber)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void saveStudentResponse(KafkaStudentResponseDto.ExamResponseDto answer) {
+        // KafkaStudentResponseDto.ExamResponseDto를 StudentResponse로 변환 후 DB에 저장
+        StudentResponse studentResponse = studentResponseMapper.toEntity(kafkaStudentResponseMapper.toDto(answer));
+        studentResponseRepository.save(studentResponse); // DB에 저장
     }
 }
