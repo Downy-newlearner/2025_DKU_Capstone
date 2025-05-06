@@ -1,5 +1,5 @@
 file:
-  image-dir: app/static/images
+  image-dir: /app/static/images
 
 spring:
 

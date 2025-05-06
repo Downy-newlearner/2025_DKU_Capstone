@@ -12,5 +12,7 @@ COPY docker-images/ /app/static/images/
 # 포트 노출
 EXPOSE 8080
 
+ENV IMAGE_DIR=/app/static/images
+
 # 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]
