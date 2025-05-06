@@ -9,8 +9,11 @@ services:
       - "8080:8080"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://root:example@mongodb:27017/capstone?authSource=admin
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
     depends_on:
       - mongodb
+      - redis
     networks:
       - test_net
 
@@ -24,6 +27,15 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
       MONGO_INITDB_DATABASE: test
+    networks:
+      - test_net
+
+  # Redis 컨테이너 추가
+  redis:
+    image: redis:7.2
+    container_name: redis
+    ports:
+      - "6379:6379"
     networks:
       - test_net
 
