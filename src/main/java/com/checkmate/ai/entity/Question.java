@@ -13,5 +13,7 @@ public class Question {
     private String question_type; // e.g. "short_answer", "TF", "descriptive"
     private int sub_question_number; // optional (null 허용)
     private String answer;
-    private int allocated_score;
+    private int point;
+
+
 }

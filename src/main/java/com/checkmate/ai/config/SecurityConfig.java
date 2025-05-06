@@ -2,7 +2,9 @@ package com.checkmate.ai.config;
 
 import com.checkmate.ai.filter.JwtAuthenticationFilter;
 import com.checkmate.ai.service.JwtTokenProvider;
+import com.checkmate.ai.service.TokenService;
 import lombok.RequiredArgsConstructor;
+import org.apache.el.parser.Token;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -24,19 +26,20 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenService tokenService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
-                .cors((c) -> c.configurationSource(corsConfigurationSource()))  // ✅ CORS 설정 추가
-                .httpBasic((hp) -> hp.disable())  // 기본 인증 비활성화
-                .csrf((cs) -> cs.disable())  // CSRF 비활성화
-                .sessionManagement((sm) -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // 세션 사용 안 함
+                .cors((c) -> c.configurationSource(corsConfigurationSource()))
+                .httpBasic((hp) -> hp.disable())
+                .csrf((cs) -> cs.disable())
+                .sessionManagement((sm) -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests((ahr) -> ahr
-                        .requestMatchers("/sign-up", "/sign-in", "/make-data").permitAll()  // 인증 제외 경로
+                        .requestMatchers("/sign-up", "/sign-in", "/reset-request", "/reset-password", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, tokenService), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -53,6 +56,8 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

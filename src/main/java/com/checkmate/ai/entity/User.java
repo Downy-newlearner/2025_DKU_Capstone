@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "Users")
+@Document(collection = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,6 +32,11 @@ public class User{
 
     @LastModifiedDate
     private LocalDateTime update_at;
+    private int total_score;
+
+//    private String resetToken;
+//    private LocalDateTime tokenExpiry;
+
 
 
     public User(String email, String password, String name) {

@@ -1,14 +1,15 @@
-package com.checkmate.ai.dto;
+package com.checkmate.ai.entity;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
 
 @Getter
 @Setter
-@NoArgsConstructor
-
 public class ExamResponse {
+    @Id
+    private Long id;  // 데이터베이스에서 식별할 ID
+
     private int question_number;
     private String student_answer;
     private int confidence;

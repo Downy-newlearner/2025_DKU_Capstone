@@ -1,10 +1,14 @@
 package com.checkmate.ai.service;
 
+import com.checkmate.ai.dto.ExamDto;
+import com.checkmate.ai.dto.StudentAnswerUpdateDto;
 import com.checkmate.ai.entity.Exam;
+import com.checkmate.ai.mapper.ExamMapper;
 import com.checkmate.ai.repository.ExamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,17 +18,28 @@ public class ExamService {
     @Autowired
     private ExamRepository examRepository;
 
-    public Exam createExam(Exam exam) {
-        return examRepository.save(exam);
+
+    public void saveExam(ExamDto examDto) {
+        Exam exam = ExamMapper.toEntity(examDto);
+        examRepository.save(exam);
     }
 
-    public List<Exam> getAllExams() {
-        return examRepository.findAll();
+    public ExamDto getExamById(String id) {
+        return examRepository.findById(id)
+                .map(ExamMapper::toDto)
+                .orElseThrow(() -> new RuntimeException("Exam not found: " + id));
     }
 
-    public Optional<Exam> getExamById(String id) {
-        return examRepository.findById(id);
+    public List<ExamDto> getAllExams() {
+        return examRepository.findAll().stream()
+                .map(ExamMapper::toDto)
+                .toList();
     }
+
+
+}
+
+
 
 //    public Exam addStudentResponse(String examId, StudentResponse newResponse) {
 //        Optional<Exam> optionalExam = examRepository.findById(examId);
@@ -40,9 +55,6 @@ public class ExamService {
 //        throw new RuntimeException("시험을 찾을 수 없습니다: " + examId);
 //    }
 
-    public void saveExam(Exam exam) {
-        examRepository.save(exam);
-        }
 
-    }
+
 
