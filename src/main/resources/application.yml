@@ -1,3 +1,6 @@
+file:
+  image-dir: app/static/images
+
 spring:
 
   session:
@@ -21,6 +24,10 @@ spring:
 
   application:
     name: checkmate_backend
+
+
+
+
 
   data:
     mongodb:

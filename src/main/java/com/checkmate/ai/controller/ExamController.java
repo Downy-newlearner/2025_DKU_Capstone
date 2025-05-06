@@ -1,7 +1,7 @@
 package com.checkmate.ai.controller;
 
 import com.checkmate.ai.dto.ExamDto;
-import com.checkmate.ai.dto.StudentAnswerUpdateDto;
+
 import com.checkmate.ai.service.ExamService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +18,20 @@ public class ExamController {
     @Autowired
     private ExamService examService;
 
-    @PostMapping
+    @PostMapping("/final")
     public ResponseEntity<ExamDto> saveExam(@RequestBody ExamDto examDto) {
         log.info("요청 받은 Exam DTO: {}", examDto);
         examService.saveExam(examDto);
         return ResponseEntity.ok(examDto);
     }
+
+    @PostMapping
+    public ResponseEntity<ExamDto> showExam(@RequestBody ExamDto examDto) {
+        log.info("요청 받은 Exam DTO: {}", examDto);
+        return ResponseEntity.ok(examDto);
+    }
+
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ExamDto> getExam(@PathVariable String id) {
