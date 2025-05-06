@@ -31,7 +31,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://root:example@localhost:27017/capstone?authSource=admin
+      uri: mongodb://localhost:27017/capstone?authSource=admin
 
     redis:
       host: ${SPRING_REDIS_HOST:localhost}

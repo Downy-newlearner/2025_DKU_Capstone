@@ -76,6 +76,7 @@ public class StudentResponseService {
                 }
                 totalScore += answer.getScore();
             }
+            saveStudentResponse(answer); // DB에 저장
         }
 
         return totalScore;

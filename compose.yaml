@@ -12,10 +12,7 @@ services:
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    depends_on:
-      - mongodb
-      - redis
-      - kafka
+
     networks:
       - test_net
 

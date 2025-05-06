@@ -1,9 +1,6 @@
 package com.checkmate.ai.controller;
 
-import com.checkmate.ai.dto.GradingRequestDto;
-import com.checkmate.ai.dto.KafkaStudentResponseDto;
-import com.checkmate.ai.dto.QuestionDto;
-import com.checkmate.ai.dto.StudentAnswerUpdateDto;
+import com.checkmate.ai.dto.*;
 import com.checkmate.ai.entity.StudentResponse;
 import com.checkmate.ai.service.StudentResponseService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,11 +26,14 @@ public class StudentResponseController {
     }
 
 
-    // 사용자 검토 후 재채점 처리
     @PostMapping("/reviewed-answers")
-    public int gradeReviewedAnswers(@RequestBody List<KafkaStudentResponseDto.ExamResponseDto> reviewedAnswers, @RequestParam List<QuestionDto> questions) {
-        return studentResponseService.gradeReviewedAnswers(reviewedAnswers, questions);
+    public ResponseEntity<?> handleReviewedAnswers(
+            @RequestBody ReviewedAnswersRequest request
+    ) {
+        int score = studentResponseService.gradeReviewedAnswers(request.getReviewedAnswers(), request.getQuestions());
+        return ResponseEntity.ok(score);
     }
+
 
 
 
