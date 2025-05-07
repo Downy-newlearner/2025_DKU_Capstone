@@ -1,0 +1,1 @@
+Text: 눕, Confidence: 0.0435088559970751, BBox: [[np.int32(8), np.int32(8)], [np.int32(64), np.int32(8)], [np.int32(64), np.int32(78)], [np.int32(8), np.int32(78)]]
