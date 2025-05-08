@@ -1,0 +1,84 @@
+# rename_answer_files.py 코드 설명
+
+## 1. 모듈의 목적
+이 모듈은 답안 이미지 파일들의 이름을 수정하는 기능을 합니다. 각 답안 이미지 파일명에 해당하는 문제 번호(qn)와 그 문제의 정답 개수(ac) 정보를 추가합니다.
+
+## 2. 매개변수 설명
+함수는 세 가지 매개변수를 받습니다:
+
+1. question_info_path (str)
+   - y좌표 정보가 있는 JSON 파일 경로
+   - JSON 파일 형식:
+     {
+         '1': [0, 72],     # [y_top, y_bottom]
+         '2': [72, 183],   # [y_top, y_bottom]
+         '3': [183, 295],  # [y_top, y_bottom]
+         ...
+     }
+
+2. answer_json_path (str)
+   - 답지 정보가 있는 JSON 파일 경로
+   - JSON 파일 형식:
+     {
+         "questions": [
+             {
+                 "question_number": "1",
+                 "answer_counts": 2
+             },
+             {
+                 "question_number": "2",
+                 "answer_counts": 1
+             }
+         ]
+     }
+
+3. answer_dir_path (str)
+   - 답안 이미지들이 있는 디렉토리 경로
+   - 예: '/home/ysoh20/AI/Algorithm/OCR/cropped_datasets/text_crop_new/answer'
+
+## 3. 동작 과정
+
+1. 데이터 로드
+   - question_info_path에서 y좌표 정보를 읽어옴
+   - answer_json_path에서 각 문제별 정답 개수 정보를 읽어옴
+
+2. 답안 폴더 처리
+   - answer_dir_path 안의 모든 폴더를 순회
+   - 각 폴더명은 'answer_number_ytop_ybottom' 형식
+   - 예: answer_2_72_183.jpg
+
+3. y좌표 추출 및 매칭
+   - 폴더명에서 y_top과 y_bottom 추출
+   - y_center = (y_top + y_bottom) // 2 계산 (정수 나눗셈 사용)
+   - question_info의 y좌표 범위와 비교하여 해당하는 문제 번호 찾기
+   - y_coords[0] <= y_center <= y_coords[1] 조건으로 매칭
+
+4. 파일명 변경
+   - 각 폴더 안의 이미지 파일들을 처리
+   - 지원하는 이미지 확장자: .jpg, .jpeg, .png, .bmp, .gif
+   - 기존 파일명에 _qn_과 _ac_가 있으면 제거
+   - 새로운 파일명 형식: {원본이름}_qn_{문제번호}_ac_{정답개수}{확장자}
+   - 예: answer_2_72_183_x_166_is_merged_0_qn_2_ac_1.jpg
+
+## 4. 에러 처리
+- 폴더명 파싱 실패시 경고 메시지 출력 후 다음 폴더로 진행
+- 파일 처리 중 발생하는 예외 상황 처리
+
+## 5. 사용 예시
+```python
+# 기본 경로 설정
+base_dir = '/home/ysoh20/AI'
+
+# 경로 설정
+question_info_path = "example_question_info.json"
+answer_json_path = "answer_counts.json"
+answer_dir_path = os.path.join(base_dir, 'Algorithm/OCR/cropped_datasets/text_crop_new/answer')
+
+# 함수 호출
+rename_answer_files(question_info_path, answer_json_path, answer_dir_path)
+```
+
+## 6. 주의사항
+- JSON 파일들의 형식이 정확해야 함
+- 폴더명이 지정된 형식(answer_number_ytop_ybottom)을 따라야 함
+- 파일명 변경 시 기존의 _qn_과 _ac_ 정보는 새로운 정보로 교체됨 
