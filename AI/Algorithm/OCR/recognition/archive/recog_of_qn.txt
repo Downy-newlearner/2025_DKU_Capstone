@@ -1,0 +1,62 @@
+
+## 1. 모듈의 목적
+이 모듈은 문제 번호 이미지 디렉토리와 답지 정보 JSON 파일을 기반으로 각 문제 번호에 해당하는 y좌표 정보를 추출하여 JSON 파일로 저장하는 기능을 합니다.
+
+## 2. 매개변수 설명
+함수는 두 가지 매개변수를 받습니다:
+
+1. qn_directory_path (str)
+   - 문제 번호 이미지들이 있는 디렉토리 경로
+   - 예: '/path/to/question_number_directory'
+
+2. answer_json_path (str)
+   - 답지 정보가 있는 JSON 파일 경로
+   - 예: 'answer_key.json'
+
+## 3. 동작 과정
+
+1. 데이터 로드
+   - answer_json_path에서 각 문제별 정답 정보를 읽어옴
+
+2. 이미지 디렉토리 처리
+   - qn_directory_path 안의 모든 이미지 파일을 순회
+   - 이 때, qn_directory_path 하위의 이미지 디렉토리들은 낮은 문제 번호가 적혀있는 이미지를 담고있는 디렉토리부터 높은 문제 번호가 적혀있는 이미지를 담고있는 디렉토리까지 정렬되어있다.
+   - 지원하는 이미지 확장자: .jpg, .jpeg, .png
+
+3. 이미지 처리 및 y좌표 추출
+   - 각 이미지 파일을 읽고 그레이스케일로 변환
+   - 이진화 및 컨투어를 찾아 바운딩 박스를 생성
+   - 바운딩 박스의 y좌표를 기반으로 문제 번호를 추정
+   - 추정된 문제 번호에 해당하는 y좌표 범위를 저장
+   - `split_and_recognize_single_digits.py`의 `generate_bounding_boxes_from_text_crop` 및 `recognize_images_from_bounding_boxes` 함수를 재활용하여 바운딩 박스를 생성하고 인식 결과를 얻음
+
+4. 답지를 통해 다음 인식해야 하는 문제 번호를 예측
+   - 현재까지 인식된 문제 번호 목록을 유지
+   - 각 문제 번호에 대해 답지에서 꼬리문제(sub_question_number)가 있는지 확인
+   - 인식 실패(또는 인식률이 0.85 이하) 시, 현재까지 인식된 마지막 문제 번호를 기준으로 다음 문제 번호를 예측
+     - 예를 들어, 문제 번호 1번과 2번을 인식했고, 다음 이미지를 인식하지 못했을 때, 2번 문제에 꼬리문제가 없다면 다음 이미지는 문제 번호 3번일 것으로 예측
+     - 다음 인식한 문제 번호가 4라면, 이 이미지는 문제 번호 3번으로 예측
+   - 예측된 문제 번호에 대한 y좌표 범위를 추출하여 저장
+
+5. JSON 파일 생성
+   - 추출된 y좌표 정보를 JSON 형식으로 변환
+   - question_info_path에 JSON 파일로 저장
+
+## 4. 에러 처리
+- 이미지 파일 읽기 실패 시 경고 메시지 출력 후 다음 파일로 진행
+- JSON 파일 저장 중 발생하는 예외 상황 처리
+
+
+## 5. 사용 예시
+```python
+# 기본 경로 설정
+qn_directory_path = '/path/to/question_number_directory'
+answer_json_path = 'answer_key.json'
+
+# 함수 호출
+create_question_info_json(qn_directory_path, answer_json_path)
+```
+
+## 6. 주의사항
+- JSON 파일 형식이 정확해야 함
+- 이미지 파일이 지정된 형식(.jpg, .jpeg, .png)을 따라야 함

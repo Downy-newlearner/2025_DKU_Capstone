@@ -14,7 +14,7 @@
     {
       "question_number": 2,
       "question_type": "multiple_choice",
-      "sub_question_number": "l",
+      "sub_question_number": "a",
       "answer": [5, 9],
       "answer_count": 2,
       "allocated_score": 5
@@ -22,8 +22,32 @@
     {
       "question_number": 2,
       "question_type": "multiple_choice",
-      "sub_question_number": "d",
+      "sub_question_number": "b",
       "answer": [3],
+      "answer_count": 1,
+      "allocated_score": 5
+    },
+    {
+      "question_number": 2,
+      "question_type": "multiple_choice",
+      "sub_question_number": "c",
+      "answer": [4],
+      "answer_count": 1,
+      "allocated_score": 5
+    },
+    {
+      "question_number": 2,
+      "question_type": "multiple_choice",
+      "sub_question_number": "d",
+      "answer": [1],
+      "answer_count": 1,
+      "allocated_score": 5
+    },
+    {
+      "question_number": 2,
+      "question_type": "multiple_choice",
+      "sub_question_number": "e",
+      "answer": [2],
       "answer_count": 1,
       "allocated_score": 5
     },
@@ -31,7 +55,7 @@
       "question_number": 3,
       "question_type": "multiple_choice",
       "sub_question_number": 0,
-      "answer": [2],  
+      "answer": [2],
       "answer_count": 1,
       "allocated_score": 5
     },
@@ -62,15 +86,23 @@
     {
       "question_number": 7,
       "question_type": "TF",
-      "sub_question_number": 0,
+      "sub_question_number": "a",
       "answer": "False",
+      "answer_count": 1,
+      "allocated_score": 5
+    },
+    {
+      "question_number": 7,
+      "question_type": "TF",
+      "sub_question_number": "b",
+      "answer": "True",
       "answer_count": 1,
       "allocated_score": 5
     },
     {
       "question_number": 8,
       "question_type": "multiple_choice",
-      "sub_question_number": "l",
+      "sub_question_number": "a",
       "answer": [4],
       "answer_count": 1,
       "allocated_score": 5
@@ -78,7 +110,7 @@
     {
       "question_number": 8,
       "question_type": "multiple_choice",
-      "sub_question_number": "d",
+      "sub_question_number": "b",
       "answer": [1],
       "answer_count": 1,
       "allocated_score": 5

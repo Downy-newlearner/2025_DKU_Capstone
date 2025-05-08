@@ -12,7 +12,7 @@ import json
 from typing import Dict, List, Union
 
 def rename_answer_files(
-    question_info_path: str,
+    question_info_dict: Dict[str, List[int]],
     answer_json_path: str,
     answer_dir_path: str
 ):
@@ -20,14 +20,10 @@ def rename_answer_files(
     답안 이미지 파일들의 이름을 문제 번호와 정답 개수 정보를 포함하도록 변경
     
     Args:
-        question_info_path: y좌표 정보가 있는 JSON 파일 경로
+        question_info_dict: y좌표 정보가 있는 딕셔너리
         answer_json_path: 답지 파일 경로
         answer_dir_path: ans 디렉토리 경로
     """
-    # Load question info from JSON file
-    with open(question_info_path, 'r', encoding='utf-8') as f:
-        question_info = json.load(f)
-    
     # Load answer count information from JSON file
     with open(answer_json_path, 'r', encoding='utf-8') as f:
         answer_counts = json.load(f)
@@ -49,7 +45,7 @@ def rename_answer_files(
                 
                 # Find corresponding question number
                 matching_qn = None
-                for qn, y_coords in question_info.items():
+                for qn, y_coords in question_info_dict.items():
                     if y_coords[0] <= y_center <= y_coords[1]:  # y_coords[0]은 y_top, y_coords[1]은 y_bottom
                         matching_qn = qn
                         break
@@ -95,9 +91,9 @@ if __name__ == "__main__":
     base_dir = '/home/ysoh20/AI'
     
     # Paths
-    question_info_path = "example_question_info.json"
     answer_json_path = "answer_counts.json"
     answer_dir_path = os.path.join(base_dir, 'Algorithm/OCR/cropped_datasets/text_crop_new/answer')
     
     # Process files
-    rename_answer_files(question_info_path, answer_json_path, answer_dir_path) 
+    # question_info_dict는 외부에서 받아와야 함
+    # rename_answer_files(question_info_dict, answer_json_path, answer_dir_path) 

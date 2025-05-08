@@ -13,11 +13,24 @@ def create_question_info_json(qn_directory_path, answer_json_path):
     with open(answer_json_path, 'r', encoding='utf-8') as f:
         answer_data = json.load(f)
 
+    # 답지 정보 분석하기
+    question_list = []
+    for question in answer_data['questions']:
+        question_number = question['question_number']
+        sub_question_number = question.get('sub_question_number', 0)
+        if sub_question_number != 0:
+            question_list.append(f"{question_number}-{sub_question_number}")
+        else:
+            question_list.append(str(question_number))
+
+    # question_list에는 모든 문제 번호가 저장됨
+    print("Extracted question list:", question_list)
+
     # 인식된 문제 번호와 y좌표 정보를 저장할 딕셔너리
     y_coordinates_dict = {}
 
     # qn_directory_path의 모든 이미지 파일 순회
-    for folder in sorted(os.listdir(qn_directory_path)):
+    for folder in os.listdir(qn_directory_path):
         folder_path = os.path.join(qn_directory_path, folder)
         if os.path.isdir(folder_path):
             for filename in sorted(os.listdir(folder_path)):
@@ -45,6 +58,9 @@ def create_question_info_json(qn_directory_path, answer_json_path):
                                 text, confidence = top_prediction['label'], top_prediction['score']
                                 # 인식 결과가 0.85 이상이고 숫자인 경우
                                 if confidence > 0.85 and text.isdigit():
+                                    y_coordinates_dict[text] = [y_top, y_bottom]
+                                # 인식 결과가 0.85 미만인 경우 -> 답지를 통해 예측하는 로직 활용
+                                else:
                                     y_coordinates_dict[text] = [y_top, y_bottom]
 
     # JSON 파일로 저장

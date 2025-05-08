@@ -1,49 +1,56 @@
 import os
-import cv2
-from transformers import pipeline
-from PIL import Image
+import json
 
-# 모델 로드
-pipe = pipeline("image-classification", model="farleyknight/mnist-digit-classification-2022-09-04", device=-1)
+# 문제 번호 이미지 디렉토리와 답지 정보 JSON 파일을 기반으로 y좌표 정보를 추출하여 딕셔너리를 반환하는 함수
+def create_question_info_dict(qn_directory_path, answer_json_path):
+    # 답지 정보 로드
+    with open(answer_json_path, 'r', encoding='utf-8') as f:
+        answer_data = json.load(f)
 
-# question_number 이미지를 single digit으로 크롭하고 인식하는 함수
-def recognize_question_number(qn_directory_path):
+    # 리스트 a와 b 생성
+    question_list_a = []
+    question_list_b = set()
+    for question in answer_data['questions']:
+        question_number = question['question_number']
+        sub_question_number = question.get('sub_question_number', 0)
+        if sub_question_number != 0:
+            question_list_a.append(f"{question_number}-{sub_question_number}")
+        else:
+            question_list_a.append(str(question_number))
+        question_list_b.add(str(question_number))
+
+    # 디렉토리에서 y_top, y_bottom 추출
+    y_coordinates_list = []
+    for folder in os.listdir(qn_directory_path):
+        parts = folder.split('_')
+        if len(parts) >= 4:
+            y_top = int(parts[2])
+            y_bottom = int(parts[3].split('.')[0])
+            y_coordinates_list.append((y_top, y_bottom))
+
+    # y_top 기준으로 정렬
+    y_coordinates_list.sort()
+
+    # 경우의 수에 따라 처리
     y_coordinates_dict = {}
-
-    for filename in os.listdir(qn_directory_path):
-        if filename.endswith(('.jpeg', '.jpg', '.png')):
-            # 파일 경로
-            file_path = os.path.join(qn_directory_path, filename)
-            
-            # 이미지 읽기
-            image = cv2.imread(file_path)
-            
-            # 그레이스케일로 변환
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            
-            # 이진화
-            _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-            
-            # 컨투어 찾기
-            contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            
-            # 바운딩 박스 생성 및 인식
-            for contour in contours:
-                x, y, w, h = cv2.boundingRect(contour)
-                cropped_image = image[y:y+h, x:x+w]
-                cropped_pil_image = Image.fromarray(cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB)).convert('RGB')
-
-                # 모델을 사용하여 예측
-                predictions = pipe(cropped_pil_image)
-                if predictions:
-                    top_prediction = predictions[0]
-                    text, confidence = top_prediction['label'], top_prediction['score']
-                    if confidence > 0.85 and text.isdigit():
-                        y_coordinates_dict[text] = [y, y + h]
+    if len(question_list_a) == len(y_coordinates_list):
+        # 경우의 수 1
+        for i, (y_top, y_bottom) in enumerate(y_coordinates_list):
+            y_coordinates_dict[question_list_a[i]] = [y_top, y_bottom]
+    elif len(question_list_b) == len(y_coordinates_list):
+        # 경우의 수 2
+        question_list_b = sorted(question_list_b)
+        for i, (y_top, y_bottom) in enumerate(y_coordinates_list):
+            y_coordinates_dict[question_list_b[i]] = [y_top, y_bottom]
+    else:
+        # 경우의 수 3
+        print("type A, B 모두 일치하지 않습니다")
+        return None
 
     return y_coordinates_dict
 
-# 예시 사용
-# qn_directory_path = '/path/to/question_number_directory'
-# y_coordinates = recognize_question_number(qn_directory_path)
-# print(y_coordinates)
+# 사용 예시
+qn_directory_path = '/home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/cropped_datasets/text_crop_new/question_number'
+answer_json_path = '/home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/answer_key.json'
+question_info_dict = create_question_info_dict(qn_directory_path, answer_json_path)
+print(question_info_dict) 
