@@ -64,12 +64,13 @@ def recognize_images_from_bounding_boxes(text_crop_image_path, bounding_boxes, i
             top_prediction = predictions[0]
             text, confidence = top_prediction['label'], top_prediction['score']
             if confidence > 0.85:
-                recognition_results.append(((x + w//2, y + h//2), text, image_num))
+                recognition_results.append(((x + w//2, y + h//2), text, image_num)) # 인식을 성공했고, 신뢰도도 높은 경우 -> text
             else:
-                recognition_results.append(((x + w//2, y + h//2), 'JSON', image_num))
-                return 
-        else:
-            recognition_results.append(((x + w//2, y + h//2), 'JSON', image_num))
+                recognition_results.append(((x + w//2, y + h//2), 'JSON', image_num)) # 인식을 성공했지만, 신뢰도가 낮은 경우 -> JSON
+                return None
+        else: 
+            recognition_results.append(((x + w//2, y + h//2), 'JSON', image_num)) # 인식 실패한 경우 -> JSON
+            return None
 
     # x 좌표 기준으로 정렬
     recognition_results.sort(key=lambda x: x[0][0])
@@ -106,7 +107,7 @@ def split_and_recognize_single_digits(directory_path):
     # sub_dirs에는 directory_path 내의 모든 파일 및 디렉토리 이름이 리스트로 할당된다.
     sub_dirs = os.listdir(directory_path)
     
-    # sub_dirs 리스트는 각 이름의 두 번째 언더스코어('_') 뒤에 있는 숫자를 기준으로 정렬된다.
+    # sub_dirs 리스트는 각 이름의 첫 번째 언더스코어('_') 뒤에 있는 숫자를 기준으로 정렬된다.
     sub_dirs.sort(key=lambda x: int(x.split('_')[1]))
 
     # JSON 파일이 존재하지 않거나 비어 있는 경우 초기화
@@ -119,8 +120,27 @@ def split_and_recognize_single_digits(directory_path):
         # sub_dir을 순회하며 하위 이미지 파일들의 경로를 변수에 담는다.
         image_paths = os.listdir(os.path.join(directory_path, sub_dir))
 
-        # image_paths 리스트는 각 이름의 두 번째 언더스코어('_') 뒤에 있는 숫자를 기준으로 정렬된다.
-        image_paths.sort(key=lambda x: int(x.split('_')[1]))
+        if 'ac_' not in image_paths[0]: # 답안에 대한 text_crop 이미지가 아닌 경우 패스
+            continue
+
+        '''
+        answer_4_294_404.jpg_x_167_is_merged_0_qn_2-b_ac_0
+        answer_4_294_404.jpg_x_584_is_merged_1_qn_2-b_ac_0
+
+        두 파일명을 정렬하는 과정은 다음과 같다.
+
+        1. x_ 이후의 숫자를 추출한다.
+            '167_is_merged_0_qn_2-b_ac_0', '584_is_merged_1_qn_2-b_ac_0'
+
+        2. '_'으로 split 했을떄 첫 번째 요소를 추출한다.
+            '167', '584'
+
+        3. 정수로 변환한 뒤 정렬한다.
+            167, 584
+
+        4. 정렬된 숫자를 이용하여 원래 파일명을 찾아 정렬한다.
+        '''
+        image_paths.sort(key=lambda x: int((x.split('x_')[1]).split('_')[0]))
 
         results_about_image = []
 
@@ -129,10 +149,14 @@ def split_and_recognize_single_digits(directory_path):
         image_num = 1
 
         for text_crop_image in image_paths:
+
             
             print(text_crop_image)
 
             text_crop_image_path = os.path.join(directory_path, sub_dir, text_crop_image)
+                # directory_path: /home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/cropped_datasets/text_crop_new/answer
+                # sub_dir: answer_2_72_183.jpg
+                # text_crop_image: answer_2_72_183.jpg_x_166_is_merged_0_qn_1_ac_0.jpg
 
             # 바운딩 박스 생성
             bounding_boxes = generate_bounding_boxes_from_text_crop(text_crop_image_path)
@@ -148,9 +172,10 @@ def split_and_recognize_single_digits(directory_path):
                         data[sub_dir] = []
                         f.seek(0)
                         json.dump(data, f, indent=4)
-                continue
+                break
 
-            results_about_image.append(recognition_results)
+
+            results_about_image.append(recognition_results) # recognize_images_from_bounding_boxes 함수의 리턴값들이 results_about_image에 추가된다.
 
             image_num += 1
 
@@ -176,9 +201,11 @@ def split_and_recognize_single_digits(directory_path):
         # !!!!!!!!!!!!!!! euclidean_distances 완성 !!!!!!!!!!!!!!!
 
         # !!!!!!!!!! answer_num은 답의 개수이다. 답지에서 답의 개수를 가져와 계산한다. !!!!!!!!!!!!!!!!!!!!
-        answer_num = 2 # 임시로 지정
-        disconnect_num = answer_num - image_num
-        # !!!!!!!!!!!!!!! disconnect_num 완성 !!!!!!!!!!!!!!!
+        answer_num = int((image_paths[0]).split('ac_')[1][0]) # text_crop 이미지에 포함된 답 개수 정보를 가져온다.
+        if answer_num == 0:
+            answer_num = 1 # 답이 1개인 경우 ac가 0으로 표시되므로 1로 변환
+        disconnect_num = max(0, answer_num - image_num)
+        # !!!!!!!!!!!!!!! disconnect_num(답 개수에 따른 끊김 횟수) 완성 !!!!!!!!!!!!!!!
 
         result = []
         disconnect_index = 0
@@ -197,21 +224,21 @@ def split_and_recognize_single_digits(directory_path):
 
         print(f'result: {result}')
 
-        # csv 파일에 이미지명과 result를 담는다.
-        import csv
+        # # csv 파일에 이미지명과 result를 담는다.
+        # import csv
 
-        # CSV 파일 경로 설정
-        csv_file_path = '/home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/ocr_results/result.csv'
+        # # CSV 파일 경로 설정
+        # csv_file_path = '/home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/ocr_results/result.csv'
 
-        # CSV 파일에 이미지명과 result를 저장
-        with open(csv_file_path, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['Image Name', 'Result'])
+        # # CSV 파일에 이미지명과 result를 저장
+        # with open(csv_file_path, mode='w', newline='') as file:
+        #     writer = csv.writer(file)
+        #     writer.writerow(['Image Name', 'Result'])
 
-            for i, sub_dir in enumerate(sub_dirs):
-                writer.writerow([sub_dir, result[i]])
+        #     for i, sub_dir in enumerate(sub_dirs):
+        #         writer.writerow([sub_dir, result[i]])
 
-        print(f'CSV 파일이 생성되었습니다: {csv_file_path}')
+        # print(f'CSV 파일이 생성되었습니다: {csv_file_path}')
 
 
 
@@ -223,78 +250,16 @@ if __name__ == "__main__":
     split_and_recognize_single_digits("/home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/cropped_datasets/text_crop_new/answer")
 
 
+'''
+체크리스트
+1. 답이 여러개인 경우
+2. 답이 여러개인데 답 간의 간격이 특이한 경우
+3. 답이 여러 글자인 경우
+4. 글자가 겹쳐있는 경우
+5. 답이 여러 글자이고 여러 개인 경우
+6. 1, 4 조합
 
 
+위 경우를 2(a)부터 3번까지 담아서 예시 이미지를 만들었다.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# 각 bb의 center point를 찾아서 유클리드 거리를 계산
-def calculate_euclidean_distance_from_bb_centers(recognition_results):
-
-    # 답의 조합이 어떻게 되는지 리턴
-    # 예를 들어 이미지가 "12, 432" 이라면 인식 결과가 '1', '2', '4', '3', '2' 일테고 이 함수에서는 0, 2를 리턴하여 최종 답이 12, 432 가 됨.
-
-    return answer_combination_indices
-
-
-# answer_combination_indices를 이용하여 최종 답을 pandas dataframe에 append한다.
-def append_answer_to_dataframe(dataframe, answer_combination_indices):
-    # dataframe은 다음과 같은 형식이어야 함.
-    # name: 이미지 파일명
-    # recognition_result: 인식 결과
-    # 인식 결과의 데이터 종류는 다음과 같다.
-        # 인식 성공(인식 결과가 값으로 표시됨)
-        # 인식 실패('JSON' 이라는 문자열로 표시됨)
-    
-
-    return dataframe
-
-
-# dataframe을 csv 파일로 저장
-def save_dataframe_to_csv(dataframe, csv_file_path):
-    dataframe.to_csv(csv_file_path, index=False)
-
-
-
-
-
-
+'''
