@@ -1,0 +1,5 @@
+Image: /home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/test/num.png, Top: 11, Bottom: 47, Confidence: 0.488, Text: 2221059 |
+Image: /home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/test/1.jpeg, Top: 333, Bottom: 601, Confidence: 0.828, Text: 2
+Image: /home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/test/1.jpeg, Top: 301, Bottom: 581, Confidence: 1.0, Text: 2
+Image: /home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/test/3.jpeg, Top: 222, Bottom: 659, Confidence: 0.912, Text: 0
+Image: /home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/test/2.jpeg, Top: 276, Bottom: 602, Confidence: 0.496, Text: n

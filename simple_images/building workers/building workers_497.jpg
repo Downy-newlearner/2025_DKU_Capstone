@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en-US" class="no-js no-svg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="profile" href="https://gmpg.org/xfn/11">
+<meta name='robots' content='noindex, follow' />
+	<style>img:is([sizes="auto" i], [sizes^="auto," i]) { contain-intrinsic-size: 3000px 1500px }</style>
+	
+	<!-- This site is optimized with the Yoast SEO plugin v24.5 - https://yoast.com/wordpress/plugins/seo/ -->
+	<title>Page not found - GIB Recruitment</title>
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:title" content="Page not found - GIB Recruitment" />
+	<meta property="og:site_name" content="GIB Recruitment" />
+	<script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://www.gibrecruitment.co.ke/#website","url":"https://www.gibrecruitment.co.ke/","name":"GIB Recruitment","description":"Your Trusted Global Recruiter","potentialAction":[{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://www.gibrecruitment.co.ke/?s={search_term_string}"},"query-input":{"@type":"PropertyValueSpecification","valueRequired":true,"valueName":"search_term_string"}}],"inLanguage":"en-US"}]}</script>
+	<!-- / Yoast SEO plugin. -->
+
+
+<link rel='dns-prefetch' href='//www.googletagmanager.com' />
+<link rel='dns-prefetch' href='//unpkg.com' />
+<link rel='dns-prefetch' href='//fonts.googleapis.com' />
+<link href='https://fonts.gstatic.com' crossorigin rel='preconnect' />
+<link rel="alternate" type="application/rss+xml" title="GIB Recruitment &raquo; Feed" href="https://www.gibrecruitment.co.ke/feed/" />
+<link rel="alternate" type="application/rss+xml" title="GIB Recruitment &raquo; Comments Feed" href="https://www.gibrecruitment.co.ke/comments/feed/" />
+<script>
+/* <![CDATA[ */
+window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/15.1.0\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/15.1.0\/svg\/","svgExt":".svg","source":{"concatemoji":"https:\/\/www.gibrecruitment.co.ke\/wp-includes\/js\/wp-emoji-release.min.js?ver=6.8"}};
+/*! This file is auto-generated */
+!function(i,n){var o,s,e;function c(e){try{var t={supportTests:e,timestamp:(new Date).valueOf()};sessionStorage.setItem(o,JSON.stringify(t))}catch(e){}}function p(e,t,n){e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(t,0,0);var t=new Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data),r=(e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(n,0,0),new Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data));return t.every(function(e,t){return e===r[t]})}function u(e,t,n){switch(t){case"flag":return n(e,"\ud83c\udff3\ufe0f\u200d\u26a7\ufe0f","\ud83c\udff3\ufe0f\u200b\u26a7\ufe0f")?!1:!n(e,"\ud83c\uddfa\ud83c\uddf3","\ud83c\uddfa\u200b\ud83c\uddf3")&&!n(e,"\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f","\ud83c\udff4\u200b\udb40\udc67\u200b\udb40\udc62\u200b\udb40\udc65\u200b\udb40\udc6e\u200b\udb40\udc67\u200b\udb40\udc7f");case"emoji":return!n(e,"\ud83d\udc26\u200d\ud83d\udd25","\ud83d\udc26\u200b\ud83d\udd25")}return!1}function f(e,t,n){var r="undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?new OffscreenCanvas(300,150):i.createElement("canvas"),a=r.getContext("2d",{willReadFrequently:!0}),o=(a.textBaseline="top",a.font="600 32px Arial",{});return e.forEach(function(e){o[e]=t(a,e,n)}),o}function t(e){var t=i.createElement("script");t.src=e,t.defer=!0,i.head.appendChild(t)}"undefined"!=typeof Promise&&(o="wpEmojiSettingsSupports",s=["flag","emoji"],n.supports={everything:!0,everythingExceptFlag:!0},e=new Promise(function(e){i.addEventListener("DOMContentLoaded",e,{once:!0})}),new Promise(function(t){var n=function(){try{var e=JSON.parse(sessionStorage.getItem(o));if("object"==typeof e&&"number"==typeof e.timestamp&&(new Date).valueOf()<e.timestamp+604800&&"object"==typeof e.supportTests)return e.supportTests}catch(e){}return null}();if(!n){if("undefined"!=typeof Worker&&"undefined"!=typeof OffscreenCanvas&&"undefined"!=typeof URL&&URL.createObjectURL&&"undefined"!=typeof Blob)try{var e="postMessage("+f.toString()+"("+[JSON.stringify(s),u.toString(),p.toString()].join(",")+"));",r=new Blob([e],{type:"text/javascript"}),a=new Worker(URL.createObjectURL(r),{name:"wpTestEmojiSupports"});return void(a.onmessage=function(e){c(n=e.data),a.terminate(),t(n)})}catch(e){}c(n=f(s,u,p))}t(n)}).then(function(e){for(var t in e)n.supports[t]=e[t],n.supports.everything=n.supports.everything&&n.supports[t],"flag"!==t&&(n.supports.everythingExceptFlag=n.supports.everythingExceptFlag&&n.supports[t]);n.supports.everythingExceptFlag=n.supports.everythingExceptFlag&&!n.supports.flag,n.DOMReady=!1,n.readyCallback=function(){n.DOMReady=!0}}).then(function(){return e}).then(function(){var e;n.supports.everything||(n.readyCallback(),(e=n.source||{}).concatemoji?t(e.concatemoji):e.wpemoji&&e.twemoji&&(t(e.twemoji),t(e.wpemoji)))}))}((window,document),window._wpemojiSettings);
+/* ]]> */
+</script>
+<style id='wp-emoji-styles-inline-css'>
+
+	img.wp-smiley, img.emoji {
+		display: inline !important;
+		border: none !important;
+		box-shadow: none !important;
+		height: 1em !important;
+		width: 1em !important;
+		margin: 0 0.07em !important;
+		vertical-align: -0.1em !important;
+		background: none !important;
+		padding: 0 !important;
+	}
+</style>
+<link rel='stylesheet' id='wp-block-library-css' href='https://www.gibrecruitment.co.ke/wp-includes/css/dist/block-library/style.min.css?ver=6.8' type='text/css' media='all' />
+<style id='global-styles-inline-css'>
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgba(6,147,227,1) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium: 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large: 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255, 1), 6px 6px rgba(0, 0, 0, 1);--wp--preset--shadow--crisp: 6px 6px 0px rgba(0, 0, 0, 1);}:where(body) { margin: 0; }.wp-site-blocks > .alignleft { float: left; margin-right: 2em; }.wp-site-blocks > .alignright { float: right; margin-left: 2em; }.wp-site-blocks > .aligncenter { justify-content: center; margin-left: auto; margin-right: auto; }:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap: 0.5em;}.is-layout-flow > .alignleft{float: left;margin-inline-start: 0;margin-inline-end: 2em;}.is-layout-flow > .alignright{float: right;margin-inline-start: 2em;margin-inline-end: 0;}.is-layout-flow > .aligncenter{margin-left: auto !important;margin-right: auto !important;}.is-layout-constrained > .alignleft{float: left;margin-inline-start: 0;margin-inline-end: 2em;}.is-layout-constrained > .alignright{float: right;margin-inline-start: 2em;margin-inline-end: 0;}.is-layout-constrained > .aligncenter{margin-left: auto !important;margin-right: auto !important;}.is-layout-constrained > :where(:not(.alignleft):not(.alignright):not(.alignfull)){margin-left: auto !important;margin-right: auto !important;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}body{padding-top: 0px;padding-right: 0px;padding-bottom: 0px;padding-left: 0px;}a:where(:not(.wp-element-button)){text-decoration: underline;}:root :where(.wp-element-button, .wp-block-button__link){background-color: #32373c;border-width: 0;color: #fff;font-family: inherit;font-size: inherit;line-height: inherit;padding: calc(0.667em + 2px) calc(1.333em + 2px);text-decoration: none;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}
+:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}
+:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}
+:root :where(.wp-block-pullquote){font-size: 1.5em;line-height: 1.6;}
+</style>
+<link rel='stylesheet' id='contact-form-7-css' href='https://www.gibrecruitment.co.ke/wp-content/plugins/contact-form-7/includes/css/styles.css?ver=6.0.4' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-job-manager-job-listings-css' href='https://www.gibrecruitment.co.ke/wp-content/plugins/wp-job-manager/assets/dist/css/job-listings.css?ver=598383a28ac5f9f156e4' type='text/css' media='all' />
+<link rel='stylesheet' id='cspt-all-gfonts-css' href='https://fonts.googleapis.com/css?family=Mulish%3A200%2C200italic%2C300%2C300italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic%2Citalic%2Cregular%2C700%2Cregular%7CNunito%3A800%2Cregular%2Citalic%2C700%7CMontserrat%3A500&#038;ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='bootstrap-css' href='https://www.gibrecruitment.co.ke/wp-content/themes/emphires/libraries/bootstrap/css/bootstrap.min.css?ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='cspt-core-style-css' href='https://www.gibrecruitment.co.ke/wp-content/themes/emphires/css/core.css?ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='cspt-theme-style-css' href='https://www.gibrecruitment.co.ke/wp-content/themes/emphires/css/theme.css?ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='fontawesome-css' href='https://www.gibrecruitment.co.ke/wp-content/themes/emphires/libraries/font-awesome/css/font-awesome.min.css?ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='magnific-popup-css' href='https://www.gibrecruitment.co.ke/wp-content/themes/emphires/libraries/magnific-popup/magnific-popup.css?ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='cspt-base-icons-css' href='https://www.gibrecruitment.co.ke/wp-content/themes/emphires/libraries/creativesplanet-base-icons/css/creativesplanet-base-icons.css?ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='balloon-css' href='https://www.gibrecruitment.co.ke/wp-content/themes/emphires/libraries/balloon/balloon.min.css?ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='cspt-emphires-header-style-css' href='https://www.gibrecruitment.co.ke/wp-content/themes/emphires/css/header/header-style-7.css?ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='cspt-dynamic-style-css' href='https://www.gibrecruitment.co.ke/wp-admin/admin-ajax.php?action=cspt_auto_css&#038;ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='cspt-responsive-style-css' href='https://www.gibrecruitment.co.ke/wp-content/themes/emphires/css/responsive.css?ver=6.8' type='text/css' media='all' />
+<script src="https://www.gibrecruitment.co.ke/wp-includes/js/jquery/jquery.min.js?ver=3.7.1" id="jquery-core-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1" id="jquery-migrate-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/plugins/emphires-addons/js/addon-scripts.js?ver=6.8" id="emphires-addons-js"></script>
+
+<!-- Google tag (gtag.js) snippet added by Site Kit -->
+
+<!-- Google Analytics snippet added by Site Kit -->
+<script src="https://www.googletagmanager.com/gtag/js?id=GT-5NPDMS2J" id="google_gtagjs-js" async></script>
+<script id="google_gtagjs-js-after">
+/* <![CDATA[ */
+window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}
+gtag("set","linker",{"domains":["www.gibrecruitment.co.ke"]});
+gtag("js", new Date());
+gtag("set", "developer_id.dZTNiMT", true);
+gtag("config", "GT-5NPDMS2J");
+ window._googlesitekit = window._googlesitekit || {}; window._googlesitekit.throttledEvents = []; window._googlesitekit.gtagEvent = (name, data) => { var key = JSON.stringify( { name, data } ); if ( !! window._googlesitekit.throttledEvents[ key ] ) { return; } window._googlesitekit.throttledEvents[ key ] = true; setTimeout( () => { delete window._googlesitekit.throttledEvents[ key ]; }, 5 ); gtag( "event", name, { ...data, event_source: "site-kit" } ); } 
+/* ]]> */
+</script>
+
+<!-- End Google tag (gtag.js) snippet added by Site Kit -->
+<script src="https://www.gibrecruitment.co.ke/wp-content/themes/emphires/libraries/magnific-popup/jquery.magnific-popup.min.js?ver=6.8" id="magnific-popup-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/themes/emphires/libraries/sticky-toolkit/jquery.sticky-kit.min.js?ver=6.8" id="jquery-sticky-js"></script>
+<script id="cspt-core-script-js-extra">
+/* <![CDATA[ */
+var cspt_js_variables = {"responsive":"1200"};
+/* ]]> */
+</script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/themes/emphires/js/core.js?ver=6.8" id="cspt-core-script-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/themes/emphires/js/elementor.js?ver=6.8" id="cspt-elementor-script-js"></script>
+<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js?ver=6.8" id="cspt-lottiefiles-script-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/themes/emphires/libraries/isotope/isotope.pkgd.min.js?ver=6.8" id="isotope-js"></script>
+<link rel="https://api.w.org/" href="https://www.gibrecruitment.co.ke/wp-json/" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://www.gibrecruitment.co.ke/xmlrpc.php?rsd" />
+<meta name="generator" content="WordPress 6.8" />
+<meta name="generator" content="Site Kit by Google 1.151.0" /><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3601991125458086"
+     crossorigin="anonymous"></script>
+
+<!-- Google AdSense meta tags added by Site Kit -->
+<meta name="google-adsense-platform-account" content="ca-host-pub-2644536267352236">
+<meta name="google-adsense-platform-domain" content="sitekit.withgoogle.com">
+<!-- End Google AdSense meta tags added by Site Kit -->
+<meta name="generator" content="Elementor 3.27.6; features: additional_custom_breakpoints; settings: css_print_method-external, google_font-enabled, font_display-auto">
+			<style>
+				.e-con.e-parent:nth-of-type(n+4):not(.e-lazyloaded):not(.e-no-lazyload),
+				.e-con.e-parent:nth-of-type(n+4):not(.e-lazyloaded):not(.e-no-lazyload) * {
+					background-image: none !important;
+				}
+				@media screen and (max-height: 1024px) {
+					.e-con.e-parent:nth-of-type(n+3):not(.e-lazyloaded):not(.e-no-lazyload),
+					.e-con.e-parent:nth-of-type(n+3):not(.e-lazyloaded):not(.e-no-lazyload) * {
+						background-image: none !important;
+					}
+				}
+				@media screen and (max-height: 640px) {
+					.e-con.e-parent:nth-of-type(n+2):not(.e-lazyloaded):not(.e-no-lazyload),
+					.e-con.e-parent:nth-of-type(n+2):not(.e-lazyloaded):not(.e-no-lazyload) * {
+						background-image: none !important;
+					}
+				}
+			</style>
+			<meta name="generator" content="Powered by Slider Revolution 6.6.14 - responsive, Mobile-Friendly Slider Plugin for WordPress with comfortable drag and drop interface." />
+<link rel="icon" href="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/gib-logo-2-Favicon-1-1-137x150.jpg" sizes="32x32" />
+<link rel="icon" href="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/gib-logo-2-Favicon-1-1.jpg" sizes="192x192" />
+<link rel="apple-touch-icon" href="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/gib-logo-2-Favicon-1-1.jpg" />
+<meta name="msapplication-TileImage" content="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/gib-logo-2-Favicon-1-1.jpg" />
+<script>function setREVStartSize(e){
+			//window.requestAnimationFrame(function() {
+				window.RSIW = window.RSIW===undefined ? window.innerWidth : window.RSIW;
+				window.RSIH = window.RSIH===undefined ? window.innerHeight : window.RSIH;
+				try {
+					var pw = document.getElementById(e.c).parentNode.offsetWidth,
+						newh;
+					pw = pw===0 || isNaN(pw) || (e.l=="fullwidth" || e.layout=="fullwidth") ? window.RSIW : pw;
+					e.tabw = e.tabw===undefined ? 0 : parseInt(e.tabw);
+					e.thumbw = e.thumbw===undefined ? 0 : parseInt(e.thumbw);
+					e.tabh = e.tabh===undefined ? 0 : parseInt(e.tabh);
+					e.thumbh = e.thumbh===undefined ? 0 : parseInt(e.thumbh);
+					e.tabhide = e.tabhide===undefined ? 0 : parseInt(e.tabhide);
+					e.thumbhide = e.thumbhide===undefined ? 0 : parseInt(e.thumbhide);
+					e.mh = e.mh===undefined || e.mh=="" || e.mh==="auto" ? 0 : parseInt(e.mh,0);
+					if(e.layout==="fullscreen" || e.l==="fullscreen")
+						newh = Math.max(e.mh,window.RSIH);
+					else{
+						e.gw = Array.isArray(e.gw) ? e.gw : [e.gw];
+						for (var i in e.rl) if (e.gw[i]===undefined || e.gw[i]===0) e.gw[i] = e.gw[i-1];
+						e.gh = e.el===undefined || e.el==="" || (Array.isArray(e.el) && e.el.length==0)? e.gh : e.el;
+						e.gh = Array.isArray(e.gh) ? e.gh : [e.gh];
+						for (var i in e.rl) if (e.gh[i]===undefined || e.gh[i]===0) e.gh[i] = e.gh[i-1];
+											
+						var nl = new Array(e.rl.length),
+							ix = 0,
+							sl;
+						e.tabw = e.tabhide>=pw ? 0 : e.tabw;
+						e.thumbw = e.thumbhide>=pw ? 0 : e.thumbw;
+						e.tabh = e.tabhide>=pw ? 0 : e.tabh;
+						e.thumbh = e.thumbhide>=pw ? 0 : e.thumbh;
+						for (var i in e.rl) nl[i] = e.rl[i]<window.RSIW ? 0 : e.rl[i];
+						sl = nl[0];
+						for (var i in nl) if (sl>nl[i] && nl[i]>0) { sl = nl[i]; ix=i;}
+						var m = pw>(e.gw[ix]+e.tabw+e.thumbw) ? 1 : (pw-(e.tabw+e.thumbw)) / (e.gw[ix]);
+						newh =  (e.gh[ix] * m) + (e.tabh + e.thumbh);
+					}
+					var el = document.getElementById(e.c);
+					if (el!==null && el) el.style.height = newh+"px";
+					el = document.getElementById(e.c+"_wrapper");
+					if (el!==null && el) {
+						el.style.height = newh+"px";
+						el.style.display = "block";
+					}
+				} catch(e){
+					console.log("Failure at Presize of Slider:" + e)
+				}
+			//});
+		  };</script>
+		<style id="wp-custom-css">
+			archive.post-type-archive-jobpost .site-content-wrap{
+	    padding: 40px 0;
+}
+
+}
+		</style>
+		<style id="wpforms-css-vars-root">
+				:root {
+					--wpforms-field-border-radius: 3px;
+--wpforms-field-border-style: solid;
+--wpforms-field-border-size: 1px;
+--wpforms-field-background-color: #ffffff;
+--wpforms-field-border-color: rgba( 0, 0, 0, 0.25 );
+--wpforms-field-border-color-spare: rgba( 0, 0, 0, 0.25 );
+--wpforms-field-text-color: rgba( 0, 0, 0, 0.7 );
+--wpforms-field-menu-color: #ffffff;
+--wpforms-label-color: rgba( 0, 0, 0, 0.85 );
+--wpforms-label-sublabel-color: rgba( 0, 0, 0, 0.55 );
+--wpforms-label-error-color: #d63637;
+--wpforms-button-border-radius: 3px;
+--wpforms-button-border-style: none;
+--wpforms-button-border-size: 1px;
+--wpforms-button-background-color: #066aab;
+--wpforms-button-border-color: #066aab;
+--wpforms-button-text-color: #ffffff;
+--wpforms-page-break-color: #066aab;
+--wpforms-background-image: none;
+--wpforms-background-position: center center;
+--wpforms-background-repeat: no-repeat;
+--wpforms-background-size: cover;
+--wpforms-background-width: 100px;
+--wpforms-background-height: 100px;
+--wpforms-background-color: rgba( 0, 0, 0, 0 );
+--wpforms-background-url: none;
+--wpforms-container-padding: 0px;
+--wpforms-container-border-style: none;
+--wpforms-container-border-width: 1px;
+--wpforms-container-border-color: #000000;
+--wpforms-container-border-radius: 3px;
+--wpforms-field-size-input-height: 43px;
+--wpforms-field-size-input-spacing: 15px;
+--wpforms-field-size-font-size: 16px;
+--wpforms-field-size-line-height: 19px;
+--wpforms-field-size-padding-h: 14px;
+--wpforms-field-size-checkbox-size: 16px;
+--wpforms-field-size-sublabel-spacing: 5px;
+--wpforms-field-size-icon-size: 1;
+--wpforms-label-size-font-size: 16px;
+--wpforms-label-size-line-height: 19px;
+--wpforms-label-size-sublabel-font-size: 14px;
+--wpforms-label-size-sublabel-line-height: 17px;
+--wpforms-button-size-font-size: 17px;
+--wpforms-button-size-height: 41px;
+--wpforms-button-size-padding-h: 15px;
+--wpforms-button-size-margin-top: 10px;
+--wpforms-container-shadow-size-box-shadow: none;
+
+				}
+			</style></head>
+<body class="error404 wp-theme-emphires cspt-sidebar-exists cspt-sidebar-right emphires elementor-default elementor-kit-12">
+<div id="page" class="site cspt-parent-header-style-7">
+	<a class="skip-link screen-reader-text" href="#content">Skip to content</a>
+	<header id="masthead" class="site-header cspt-header-style-7  cspt-sticky-logo-yes">
+		<div class="cspt-sticky-header cspt-header-sticky-yes cspt-sticky-type- cspt-sticky-bg-color-white"></div>
+		<div class="cspt-sticky-logo-yes cspt-responsive-logo-no cspt-responsive-header-bgcolor-white">
+		<div class="cspt-header-top-area cspt-header-inner cspt-infostack-header cspt-sticky-logo-yes cspt-responsive-logo-no cspt-responsive-header-bgcolor-white cspt-header-wrapper cspt-bg-color-white ">
+		<div class="container">
+			<div class="d-flex align-items-center justify-content-between cspt-infostack-header-inner">
+				<div class="site-branding cspt-logo-area">
+					<div class="wrap"><div class="site-title"><a href="https://www.gibrecruitment.co.ke/" rel="home"><img class="cspt-main-logo" src="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/gib-logo-2.jpg" alt="GIB Recruitment" title="GIB Recruitment" /><img class="cspt-sticky-logo" src="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/gib-logo-2.jpg" alt="GIB Recruitment" title="GIB Recruitment" /></a></div></div><!-- .wrap -->
+				</div><!-- .site-branding -->
+				<div class="cspt-header-info ml-auto">
+					<div class="cspt-header-info-inner">
+									<div class="cspt-header-box cspt-header-box-1">
+									<span class="cspt-header-box-icon"><i class="cspt-emphires-icon cspt-emphires-icon-email"></i></span>					<span class="cspt-header-box-title">4th Floor Kimathi House,</span>
+					<span class="cspt-header-box-content">Suit 408. Along Kimathi Street</span>
+							</div>
+						<div class="cspt-header-box cspt-header-box-2">
+									<span class="cspt-header-box-icon"><i class="cspt-emphires-icon cspt-emphires-icon-call"></i></span>					<span class="cspt-header-box-title">+254 784 261971</span>
+					<span class="cspt-header-box-content">Info@gibrecruitment.co.ke</span>
+							</div>
+														<div class="cspt-header-button">
+				<a href="https://www.gibrecruitment.co.ke/contact-us/">
+			<span class="cspt-header-button-text-1">Get In Touch</span>					</a>
+					</div>
+									</div>
+				</div>
+				<button id="menu-toggle" class="nav-menu-toggle">
+					<i class="cspt-base-icon-menu-1"></i>
+				</button>
+			</div>
+		</div>
+
+		<div class="cspt-header-menu">
+			<div class="cspt-header-menu-area-wrapper">
+				<div class="cspt-header-menu-area  cspt-header-sticky-yes cspt-sticky-type- cspt-sticky-bg-color-white cspt-bg-color-transparent cspt-bg-color-blackish">
+					<div class="container">
+						<div class="cspt-header-menu-area-inner d-flex align-items-center justify-content-between">
+														<div class="navigation-top">
+								<div class="cspt-mobile-menu-bg"></div>
+								<div class="wrap">
+									<nav id="site-navigation" class="main-navigation cspt-navbar  cspt-main-active-color-globalcolor cspt-dropdown-active-color-globalcolor" aria-label="Top Menu">
+										<div class="menu-main-menu-container"> <ul id="cspt-top-menu" class="menu"> <li id="menu-item-196" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-196"> <a href="https://www.gibrecruitment.co.ke/">Home</a> </li>
+<li id="menu-item-713" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-713"> <a href="#">Available Jobs</a>
+<ul class="sub-menu">
+	<li id="menu-item-194" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-194"> <a href="https://www.gibrecruitment.co.ke/jobs-in-kenya/">Available Jobs In Kenya</a> </li>
+	<li id="menu-item-711" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-711"> <a href="https://www.gibrecruitment.co.ke/available-jobs-in-europe/">Available Jobs In Europe</a> </li>
+	<li id="menu-item-712" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-712"> <a href="https://www.gibrecruitment.co.ke/available-jobs-in-middle-east/">Available Jobs In Middle East</a> </li>
+</ul>
+</li>
+<li id="menu-item-730" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-730"> <a href="https://www.gibrecruitment.co.ke/get-hired/">Post CV for FREE</a> </li>
+<li id="menu-item-484" class="menu-item menu-item-type-post_type_archive menu-item-object-cspt-service menu-item-has-children menu-item-484"> <a href="https://www.gibrecruitment.co.ke/service/">What We Offer</a>
+<ul class="sub-menu">
+	<li id="menu-item-575" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-575"> <a href="https://www.gibrecruitment.co.ke/service/professional-cv-writing/">Professional CV Writing</a> </li>
+	<li id="menu-item-574" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-574"> <a href="https://www.gibrecruitment.co.ke/service/linkedin-branding-boost/">LinkedIn Branding Boost</a> </li>
+	<li id="menu-item-759" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-759"> <a href="https://www.gibrecruitment.co.ke/service/candidates-assessment-and-cv-screening/">Candidates Assessment and CV Screening</a> </li>
+	<li id="menu-item-773" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-773"> <a href="https://www.gibrecruitment.co.ke/service/temporary-staffing/">Temporary Staffing</a> </li>
+	<li id="menu-item-774" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-774"> <a href="https://www.gibrecruitment.co.ke/service/permanent-recruitment/">Permanent Recruitment</a> </li>
+	<li id="menu-item-775" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-775"> <a href="https://www.gibrecruitment.co.ke/service/human-resource-outsourcing/">Human resource Outsourcing</a> </li>
+	<li id="menu-item-777" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-777"> <a href="https://www.gibrecruitment.co.ke/service/executive-search/">Executive Search</a> </li>
+	<li id="menu-item-573" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-573"> <a href="https://www.gibrecruitment.co.ke/service/cv-screening-services/">CV Screening Services</a> </li>
+	<li id="menu-item-571" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-571"> <a href="https://www.gibrecruitment.co.ke/service/labour-outsourcing-services/">Labour Outsourcing Services</a> </li>
+	<li id="menu-item-572" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-572"> <a href="https://www.gibrecruitment.co.ke/service/hr-training-services/">HR Training Services</a> </li>
+</ul>
+</li>
+<li id="menu-item-1008" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1008"> <a href="https://www.gibrecruitment.co.ke/career-tips/">Career Tips</a> </li>
+<li id="menu-item-198" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-198"> <a href="https://www.gibrecruitment.co.ke/post-jobs-for-free/">Post Jobs For FREE</a> </li>
+<li id="menu-item-1443" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1443"> <a href="https://www.gibrecruitment.co.ke/blogs/">Blogs</a> </li>
+<li id="menu-item-197" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-197"> <a href="https://www.gibrecruitment.co.ke/about-us/">About Us</a> </li>
+</ul> </div>									</nav><!-- #site-navigation -->
+								</div><!-- .wrap -->
+							</div><!-- .navigation-top -->
+														<div class="cspt-right-box">
+															<div class="cspt-search-cart-box">
+																										</div>
+							</div>
+						</div>
+					</div><!-- .cspt-header-menu-area -->
+				</div>
+			</div><!-- .cspt-header-menu-area-wrapper -->
+
+		</div>
+
+	</div>
+</div><!-- .cspt-header-wrapper -->					</header><!-- #masthead -->
+	<div class="site-content-contain  cspt-bg-color-custom cspt-bg-image-yes cspt-text-color-white">
+		<div class="site-content-wrap">
+			<div id="content" class="site-content container">
+									<div class="row multi-columns-row">
+				
+								<div class="cspt-header-search-form-wrapper">
+					<div class="cspt-search-close"><i class="cspt-base-icon-cancel"></i></div>
+										<form role="search" method="get" class="search-form" action="https://www.gibrecruitment.co.ke/">
+						<label for="search-form-680c6ae6edd2c">
+							<span class="screen-reader-text">Search for:</span>
+						</label>
+						<input type="search" id="search-form-680c6ae6edd2c" class="search-field" placeholder="Search.." value="" name="s" />
+						<button type="submit" class="search-submit">Search</button>
+					</form>
+				</div>
+<div class="wrap">
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main">
+			<section class="error-404 not-found clearfix">
+				<div class="page-content">
+											<h2 class="page-title">404</h2>
+																<h5 class="footer-message">OOPS! THE PAGE YOU WERE LOOKING FOR, COULDN&#039;T BE FOUND.</h5>
+										<form role="search" method="get" class="search-form" action="https://www.gibrecruitment.co.ke/">
+	<label for="search-form-680c6ae6edee7">
+		<span class="screen-reader-text">Search for:</span>
+	</label>
+	<input type="search" id="search-form-680c6ae6edee7" class="search-field" placeholder="Search &hellip;" value="" name="s" />
+	<button type="submit" class="search-submit"><span class="screen-reader-text">Search</span></button>
+</form>
+					<a href="https://www.gibrecruitment.co.ke/" class="ts-home-back">Back To Home Page</a>
+				</div><!-- .page-content -->
+			</section><!-- .error-404 -->
+		</main><!-- #main -->
+	</div><!-- #primary -->
+</div><!-- .wrap -->
+			</div><!-- .row -->
+		
+	</div><!-- .site-content-wrap -->
+			<footer id="colophon" class="site-footer cspt-footer-style-1 cspt-color-white cspt-bg-color-secondarycolor cspt-footer-menu-yes cspt-footer-widget-yes">
+												<div class="footer-wrap cspt-footer-widget-area  cspt-bg-color-secondarycolor">
+					<div class="container">
+						<div class="row">
+																<div class="cspt-footer-widget cspt-footer-widget-col-1 col-md-6 col-lg-3">
+										<aside id="text-7" class="widget widget_text emphires_widget  emphires_widget_count_1"><h2 class="widget-title">About Us</h2>			<div class="textwidget"><p>Established in 2022 in Kenya, GIB Recruitment Agency is a trusted, end-to-end recruitment solutions provider dedicated to connecting top talent with exceptional opportunities across Kenya and the Middle East/Gulf countries. We pride ourselves on being more than just a recruitment agency—we are a strategic partner for both employers and job seekers, offering tailored solutions that drive success in today’s competitive job market.</p>
+</div>
+		</aside><aside id="emphires_contact_widget-1" class="widget emphires_contact_widget emphires_widget  emphires_widget_count_2"><div class="cspt-contact-widget-lines"><div class="cspt-contact-widget-line cspt-contact-widget-phone"><span>Talk To Our Support </span> +254 784 261971</div></div></aside>									</div><!-- .cspt-footer-widget -->
+																	<div class="cspt-footer-widget cspt-footer-widget-col-2 col-md-6 col-lg-3">
+										<aside id="nav_menu-1" class="widget widget_nav_menu emphires_widget  emphires_widget_count_3"><h2 class="widget-title">Quick Links</h2><div class="menu-footer-menu-container"> <ul id="menu-footer-menu" class="menu"> <li id="menu-item-577" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-577"> <a href="https://www.gibrecruitment.co.ke/">Home</a> </li>
+<li id="menu-item-582" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-582"> <a href="https://www.gibrecruitment.co.ke/about-us/">About Us</a> </li>
+<li id="menu-item-578" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-578"> <a href="https://www.gibrecruitment.co.ke/blogs/">Blogs</a> </li>
+<li id="menu-item-579" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-579"> <a href="https://www.gibrecruitment.co.ke/tenders/">Tenders</a> </li>
+<li id="menu-item-581" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-581"> <a href="https://www.gibrecruitment.co.ke/post-jobs-for-free/">Post Jobs For Free</a> </li>
+<li id="menu-item-584" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-584"> <a href="https://www.gibrecruitment.co.ke/career-tips/">Career Tips</a> </li>
+<li id="menu-item-733" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-733"> <a href="https://www.gibrecruitment.co.ke/get-hired/">Get Hired</a> </li>
+<li id="menu-item-583" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-583"> <a href="https://www.gibrecruitment.co.ke/contact-us/">Contact Us</a> </li>
+</ul> </div></aside>									</div><!-- .cspt-footer-widget -->
+																	<div class="cspt-footer-widget cspt-footer-widget-col-3 col-md-6 col-lg-3">
+										<aside id="emphires_recent_posts_widget-2" class="widget emphires_recent_posts_widget emphires_widget  emphires_widget_count_4"><h2 class="widget-title">Latest News</h2><ul class="cspt-rpw-list"><li><a href="https://www.gibrecruitment.co.ke/canada-open-work-permit-2025-a-complete-guide-for-applicants/"><span class="cspt-rpw-img"><img width="150" height="150" src="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/04/Canada-Open-Work-Permit-2025-Guide-Guide-150x150.jpg" class="attachment-thumbnail size-thumbnail wp-post-image" alt="Canada Open Work Permit 2025 Guide" decoding="async" srcset="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/04/Canada-Open-Work-Permit-2025-Guide-Guide-150x150.jpg 150w, https://www.gibrecruitment.co.ke/wp-content/uploads/2025/04/Canada-Open-Work-Permit-2025-Guide-Guide-300x300.jpg 300w, https://www.gibrecruitment.co.ke/wp-content/uploads/2025/04/Canada-Open-Work-Permit-2025-Guide-Guide-270x270.jpg 270w" sizes="(max-width: 150px) 100vw, 150px" data-id="1379" /></span></a><span class="cspt-rpw-content">
+						<span class="cspt-rpw-title"><a href="https://www.gibrecruitment.co.ke/canada-open-work-permit-2025-a-complete-guide-for-applicants/">Canada Open Work Permit 2025: A Complete Guide for Applicants</a></span>
+						<span class="cspt-rpw-date"><a href="https://www.gibrecruitment.co.ke/canada-open-work-permit-2025-a-complete-guide-for-applicants/">April 1, 2025</a></span>
+					</span></li><li><a href="https://www.gibrecruitment.co.ke/get-hired-in-europe-perfect-eurostar-cv-guide-2025/"><span class="cspt-rpw-img"><img width="150" height="150" src="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/Get-Hired-in-Europe-Perfect-Eurostar-CV-Guide-2025-150x150.avif" class="attachment-thumbnail size-thumbnail wp-post-image" alt="Get Hired in Europe: Perfect Eurostar CV Guide 2025" decoding="async" srcset="https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/Get-Hired-in-Europe-Perfect-Eurostar-CV-Guide-2025-150x150.avif 150w, https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/Get-Hired-in-Europe-Perfect-Eurostar-CV-Guide-2025-770x770.avif 770w, https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/Get-Hired-in-Europe-Perfect-Eurostar-CV-Guide-2025-300x300.avif 300w, https://www.gibrecruitment.co.ke/wp-content/uploads/2025/03/Get-Hired-in-Europe-Perfect-Eurostar-CV-Guide-2025-270x270.avif 270w" sizes="(max-width: 150px) 100vw, 150px" data-id="1326" /></span></a><span class="cspt-rpw-content">
+						<span class="cspt-rpw-title"><a href="https://www.gibrecruitment.co.ke/get-hired-in-europe-perfect-eurostar-cv-guide-2025/">Get Hired in Europe: Perfect Eurostar CV Guide 2025</a></span>
+						<span class="cspt-rpw-date"><a href="https://www.gibrecruitment.co.ke/get-hired-in-europe-perfect-eurostar-cv-guide-2025/">March 30, 2025</a></span>
+					</span></li></ul>    </aside>									</div><!-- .cspt-footer-widget -->
+																	<div class="cspt-footer-widget cspt-footer-widget-col-4 col-md-6 col-lg-3">
+										<aside id="nav_menu-3" class="widget widget_nav_menu emphires_widget  emphires_widget_count_5"><h2 class="widget-title">What We Offer</h2><div class="menu-services-menu-container"> <ul id="menu-services-menu" class="menu"> <li id="menu-item-488" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-488"> <a href="https://www.gibrecruitment.co.ke/service/hr-training-services/">HR Training Services</a> </li>
+<li id="menu-item-489" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-489"> <a href="https://www.gibrecruitment.co.ke/service/cv-screening-services/">CV Screening Services</a> </li>
+<li id="menu-item-491" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-491"> <a href="https://www.gibrecruitment.co.ke/service/professional-cv-writing/">Professional CV Writing</a> </li>
+<li id="menu-item-786" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-786"> <a href="https://www.gibrecruitment.co.ke/service/executive-search/">Executive Search</a> </li>
+<li id="menu-item-787" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-787"> <a href="https://www.gibrecruitment.co.ke/service/human-resource-outsourcing/">Human resource Outsourcing</a> </li>
+<li id="menu-item-788" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-788"> <a href="https://www.gibrecruitment.co.ke/service/permanent-recruitment/">Permanent Recruitment</a> </li>
+<li id="menu-item-789" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-789"> <a href="https://www.gibrecruitment.co.ke/service/temporary-staffing/">Temporary Staffing</a> </li>
+<li id="menu-item-790" class="menu-item menu-item-type-post_type menu-item-object-cspt-service menu-item-790"> <a href="https://www.gibrecruitment.co.ke/service/candidates-assessment-and-cv-screening/">Candidates Assessment and CV Screening</a> </li>
+</ul> </div></aside>									</div><!-- .cspt-footer-widget -->
+														</div><!-- .row -->
+					</div>	
+				</div>
+				
+				<div class="cspt-footer-text-area  cspt-bg-color-transparent">
+					<div class="container">
+						<div class="cspt-footer-text-inner">
+							<div class="row">
+																											
+										<div class="cspt-footer-copyright col-md-6">			
+																	
+				
+									<div class="cspt-footer-copyright-text-area">
+										Copyright © 2025 <a href="https://www.gibrecruitment.co.ke/">GIB Recruitment Agency </a> All Rights Reserved.									</div>							
+								</div>											
+																<div class="cspt-footer-social-area col-md-6">
+									<ul class="cspt-social-links"><li class="cspt-social-li cspt-social-facebook "><a href="https://www.facebook.com/profile.php?id=100083421275214" target="_blank"><span><i class="cspt-base-icon-facebook-squared"></i></span></a></li><li class="cspt-social-li cspt-social-twitter "><a href="#" target="_blank"><span><i class="cspt-base-icon-twitter"></i></span></a></li><li class="cspt-social-li cspt-social-linkedin "><a href="#" target="_blank"><span><i class="cspt-base-icon-linkedin-squared"></i></span></a></li><li class="cspt-social-li cspt-social-instagram "><a href="#" target="_blank"><span><i class="cspt-base-icon-instagram"></i></span></a></li></ul>								</div>
+																											
+							</div>				
+							<a href="#" class="scroll-to-top"><i class="cspt-base-icon-arrow-right"></i><span class="cspt-hide">Back to top</span></a>
+						</div>	
+					</div>	
+										
+				</div>
+			</footer><!-- #colophon -->
+		</div><!-- .site-content-contain -->
+	</div><!-- #page -->
+</div>
+
+		<script>
+			window.RS_MODULES = window.RS_MODULES || {};
+			window.RS_MODULES.modules = window.RS_MODULES.modules || {};
+			window.RS_MODULES.waiting = window.RS_MODULES.waiting || [];
+			window.RS_MODULES.defered = true;
+			window.RS_MODULES.moduleWaiting = window.RS_MODULES.moduleWaiting || {};
+			window.RS_MODULES.type = 'compiled';
+		</script>
+		<script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"\/*"},{"not":{"href_matches":["\/wp-*.php","\/wp-admin\/*","\/wp-content\/uploads\/*","\/wp-content\/*","\/wp-content\/plugins\/*","\/wp-content\/themes\/emphires\/*","\/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+			<script>
+				const lazyloadRunObserver = () => {
+					const lazyloadBackgrounds = document.querySelectorAll( `.e-con.e-parent:not(.e-lazyloaded)` );
+					const lazyloadBackgroundObserver = new IntersectionObserver( ( entries ) => {
+						entries.forEach( ( entry ) => {
+							if ( entry.isIntersecting ) {
+								let lazyloadBackground = entry.target;
+								if( lazyloadBackground ) {
+									lazyloadBackground.classList.add( 'e-lazyloaded' );
+								}
+								lazyloadBackgroundObserver.unobserve( entry.target );
+							}
+						});
+					}, { rootMargin: '200px 0px 200px 0px' } );
+					lazyloadBackgrounds.forEach( ( lazyloadBackground ) => {
+						lazyloadBackgroundObserver.observe( lazyloadBackground );
+					} );
+				};
+				const events = [
+					'DOMContentLoaded',
+					'elementor/lazyload/observe',
+				];
+				events.forEach( ( event ) => {
+					document.addEventListener( event, lazyloadRunObserver );
+				} );
+			</script>
+			<link rel='stylesheet' id='cspt_emphires_icon-css' href='https://www.gibrecruitment.co.ke/wp-content/plugins/emphires-addons/libraries/cspt-emphires-icon/flaticon.css?ver=6.8' type='text/css' media='all' />
+<link rel='stylesheet' id='rs-plugin-settings-css' href='https://www.gibrecruitment.co.ke/wp-content/plugins/revslider/public/assets/css/rs6.css?ver=6.6.14' type='text/css' media='all' />
+<style id='rs-plugin-settings-inline-css'>
+#rs-demo-id {}
+</style>
+<script src="https://www.gibrecruitment.co.ke/wp-includes/js/dist/hooks.min.js?ver=4d63a3d491d11ffd8ac6" id="wp-hooks-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-includes/js/dist/i18n.min.js?ver=5e580eb46a90c2b997e6" id="wp-i18n-js"></script>
+<script id="wp-i18n-js-after">
+/* <![CDATA[ */
+wp.i18n.setLocaleData( { 'text direction\u0004ltr': [ 'ltr' ] } );
+/* ]]> */
+</script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/plugins/contact-form-7/includes/swv/js/index.js?ver=6.0.4" id="swv-js"></script>
+<script id="contact-form-7-js-before">
+/* <![CDATA[ */
+var wpcf7 = {
+    "api": {
+        "root": "https:\/\/www.gibrecruitment.co.ke\/wp-json\/",
+        "namespace": "contact-form-7\/v1"
+    }
+};
+/* ]]> */
+</script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/plugins/contact-form-7/includes/js/index.js?ver=6.0.4" id="contact-form-7-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/plugins/revslider/public/assets/js/rbtools.min.js?ver=6.6.14" defer async id="tp-tools-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/plugins/revslider/public/assets/js/rs6.min.js?ver=6.6.14" defer async id="revmin-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/plugins/google-site-kit/dist/assets/js/googlesitekit-events-provider-contact-form-7-21cf1c445673c649970d.js" id="googlesitekit-events-provider-contact-form-7-js" defer></script>
+<script defer src="https://www.gibrecruitment.co.ke/wp-content/plugins/mailchimp-for-wp/assets/js/forms.js?ver=4.10.1" id="mc4wp-forms-api-js"></script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/plugins/google-site-kit/dist/assets/js/googlesitekit-events-provider-mailchimp-7920d200a07d3bcd60bb.js" id="googlesitekit-events-provider-mailchimp-js" defer></script>
+<script src="https://www.gibrecruitment.co.ke/wp-content/plugins/google-site-kit/dist/assets/js/googlesitekit-events-provider-wpforms-b35450445f9cb0eeb855.js" id="googlesitekit-events-provider-wpforms-js" defer></script>
+</body>
+</html>

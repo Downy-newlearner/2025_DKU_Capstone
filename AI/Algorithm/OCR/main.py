@@ -18,11 +18,11 @@ Written by 정다훈 2025.04.14
 '''
 
 
-from ready_for_ocr.line_detection import detect_and_crop_by_lines
-from ready_for_ocr.text_crop import process_images_in_directory
+from preprocessing.line_detection import detect_and_crop_by_lines
+from preprocessing.text_crop import process_images_in_directory
 
-from use_ocr.OCR_to_half_cropped import perform_ocr_on_half_cropped
-from use_ocr.OCR_to_text_crop import recognizing_images
+from recognition.OCR_to_half_cropped import perform_ocr_on_half_cropped
+from recognition.OCR_to_text_crop import recognizing_images
 
 from match_and_make_JSON.matching import process_and_compare_results
 from match_and_make_JSON.JSON_to_grader import save_json_from_csv
@@ -35,7 +35,7 @@ def main():
     # 1. 답안지 원본 이미지 -> half cropped 이미지
     
 
-    # 2. ready_for_ocr.line_detection: half cropped 이미지 -> horizontally cropped 이미지
+    # 2. preprocessing.line_detection: half cropped 이미지 -> horizontally cropped 이미지
     half_cropped_dir = 'cropped_datasets/half_cropped'
     detect_and_crop_by_lines(
         image_path=os.path.join(half_cropped_dir, '10_answer.jpeg'),
@@ -50,7 +50,7 @@ def main():
     )
     
 
-    # 3. ready_for_ocr.text_crop_final: horizontally cropped 이미지 -> text crop 이미지
+    # 3. preprocessing.text_crop_final: horizontally cropped 이미지 -> text crop 이미지
     horizontally_cropped_dir = 'cropped_datasets/horizontally_cropped'
     process_images_in_directory(
         input_dir=os.path.join(horizontally_cropped_dir, 'answer'),
