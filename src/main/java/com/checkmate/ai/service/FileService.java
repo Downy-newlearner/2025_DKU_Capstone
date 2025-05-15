@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
-public class ImageService {
+public class FileService {
 
     @Value("${file.image-dir}")
     private String imageDir;
