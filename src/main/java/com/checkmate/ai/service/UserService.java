@@ -1,12 +1,9 @@
 package com.checkmate.ai.service;
 
 import com.checkmate.ai.dto.*;
-import com.checkmate.ai.entity.ResetToken;
 import com.checkmate.ai.entity.User;
 import com.checkmate.ai.mapper.UserMapper;
-import com.checkmate.ai.repository.ResetTokenRepository;
 import com.checkmate.ai.repository.UserRepository;
-import io.jsonwebtoken.Claims;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,7 +40,7 @@ public class UserService {
 
 
     private final UserRepository userRepository;
-    private final ResetTokenRepository resetTokenRepository;
+
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;

@@ -17,8 +17,8 @@ import java.util.List;
 public class Student {
     @Id
     private String id;
-    private String student_name;
-    private String student_id;
+    private String studentName;
+    private String studentId;
     private List<Exam> exams;
 
 }

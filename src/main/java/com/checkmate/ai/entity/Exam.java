@@ -22,13 +22,13 @@ public class Exam {
 
     private String subject;
 
-    private LocalDateTime exam_date;
+    private LocalDateTime examDate;
 
     private List<Question> questions;
 
     @CreatedDate
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
-    private LocalDateTime update_at;
+    private LocalDateTime updatedAt;
 }

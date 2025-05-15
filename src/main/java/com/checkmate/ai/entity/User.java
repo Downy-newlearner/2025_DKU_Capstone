@@ -32,7 +32,7 @@ public class User{
 
     @LastModifiedDate
     private LocalDateTime update_at;
-    private int total_score;
+
 
 //    private String resetToken;
 //    private LocalDateTime tokenExpiry;

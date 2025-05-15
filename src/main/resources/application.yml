@@ -1,7 +1,24 @@
 file:
   image-dir: /app/static/images
 
+flask:
+  server:
+    url: http://localhost:5000
+
 spring:
+
+  kafka:
+    bootstrap-servers: 43.202.183.74:9092  # Kafka 서버 주소
+    consumer:
+      group-id: exam-grading-group      # Consumer 그룹 ID
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      missing-topics-fatal: false
+
 
   session:
     store-type: redis
@@ -25,17 +42,16 @@ spring:
   application:
     name: checkmate_backend
 
-
-
-
-
   data:
     mongodb:
-      uri: mongodb://localhost:27017/capstone?authSource=admin
+      uri: mongodb://root:example@13.209.197.61:27017/capstone?authSource=admin
 
     redis:
-      host: ${SPRING_REDIS_HOST:localhost}
+
+      host: 13.209.197.61 # test시 localhost or ec2 public ip, 배포시 ec2의 private ip(172.31.44.243)
       port: 6379
+      password: example
+
 
   jpa:
     hibernate:
@@ -46,6 +62,16 @@ spring:
 app:
   reset-password:
     url: ${RESET_PASSWORD_URL:http://localhost:3000/reset-password?token=}
+
+redisson:
+  config: |
+    singleServerConfig:
+      address: "redis://13.209.197.61:6379"
+      password: example
+      timeout: 3000
+      connectionMinimumIdleSize: 1
+      connectionPoolSize: 10
+
 
 jwt:
   secret: "fhuiahfhaf98ahf89dshf8ahs9f8df89ahf89dshafffdfaf8as9fh89ashf98dashf9as8hfa89fhas89fhaf98dashfsa89fhdsa89fahf8d9sahfsa9f8hf8"

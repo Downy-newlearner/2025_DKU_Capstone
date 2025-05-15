@@ -13,20 +13,20 @@ public class ExamResponseMapper {
     // ExamResponse -> ExamResponseDto 변환
     public ExamResponseDto toDto(ExamResponse examResponse) {
         ExamResponseDto dto = new ExamResponseDto();
-        dto.setQuestion_number(examResponse.getQuestion_number());
-        dto.setStudent_answer(examResponse.getStudent_answer());
+        dto.setQuestion_number(examResponse.getQuestionNumber());
+        dto.setStudent_answer(examResponse.getStudentAnswer());
         dto.setConfidence(examResponse.getConfidence());
-        dto.set_correct(examResponse.is_correct());
+        dto.set_correct(examResponse.isCorrect());
         dto.setScore(examResponse.getScore());
         return dto;
     }
 
     public ExamResponse toEntity(KafkaStudentResponseDto.ExamResponseDto dto) {
         ExamResponse examResponse = new ExamResponse();
-        examResponse.setQuestion_number(dto.getQuestionNumber());
-        examResponse.setStudent_answer(dto.getStudentAnswer());
+        examResponse.setQuestionNumber(dto.getQuestion_number());
+        examResponse.setStudentAnswer(dto.getStudent_answer());
         examResponse.setConfidence(dto.getConfidence());
-        examResponse.set_correct(dto.isCorrect());
+        examResponse.setCorrect(dto.is_correct());
         examResponse.setScore(dto.getScore());
         return examResponse;
     }
@@ -34,10 +34,10 @@ public class ExamResponseMapper {
     // ExamResponseDto -> ExamResponse 변환
     public ExamResponse toEntity(ExamResponseDto dto) {
         ExamResponse examResponse = new ExamResponse();
-        examResponse.setQuestion_number(dto.getQuestion_number());
-        examResponse.setStudent_answer(dto.getStudent_answer());
+        examResponse.setQuestionNumber(dto.getQuestion_number());
+        examResponse.setStudentAnswer(dto.getStudent_answer());
         examResponse.setConfidence(dto.getConfidence());
-        examResponse.set_correct(dto.is_correct());
+        examResponse.setCorrect(dto.is_correct());
         examResponse.setScore(dto.getScore());
         return examResponse;
     }
@@ -47,10 +47,10 @@ public class ExamResponseMapper {
         ExamResponseDto dto = new ExamResponseDto();
 
         // KafkaStudentResponseDto.ExamResponseDto에서 ExamResponseDto로 값 매핑
-        dto.setQuestion_number(examResponseDto.getQuestionNumber());
-        dto.setStudent_answer(examResponseDto.getStudentAnswer());
+        dto.setQuestion_number(examResponseDto.getQuestion_number());
+        dto.setStudent_answer(examResponseDto.getStudent_answer());
         dto.setConfidence(examResponseDto.getConfidence());
-        dto.set_correct(examResponseDto.isCorrect());
+        dto.set_correct(examResponseDto.is_correct());
         dto.setScore(examResponseDto.getScore());
 
         return dto;

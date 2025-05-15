@@ -2,17 +2,17 @@ package com.checkmate.ai.service;
 
 import com.checkmate.ai.dto.Base64ImageDto;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class FileService {
@@ -20,10 +20,17 @@ public class FileService {
     @Value("${file.image-dir}")
     private String imageDir;
 
+    @Value("${flask.server.url}")
+    private String flaskReportUrl;
+
+    private final RestTemplate restTemplate;
+
+    public FileService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
     public List<Base64ImageDto> getLowConfidenceImages(String subject) {
         List<Base64ImageDto> imageList = new ArrayList<>();
-
-
 
         File dir = new File(imageDir);
         File[] files = dir.listFiles((d, name) ->
@@ -47,5 +54,35 @@ public class FileService {
         }
 
         return imageList;
+    }
+
+    public ResponseEntity<ByteArrayResource> downloadSubjectReportPdf(String subject) {
+        String reportUrl = flaskReportUrl + "/" + subject;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_PDF));
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+                reportUrl,
+                HttpMethod.GET,
+                requestEntity,
+                byte[].class
+        );
+
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            ByteArrayResource resource = new ByteArrayResource(response.getBody());
+
+            HttpHeaders responseHeaders = new HttpHeaders();
+            responseHeaders.setContentType(MediaType.APPLICATION_PDF);
+            responseHeaders.setContentDisposition(ContentDisposition
+                    .attachment()
+                    .filename(subject + "_report.pdf")
+                    .build());
+
+            return new ResponseEntity<>(resource, responseHeaders, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_GATEWAY);
+        }
     }
 }

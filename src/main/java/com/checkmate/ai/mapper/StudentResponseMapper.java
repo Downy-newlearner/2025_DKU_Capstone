@@ -19,7 +19,7 @@ public class StudentResponseMapper {
     // KafkaStudentResponseDto -> StudentResponse 변환
     public StudentResponse toEntity(KafkaStudentResponseDto dto) {
         StudentResponse studentResponse = new StudentResponse();
-        studentResponse.setStudent_id(dto.getStudentId());
+        studentResponse.setStudentId(dto.getStudent_id());
         studentResponse.setSubject(dto.getSubject());  // 과목명 설정
 
         // KafkaStudentResponseDto의 답안을 ExamResponse 객체로 변환
@@ -28,7 +28,7 @@ public class StudentResponseMapper {
                 .collect(Collectors.toList());
 
         studentResponse.setAnswers(examResponses);
-        studentResponse.setTotal_score(dto.getTotalScore());  // 총점 설정
+        studentResponse.setTotalScore(dto.getTotal_score());  // 총점 설정
         return studentResponse;
     }
 
@@ -37,10 +37,11 @@ public class StudentResponseMapper {
     // KafkaStudentResponseDto.ExamResponseDto -> ExamResponse 변환
     private ExamResponse toExamResponse(KafkaStudentResponseDto.ExamResponseDto examResponseDto) {
         ExamResponse examResponse = new ExamResponse();
-        examResponse.setQuestion_number(examResponseDto.getQuestionNumber());
-        examResponse.setStudent_answer(examResponseDto.getStudentAnswer());
+        examResponse.setQuestionNumber(examResponseDto.getQuestion_number());
+        examResponse.setStudentAnswer(examResponseDto.getStudent_answer());
+        examResponse.setAnswerCount(examResponseDto.getAnswer_count());
         examResponse.setScore(examResponseDto.getScore());
-        examResponse.set_correct(examResponseDto.isCorrect());
+        examResponse.setCorrect(examResponseDto.is_correct());
         examResponse.setConfidence(examResponseDto.getConfidence());
         return examResponse;
     }

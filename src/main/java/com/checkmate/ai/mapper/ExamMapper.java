@@ -5,6 +5,7 @@ import com.checkmate.ai.dto.QuestionDto;
 import com.checkmate.ai.entity.Exam;
 import com.checkmate.ai.entity.Question;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,9 +15,9 @@ public class ExamMapper {
         ExamDto dto = new ExamDto();
         dto.setId(exam.getId());
         dto.setSubject(exam.getSubject());
-        dto.setExam_date(exam.getExam_date());
-        dto.setCreated_at(exam.getCreated_at());
-        dto.setUpdate_at(exam.getUpdate_at());
+        dto.setExam_date(exam.getExamDate());
+        dto.setCreated_at(exam.getCreatedAt());
+        dto.setUpdate_at(exam.getUpdatedAt());
 
         List<QuestionDto> questionDtos = exam.getQuestions().stream().map(q -> {
             QuestionDto qdto = new QuestionDto();
@@ -36,9 +37,9 @@ public class ExamMapper {
         Exam exam = new Exam();
         exam.setId(dto.getId());
         exam.setSubject(dto.getSubject());
-        exam.setExam_date(dto.getExam_date());
-        exam.setCreated_at(dto.getCreated_at());
-        exam.setUpdate_at(dto.getUpdate_at());
+        exam.setExamDate(dto.getExam_date());
+        exam.setCreatedAt(dto.getCreated_at());
+        exam.setUpdatedAt(dto.getUpdate_at());
 
         List<Question> questions = dto.getQuestions().stream().map(qdto -> {
             Question q = new Question();
@@ -47,11 +48,24 @@ public class ExamMapper {
             q.setSub_question_number(qdto.getSub_question_number());
             q.setAnswer(qdto.getAnswer());
             q.setPoint(qdto.getPoint());
+
+            // answer_count 계산
+            if (qdto.getAnswer() != null && !qdto.getAnswer().isBlank()) {
+                int count = (int) Arrays.stream(qdto.getAnswer().split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isBlank())
+                        .count();
+                q.setAnswer_count(count);
+            } else {
+                q.setAnswer_count(0);
+            }
+
             return q;
         }).collect(Collectors.toList());
 
         exam.setQuestions(questions);
         return exam;
     }
+
 
 }
