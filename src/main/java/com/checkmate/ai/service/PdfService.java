@@ -14,6 +14,9 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
@@ -21,6 +24,8 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.io.font.constants.StandardFonts;
+import org.springframework.web.client.RestTemplate;
+
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 
@@ -29,12 +34,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PdfService {
 
+
+    @Value("${flask.server.url}")
+    private String flaskReportUrl;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+
     @Autowired
     private  ExamRepository examRepository;
 
     @Autowired
     private StudentResponseRepository studentResponseRepository;
 
+
+//    @Value("${file.image-dir}")
+//    private String imageDir;
 
 // ...
 
@@ -113,4 +129,34 @@ public class PdfService {
         return out.toByteArray();
     }
 
+
+    public ResponseEntity<ByteArrayResource> downloadSubjectReportPdf(String subject) {
+        String reportUrl = flaskReportUrl + "/" + subject;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_PDF));
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+                reportUrl,
+                HttpMethod.GET,
+                requestEntity,
+                byte[].class
+        );
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            ByteArrayResource resource = new ByteArrayResource(response.getBody());
+
+            HttpHeaders responseHeaders = new HttpHeaders();
+            responseHeaders.setContentType(MediaType.APPLICATION_PDF);
+            responseHeaders.setContentDisposition(ContentDisposition
+                    .attachment()
+                    .filename(subject + "_report.pdf")
+                    .build());
+
+            return new ResponseEntity<>(resource, responseHeaders, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_GATEWAY);
+        }
+    }
 }

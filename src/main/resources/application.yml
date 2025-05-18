@@ -48,7 +48,14 @@ spring:
 
     redis:
 
-      host: 13.209.197.61 # test시 localhost or ec2 public ip, 배포시 ec2의 private ip(172.31.44.243)
+      host: 13.209.197.61
+      # test 시
+      #   Docker의 경우 :localhost
+      #   ec2의 경우:  public ip,
+      #
+      # ec2 배포 시 (Docker)
+      # private ip(172.31.44.243)를 명시할 것
+
       port: 6379
       password: example
 

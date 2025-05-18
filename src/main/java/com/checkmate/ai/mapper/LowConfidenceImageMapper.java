@@ -1,0 +1,74 @@
+package com.checkmate.ai.mapper;
+
+import com.checkmate.ai.dto.LowConfidenceImageDto;
+import com.checkmate.ai.entity.LowConfidenceImage;
+
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+public class LowConfidenceImageMapper {
+
+    private static final Pattern QN_PATTERN = Pattern.compile("qn_(\\d+)");
+    private static final Pattern AC_PATTERN = Pattern.compile("ac_(\\d+)");
+
+    public static LowConfidenceImage toEntity(LowConfidenceImageDto dto) {
+        LowConfidenceImage entity = new LowConfidenceImage();
+        entity.setSubject(dto.getSubject());
+
+        List<LowConfidenceImage.Image> images = dto.getImages().stream()
+                .map(dtoImage -> {
+                    LowConfidenceImage.Image img = new LowConfidenceImage.Image();
+                    img.setFilename(dtoImage.getFile_name());
+                    img.setBase64Data(dtoImage.getBase64_data());
+                    img.setStudentId(dtoImage.getStudent_id());
+
+                    // 파일명에서 questionNumber와 answerCount 파싱
+                    img.setQuestionNumber(parseQuestionNumber(dtoImage.getFile_name()));
+                    img.setSubQuestionNumber(parseAnswerCount(dtoImage.getFile_name()));
+
+                    return img;
+                })
+                .collect(Collectors.toList());
+
+        entity.setImages(images);
+        return entity;
+    }
+
+    private static int parseQuestionNumber(String filename) {
+        Matcher matcher = QN_PATTERN.matcher(filename);
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group(1));
+        }
+        return 0; // 기본값 또는 에러 처리
+    }
+
+    private static int parseAnswerCount(String filename) {
+        Matcher matcher = AC_PATTERN.matcher(filename);
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group(1));
+        }
+        return 0; // 기본값 또는 에러 처리
+    }
+
+    public static LowConfidenceImageDto toDto(LowConfidenceImage entity) {
+        if (entity == null) return null;
+
+        LowConfidenceImageDto dto = new LowConfidenceImageDto();
+        dto.setSubject(entity.getSubject());
+        dto.setImages(entity.getImages().stream()
+                .map(imgEntity -> {
+                    LowConfidenceImageDto.Image imgDto = new LowConfidenceImageDto.Image();
+                    imgDto.setFile_name(imgEntity.getFilename());
+                    imgDto.setBase64_data(imgEntity.getBase64Data());
+                    imgDto.setStudent_id(imgEntity.getStudentId());
+                    imgDto.setQuestion_number(imgEntity.getQuestionNumber());
+                    imgDto.setSub_question_number(imgEntity.getSubQuestionNumber());
+                    return imgDto;
+                }).collect(Collectors.toList())
+        );
+
+        return dto;
+    }
+}

@@ -39,7 +39,6 @@ public class TokenService {
         return user.isPresent(); // 사용자가 존재하면 true, 아니면 false
     }
 
-
     public boolean isTokenBlacklisted(String token) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(token));
     }

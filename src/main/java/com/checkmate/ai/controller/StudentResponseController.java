@@ -19,9 +19,20 @@ public class StudentResponseController {
 
 
 
-
     @Autowired
     private StudentResponseService studentResponseService;
+
+
+    @GetMapping("/{subject}")
+    public ResponseEntity<List<StudentResponse>> getStudentResponses(@PathVariable String subject) {
+        List<StudentResponse> responses = studentResponseService.getStudentResponses(subject);
+
+        if (responses.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(responses);
+    }
 
 
     @PutMapping

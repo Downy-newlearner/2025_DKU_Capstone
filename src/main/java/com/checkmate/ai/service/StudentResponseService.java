@@ -12,9 +12,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 public class StudentResponseService {
-
 
 
     @Autowired
@@ -37,6 +46,12 @@ public class StudentResponseService {
     @Autowired
     private QuestionService questionService;
 
+
+
+
+    public List<StudentResponse> getStudentResponses(String subject) {
+        return studentResponseRepository.findBySubject(subject);
+    }
 
     public int gradeWithAnswerChecking(KafkaStudentResponseDto dto, List<Question> questions) {
         int totalScore = 0;
@@ -120,6 +135,7 @@ public class StudentResponseService {
 
 
 
+
     public void updateStudentResponses(StudentAnswerUpdateDto dto) {
         String subject = dto.getSubject();
         List<StudentAnswerUpdateDto.StudentAnswers> studentAnswersList = dto.getStudentAnswersList();
@@ -130,36 +146,56 @@ public class StudentResponseService {
             if (optionalResponse.isPresent()) {
                 StudentResponse response = optionalResponse.get();
 
+                int totalScore = response.getTotalScore();
+
                 for (StudentAnswerUpdateDto.StudentAnswers.AnswerDto answerDto : studentAnswers.getAnswers()) {
-                    response.getAnswers().stream()
-                            .filter(a -> a.getQuestionNumber() == answerDto.getQuestion_number()
-                                    && a.getSubQuestionNumber() == answerDto.getSub_question_number())
-                            .findFirst()
-                            .ifPresent(a -> {
-                                a.setStudentAnswer(answerDto.getStudent_answer());
+                    List<ExamResponse> answers = response.getAnswers();
+                    ExamResponse matchedAnswer = null;
+                    for (ExamResponse a : answers) {
+                        if (a.getQuestionNumber() == answerDto.getQuestion_number()
+                                && a.getSubQuestionNumber() == answerDto.getSub_question_number()) {
+                            matchedAnswer = a;
+                            break;
+                        }
+                    }
 
-                                // 정답 가져오기 (exam 등에서 질문과 정답 정보를 미리 조회해둔 상태라고 가정)
-                                Question question = questionService.findQuestionBySubjectAndNumber(subject, answerDto.getQuestion_number(), answerDto.getSub_question_number());
+                    if (matchedAnswer != null) {
+                        int previousScore = matchedAnswer.getScore();
 
-                                if (question != null) {
-                                    String studentAnswer = answerDto.getStudent_answer();
-                                    String correctAnswer = question.getAnswer();
+                        matchedAnswer.setStudentAnswer(answerDto.getStudent_answer());
 
-                                    boolean correct = studentAnswer != null && correctAnswer != null &&
-                                            studentAnswer.trim().replaceAll("\\s+", "").equalsIgnoreCase(correctAnswer.trim().replaceAll("\\s+", ""));
+                        Question question = questionService.findQuestionBySubjectAndNumber(subject,
+                                answerDto.getQuestion_number(), answerDto.getSub_question_number());
 
-                                    a.setCorrect(correct);
-                                } else {
-                                    a.setCorrect(false);
-                                }
-                            });
+                        if (question != null) {
+                            String studentAnswer = answerDto.getStudent_answer();
+                            String correctAnswer = question.getAnswer();
+
+                            boolean correct = studentAnswer != null && correctAnswer != null &&
+                                    studentAnswer.trim().replaceAll("\\s+", "")
+                                            .equalsIgnoreCase(correctAnswer.trim().replaceAll("\\s+", ""));
+
+                            int newScore = correct ? question.getPoint() : 0;
+
+                            matchedAnswer.setCorrect(correct);
+                            matchedAnswer.setScore(newScore);
+
+                            totalScore += (newScore - previousScore);
+                        } else {
+                            matchedAnswer.setCorrect(false);
+                            matchedAnswer.setScore(0);
+                            totalScore -= previousScore;
+                        }
+                    }
                 }
 
-
+                response.setTotalScore(totalScore);
                 studentResponseRepository.save(response);
             }
         }
     }
+
+
 
 
 }
