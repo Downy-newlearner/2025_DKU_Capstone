@@ -3,6 +3,8 @@ from pathlib import Path
 import json
 import os
 
+
+# 답안지 이미지들의 상위 디렉토리 경로를 입력하면, 모든 이미지에 대한 Bounding Box 좌표를 출력하는 함수
 def run_yolo_prediction(
     model_path: str = "/home/ysoh20/AI/Student_id_recognition/extract_student_num/best.pt",
     source_path: str = None,
