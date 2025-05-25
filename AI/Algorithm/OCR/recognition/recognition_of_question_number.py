@@ -1,3 +1,18 @@
+'''
+주석 작성: 정다훈 250525
+
+create_question_info_dict 함수:
+
+Params:
+    - qn_directory_path
+    - answer_json_path
+
+Return:
+    - y_coordinates_dict
+
+'''
+
+
 import os
 import json
 

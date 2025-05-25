@@ -13,6 +13,14 @@ Written by 정다훈 (2025.05.02)
             - 인식 성공(인식 결과가 값으로 표시됨)
             - 인식 실패('JSON' 이라는 문자열로 표시됨)
 
+split_and_recognize_single_digits 함수:
+Param:
+ - directory_path(answer text_crop imgs 폴더 경로)
+
+Return:
+ -  인식 결과 csv 저장
+
+
 '''
 
 import cv2
