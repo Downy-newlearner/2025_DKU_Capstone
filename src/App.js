@@ -9,9 +9,15 @@ import ChangePassword from "./components/ChangePassword";
 import ForgetPassword from "./components/ForgetPassword";
 import AuthenticatePassword from "./components/AuthenticatePassword";
 import GradingInformation from "./components/GradingInformation";
+import StudentIdPending from "./components/StudentIdPending";
 import GradingPending from "./components/GradingPending";
 import UploadStudentAnswer from "./components/UploadStudentAnswer";
 import ReviewLowConfidenceAnswers from "./components/ReviewLowConfidenceAnswers";
+import GradingSecondPending from "./components/GradingSecondPending";
+import PastResultsPage from "./components/PastResultsPage";
+import ReviewLowConfidenceStudentIds from "./components/ReviewLowConfidenceStudentIds";
+import GradingResults from "./components/GradingResults";
+
 
 import './App.css'; // Tailwind를 적용하기 위해 유지
 
@@ -19,9 +25,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/grading-results" element={<GradingResults />} />
+        <Route path="/past-results" element={<PastResultsPage />} />
+        <Route path="/grading-second-pending" element={<GradingSecondPending />} />
         <Route path="/review-answers" element={<ReviewLowConfidenceAnswers />} />
-        <Route path="/upload-answer" element={<UploadStudentAnswer />} />
         <Route path="/grading-pending" element={<GradingPending />} />
+        <Route path="/review-low-confidence-ids" element={<ReviewLowConfidenceStudentIds />} />
+        <Route path="/student-id-pending" element={<StudentIdPending />} />
+        <Route path="/upload-answer" element={<UploadStudentAnswer />} />
         <Route path="/grading-info" element={<GradingInformation />} />
         <Route path="/reset-password" element={<AuthenticatePassword />} />
         <Route path="/forgetpassword" element={<ForgetPassword />} />

@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:8080/', // 백엔드 주소에 맞게 수정
+  baseURL: 'http://13.209.197.61:8080', // 백엔드 주소에 맞게 수정
   withCredentials: true, // 세션 기반이면 추가
 });
 

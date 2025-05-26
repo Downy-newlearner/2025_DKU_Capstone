@@ -15,7 +15,7 @@ export const Mypage = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const res = await fetch("http://localhost:8080/user", {
+        const res = await fetch("http://13.209.197.61:8080/user", {
           method: "GET",
           credentials: "include", // 쿠키 기반 인증
           headers: {

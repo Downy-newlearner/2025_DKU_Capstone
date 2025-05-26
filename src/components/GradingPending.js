@@ -6,11 +6,12 @@ import axios from "../api/axios";
 const GradingPending = () => {
   const navigate = useNavigate();
   const { state } = useLocation(); // examId를 state로부터 받음
+  const subject = state?.subject;
 
   useEffect(() => {
     const interval = setInterval(() => {
       axios
-        .get(`/exams/check-status?examId=${state.examId}`, {
+        .get(`/exams/check-status?subject=${encodeURIComponent(subject)}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -19,31 +20,35 @@ const GradingPending = () => {
           const { status, lowConfidence } = res.data;
 
           if (status === "DONE") {
-            clearInterval(interval); // polling 중지
+            clearInterval(interval);
 
             if (lowConfidence && lowConfidence.length > 0) {
               navigate("/review-answers", {
-                state: { images: lowConfidence },
+                state: {
+                  images: lowConfidence,
+                  subject,
+                  examDate: state.examDate,
+                },
               });
             } else {
-              navigate("/result1", { state: { examId: state.examId } });
+              navigate("/result1", { state: { subject } });
             }
           }
         })
         .catch((err) => {
           console.error("채점 상태 확인 실패", err);
         });
-    }, 3000); // 3초마다 polling
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, [navigate, state.examId]);
+  }, [navigate, subject]);
 
   return (
     <div className="flex items-center justify-center h-screen bg-white">
       <div className="flex flex-col items-center">
         <div className="flex items-center mb-4">
           <Loader2 className="animate-spin text-indigo-600 w-10 h-10 mr-4" />
-          <h1 className="text-4xl font-extrabold">1차 채점 중입니다...</h1>
+          <h1 className="text-4xl font-extrabold">1차 인식 중입니다...</h1>
         </div>
         <p className="text-gray-600 text-lg">잠시만 기다려주세요.</p>
       </div>

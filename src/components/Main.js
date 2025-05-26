@@ -83,7 +83,8 @@ const Main = () => {
             <Card className="rounded-xl border-gray-400 shadow-md w-full">
               <CardContent className="py-8 px-6 flex flex-col items-center">
                 <p className="text-xl mb-6 text-center">이전 시험 결과를 학생별로 확인하고 싶다면?</p>
-                <Button className="w-[300px] h-[60px] bg-[#c2afe8] text-white text-2xl rounded-md hover:bg-[#b399e0]">
+                <Button className="w-[300px] h-[60px] bg-[#c2afe8] text-white text-2xl rounded-md hover:bg-[#b399e0]"
+                onClick={() => navigate("/past-results")}>
                   이전 채점 결과 확인하기
                 </Button>
               </CardContent>

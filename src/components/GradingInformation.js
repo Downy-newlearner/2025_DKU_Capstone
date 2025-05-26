@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
 import axios from "../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 
 const GradingInformation = () => {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null); // 💡 에러 상태 추가
   const navigate = useNavigate();
+  const { state: data } = useLocation(); // 👈 POST 응답 데이터가 그대로 들어옴
+
+  if (!data || !data.questions) {
+    return <div className="p-10">시험 정보를 불러올 수 없습니다.</div>;
+  }
+
+
+  
   // 유형 한글 변환 함수
   const getTypeLabel = (type, multiple) => {
     const map = {
@@ -20,53 +26,27 @@ const GradingInformation = () => {
       ? `${base} (답 2개 이상)`
       : base;
   };
-
+  
   const handleFinalSubmit = () => {
-    axios.post("/exams/final", { examId: data.id }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
+    axios.post("/exams/final", data, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  })
     .then(() => {
-      navigate("/grading-pending"); // ✅ 1차 채점 중 화면으로 이동
-    })
-    .catch(() => alert("제출 중 오류 발생"));
-  };
-
-
-  useEffect(() => {
-    axios
-      .get("/exams", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+      navigate("/upload-answer", {
+        state: {
+          subject: data.subject,
+          examDate: data.exam_date,
         },
-      })
-      .then((res) => {
-        console.log("응답 데이터 구조 확인:", res.data); // 그대로 둬도 좋음
-  
-        const allExams = res.data;
-        if (!Array.isArray(allExams) || allExams.length === 0) {
-          throw new Error("응답 데이터가 비었습니다.");
-        }
-  
-        const latest = allExams[allExams.length - 1]; // 가장 마지막 데이터 선택
-
-        if (latest && Array.isArray(latest.questions)) {
-          console.log("✅ 전체 문제 목록:", latest.questions.map(q => ({
-            question_number: q.question_number,
-            sub_question_number: q.sub_question_number
-          })));
-        }
-        setData(latest);
-      })
-      .catch((err) => {
-        console.error("정보 불러오기 실패:", err);
-        setError("시험 정보를 불러오지 못했습니다.");
       });
-  }, []);
-  
-  if (error) return <div className="p-10 text-red-500">{error}</div>;
-  if (!data) return <div className="p-10">Loading...</div>;
+    })
+    .catch((err) => {
+      console.error("최종 제출 실패:", err.response?.data || err.message);
+      alert("최종 제출 중 오류가 발생했습니다.");
+    });
+
+  };
 
   return (
     <div className="bg-white flex flex-row justify-center w-full min-h-screen">
@@ -146,19 +126,7 @@ const GradingInformation = () => {
             </Button>
             <Button
               className="bg-[#c7aee7] hover:bg-[#b79dd6] text-white text-xl px-4 py-2 rounded"
-              onClick={() => {
-                axios.post("/exams/final", { examId: data.id }, {
-                  headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                  },
-                })
-                .then(() => {
-                  navigate("/upload-answer", { state: { examId: data.id } });
-                })
-                .catch(() => {
-                  alert("최종 제출 중 오류가 발생했습니다.");
-                });
-              }}
+              onClick={handleFinalSubmit}
             >
               최종 제출
             </Button>

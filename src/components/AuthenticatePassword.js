@@ -38,7 +38,7 @@ const AuthenticatePassword = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/reset-password", {
+      const response = await fetch("http://13.209.197.61:8080/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

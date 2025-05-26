@@ -4,7 +4,7 @@ import axios from "axios";
 const token = localStorage.getItem("token");
 
 const instance = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: "http://13.209.197.61:8080",
   withCredentials: true,
   headers: {
     Authorization: token ? `Bearer ${token}` : "", // ✅ 여기에 기본 Authorization 설정

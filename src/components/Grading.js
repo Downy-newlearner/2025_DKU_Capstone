@@ -8,6 +8,7 @@ import axios from "../api/axios";
 
 const Grading = () => {
   const location = useLocation();
+  const { state } = useLocation();
   const examData = location.state;
 
   useEffect(() => {
@@ -137,8 +138,10 @@ const Grading = () => {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     })
-    .then(() => {
-      navigate("/grading-info");  // ✅ 제출 성공 시 페이지 이동
+    .then(res => {
+      navigate("/grading-info", {
+        state: res.data, // ✅ 서버에서 전체 exam DTO를 돌려준다면
+      })
     })
     .catch((error) => {
       console.error("제출 실패:", error);
@@ -230,7 +233,7 @@ const Grading = () => {
             <div className="relative w-full">
               <Input
                 className="w-full text-[20px] placeholder:text-gray-400 border-none rounded-none focus-visible:ring-0"
-                placeholder="Enter your subject name"
+                placeholder="과목명-분반 형태로 입력해주세요"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
               />
