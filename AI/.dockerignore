@@ -1,0 +1,20 @@
+.git
+.vscode
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.env
+# 로컬 테스트 데이터나 대용량 파일 (모델 파일 등)이 소스코드와 함께 있다면 추가
+# 예: AI/Student_id_recognition/extract_student_num/best.pt (모델은 별도 관리 권장)
+# 예: dataset/
+# 예: prac_data_0513/
+# 예: cropped_datasets/
+# 예: ocr_results/
+# 예: *.zip
+# 예: *.xlsx
+
+# Dockerfile 자체와 requirements.txt는 필요
+#!Dockerfile
+#!requirements.txt 
