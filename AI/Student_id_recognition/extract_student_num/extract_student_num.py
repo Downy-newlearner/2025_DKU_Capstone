@@ -10,6 +10,7 @@ import json
 from datetime import datetime
 import shutil
 import traceback
+import base64
 
 
 '''
@@ -62,23 +63,23 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
         result = subprocess.run(command, capture_output=True, text=True)
         
         if result.returncode != 0:
-            # print(f"YOLO detection failed for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
-            return None
+            print(f"YOLO detection failed for {os.path.basename(answer_sheet_img_path)}")
+            return None, ""
             
         # 2. 라벨 파일 경로 설정
         image_name = Path(answer_sheet_img_path).stem
         label_path = Path(os.path.join(temp_dir, "labels")) / f"{image_name}.txt"
         
         if not label_path.exists():
-            # print(f"Label file not found for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
-            return None
+            print(f"Label file not found for {os.path.basename(answer_sheet_img_path)}")
+            return None, ""
         
         # 3. 이미지 크롭
         # 이미지 읽기
         image = cv2.imread(answer_sheet_img_path)
         if image is None:
-            # print(f"Could not read image: {os.path.basename(answer_sheet_img_path)}") # 주석 처리
-            return None
+            print(f"Could not read image: {os.path.basename(answer_sheet_img_path)}")
+            return None, ""
         
         height, width = image.shape[:2]
         
@@ -88,8 +89,8 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
             if len(line) >= 5:  # class_id, center_x, center_y, width, height
                 center_x, center_y, w, h = map(float, line[1:5])
             else:
-                # print(f"Invalid label format for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
-                return None
+                print(f"Invalid label format for {os.path.basename(answer_sheet_img_path)}")
+                return None, ""
         
         # 정규화된 좌표를 실제 픽셀 좌표로 변환
         x1 = int((center_x - w/2) * width)
@@ -106,13 +107,18 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
         # 이미지 자르기
         cropped_image = image[y1:y2, x1:x2]
         
+        # 이미지를 base64로 변환
+        # NumPy 배열을 연속적인 메모리로 만들고, JPEG로 인코딩
+        _, buffer = cv2.imencode('.jpg', cropped_image)
+        img_base64 = base64.b64encode(buffer).decode('utf-8')
+        
         # 4. OCR로 학번 인식
         ocr = PaddleOCR(use_angle_cls=True, lang='en')
         result = ocr.ocr(cropped_image, cls=True)
         
         if not result:
-            # print(f"No text detected by OCR for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
-            return None
+            print(f"No text detected by OCR for {os.path.basename(answer_sheet_img_path)}")
+            return None, img_base64
             
         # OCR 결과에서 가장 높은 신뢰도를 가진 숫자 찾기
         best_number = None
@@ -146,18 +152,18 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
                         continue
         
         if best_number is not None:
-            # print(f"Found student ID: {best_number} for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
-            return best_number
+            print(f"Found student ID: {best_number} for {os.path.basename(answer_sheet_img_path)}")
+            return best_number, img_base64
         else:
-            # print(f"No valid student number found for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
-            return None
+            print(f"No valid student number found for {os.path.basename(answer_sheet_img_path)}")
+            return None, img_base64
             
     except Exception as e:
         print(f"Error processing {os.path.basename(answer_sheet_img_path)}: {str(e)}")
         print("--- Full Traceback ---")
         traceback.print_exc()
         print("--- End Traceback ---")
-        return None
+        return None, img_base64
 
 
 if __name__ == "__main__":
@@ -173,16 +179,17 @@ if __name__ == "__main__":
     try:
         # 디렉토리 내의 모든 jpg 파일 처리
         for img_file in os.listdir(test_dir):
-            if img_file.lower().endswith(('.jpg', '.jpeg', '.png')):
+            if img_file.endswith('.jpg'):
                 img_path = os.path.join(test_dir, img_file)
                 print(f"\nProcessing image: {img_file}")
-                student_num = extract_student_num(img_path)
+                student_num, img_base64 = extract_student_num(img_path)
                 
                 # 결과 저장
                 result_entry = {
                     "image_file": img_file,
                     "student_number": student_num,
-                    "success": student_num is not None
+                    "success": student_num is not None,
+                    "cropped_image_base64": img_base64  # base64 이미지 데이터 추가
                 }
                 results_summary["results"].append(result_entry)
                 

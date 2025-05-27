@@ -20,6 +20,7 @@ def make_json(processed_dir_path):
     # JSON 구조 생성
     data = {
         "subject": subject,
+        "student_list": [],  # 학번 리스트 추가
         "base64_data": []
     }
     return data
@@ -43,22 +44,24 @@ def main(answer_sheet_dir_path: str, student_id_list: list): # student_id_list�
                 continue
                 
             answer_sheet = os.path.join(root, file)
-            student_num = extract_student_num(answer_sheet) 
+            student_num, cropped_stduend_ID_image_base64_data = extract_student_num(answer_sheet) 
             print(f"DEBUG: Processing {file}, extracted student_num: {student_num}") # student_num 값 확인
+            
+            # base64 데이터 디버깅
+            print(f"DEBUG: Base64 data is None: {cropped_stduend_ID_image_base64_data is None}")
+            if cropped_stduend_ID_image_base64_data:
+                print(f"DEBUG: Base64 data length: {len(cropped_stduend_ID_image_base64_data)}")
+                print(f"DEBUG: Base64 data preview: {cropped_stduend_ID_image_base64_data[:50]}...")
             
             go_to_json = student_num_comparision(student_num, student_id_list)
             print(f"DEBUG: For {file}, student_num_comparision returned: {go_to_json}") # go_to_json 값 확인
             
-            if go_to_json: # 인식 실패 등으로 JSON에 base64를 저장해야 하는 경우
-                try:
-                    with open(answer_sheet, 'rb') as img_file:
-                        import base64
-                        img_base64 = base64.b64encode(img_file.read()).decode('utf-8')
-                    data['base64_data'].append(img_base64)
-                    print(f"인식 실패 또는 JSON 저장 대상 이미지 추가: {answer_sheet}")
-                except FileNotFoundError:
-                    print(f"이미지 파일 없음 (base64 변환 실패): {answer_sheet}")
-                # 이 경우 파일명 변경은 하지 않음
+            # 3. 조건에 따라 결과 저장
+            if go_to_json:
+                data['student_list'].append(str(student_num))
+                data['base64_data'].append(cropped_stduend_ID_image_base64_data)
+                print(f"DEBUG: Added base64 data to list. Current list length: {len(data['base64_data'])}")
+                continue
             
             else: # go_to_json == False (인식 성공 및 학번부와 8자리 일치)
                 if student_num: # student_num이 정상적으로 추출된 경우에만 파일명 변경 시도
@@ -85,7 +88,7 @@ def main(answer_sheet_dir_path: str, student_id_list: list): # student_id_list�
 # 예시 실행 코드
 if __name__ == '__main__':
     # --- 설정 ---
-    base_dir = "/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data"
+    base_dir = "/Users/ohyooseok/캡스톤/capstone_AI/AI/test_data"
     test_zip_file_path = os.path.join(base_dir, "test_answer.zip")
     test_xlsx_file_path = os.path.join(base_dir, "학적정보.xlsx")
     
