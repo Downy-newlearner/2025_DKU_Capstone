@@ -26,7 +26,7 @@ def create_question_info_json(qn_directory_path, answer_json_path):
     # question_list에는 모든 문제 번호가 저장됨
     print("Extracted question list:", question_list)
 
-    # 인식된 문제 번호와 y좌표 정보를 저장할 딕셔너리
+    # 인식된 문제 번호와 y좌표 정보를 저장할 딕셔너리 
     y_coordinates_dict = {}
 
     # qn_directory_path의 모든 이미지 파일 순회

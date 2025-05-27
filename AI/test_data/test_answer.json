@@ -1,0 +1,320 @@
+{
+  "_id": "68009e9996b7f15f6bc4cbb5",
+  "subject": "수학",
+  "exam_date": "2025-04-02T15:00:00.000Z",
+  "questions": [
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 1,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 2,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 3,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 4,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 5,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 6,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 7,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 8,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 9,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 10,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 11,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 12,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 13,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 14,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 15,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 16,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 17,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 18,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 19,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 20,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 21,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 22,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 23,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 24,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 25,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 26,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 27,
+      "answer": "F",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 1,
+      "question_type": "TF",
+      "sub_question_number": 28,
+      "answer": "T",
+      "allocated_score": 2,
+      "answer_count": 1
+    },
+    {
+      "question_number": 2,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "4, 6",
+      "allocated_score": 4,
+      "answer_count": 2
+    },
+    {
+      "question_number": 3,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "1, 8",
+      "allocated_score": 4,
+      "answer_count": 2
+    },
+    {
+      "question_number": 4,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "1",
+      "allocated_score": 4,
+      "answer_count": 1
+    },
+    {
+      "question_number": 5,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "4",
+      "allocated_score": 4,
+      "answer_count": 1
+    },
+    {
+      "question_number": 6,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "10",
+      "allocated_score": 4,
+      "answer_count": 1
+    },
+    {
+      "question_number": 7,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "5",
+      "allocated_score": 4,
+      "answer_count": 1
+    },
+    {
+      "question_number": 8,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "2, 6",
+      "allocated_score": 4,
+      "answer_count": 1
+    },
+    {
+      "question_number": 9,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "1, 2",
+      "allocated_score": 4,
+      "answer_count": 2
+    },
+    {
+      "question_number": 10,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "1, 2",
+      "allocated_score": 4,
+      "answer_count": 1
+    },
+    {
+      "question_number": 11,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "1",
+      "allocated_score": 4,
+      "answer_count": 1
+    },
+    {
+      "question_number": 12,
+      "question_type": "short_answer",
+      "sub_question_number": 1,
+      "answer": "2",
+      "allocated_score": 4,
+      "answer_count": 1
+    }
+  ],
+  "_class": "com.checkmate.ai.entity.Exam"
+}

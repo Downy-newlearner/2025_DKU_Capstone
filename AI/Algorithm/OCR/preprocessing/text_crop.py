@@ -108,76 +108,79 @@ def prepare_image(image_path, output_dir):
     return img
 
 
-def process_images_in_directory(input_dir, output_dir, is_answer):
-    # 입력 디렉토리 내의 모든 이미지 파일에 대해 반복
-    for root, dirs, files in os.walk(input_dir):
-        for file in files:
-            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
-                image_path = os.path.join(root, file)
-                # 이미지 준비
-                img = prepare_image(image_path, output_dir)
-                if img is None:
-                    continue
+def process_images_in_directory(horizontally_cropped_dir_path):
+    # 상위 디렉토리 내의 answer와 question 디렉토리 순회
+    for sub_dir in ['answer', 'question_number']:
+        input_dir = os.path.join(horizontally_cropped_dir_path, sub_dir)
+        
+        # is_answer 설정
+        is_answer = (sub_dir == 'answer')
+        
+        # output_dir 설정
+        output_dir = os.path.join(horizontally_cropped_dir_path, '..', 'text_cropped', sub_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
-                # 이미지 전처리 및 윤곽선 찾기
-                contours = preprocess_image_and_find_contours(img)
+        # 입력 디렉토리 내의 모든 이미지 파일에 대해 반복
+        for root, dirs, files in os.walk(input_dir):
+            for file in files:
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+                    image_path = os.path.join(root, file)
+                    
+                    # 이미지 읽기
+                    img = cv2.imread(image_path)
+                    if img is None:
+                        print(f"Error: Could not read image {image_path}")
+                        continue
 
-                # 병합 로직 적용
-                merged_boxes = merge_contours_v2(contours, output_dir=output_dir, img=img)
+                    # 이미지 전처리 및 윤곽선 찾기
+                    contours = preprocess_image_and_find_contours(img)
 
-                if merged_boxes:
-                    img_output_dir = os.path.join(output_dir, f'{os.path.basename(image_path)}')
-                    if not os.path.exists(img_output_dir):
-                        os.makedirs(img_output_dir)
+                    # 병합 로직 적용
+                    merged_boxes = merge_contours_v2(contours, output_dir=output_dir, img=img)
 
-                    padding = 10  # 패딩 값 설정
-                    for j, (x, y, w, h, xc, yc, is_merged) in enumerate(merged_boxes):
-                        # 1:1 비율로 조정
-                        max_side = max(w, h)
-                        x_padded = max(x - padding, 0)
-                        y_padded = max(y - padding, 0)
-                        w_padded = min(w + 2 * padding, img.shape[1] - x_padded)
-                        h_padded = min(h + 2 * padding, img.shape[0] - y_padded)
+                    if merged_boxes:
+                        img_output_dir = os.path.join(output_dir, f'{os.path.basename(image_path)}')
+                        if not os.path.exists(img_output_dir):
+                            os.makedirs(img_output_dir)
 
-                        # 이미지 경계를 초과하지 않도록 조정
-                        if x_padded + w_padded > img.shape[1]:
-                            w_padded = img.shape[1] - x_padded
-                        if y_padded + h_padded > img.shape[0]:
-                            h_padded = img.shape[0] - y_padded
+                        padding = 10  # 패딩 값 설정
+                        for j, (x, y, w, h, xc, yc, is_merged) in enumerate(merged_boxes):
+                            # 1:1 비율로 조정
+                            max_side = max(w, h)
+                            x_padded = max(x - padding, 0)
+                            y_padded = max(y - padding, 0)
+                            w_padded = min(w + 2 * padding, img.shape[1] - x_padded)
+                            h_padded = min(h + 2 * padding, img.shape[0] - y_padded)
 
-                        # 실제 이미지 크롭
-                        cropped_img = img[y_padded:y_padded+h_padded, x_padded:x_padded+w_padded]
-                        
-                        # 1:1 비율로 만들기 위해 흰색 배경의 정사각형 이미지 생성
-                        square_size = max(w_padded, h_padded)
-                        square_img = np.ones((square_size, square_size, 3), dtype=np.uint8) * 255  # 흰색 배경
-                        
-                        # 원본 이미지를 정사각형 이미지의 중앙에 배치
-                        offset_x = (square_size - w_padded) // 2
-                        offset_y = (square_size - h_padded) // 2
-                        square_img[offset_y:offset_y+h_padded, offset_x:offset_x+w_padded] = cropped_img
-                        
-                        # 최종 이미지 저장
-                        base_name = os.path.basename(img_output_dir)
-                        output_path = os.path.join(img_output_dir, f'{base_name}_x_{x}_is_merged_{is_merged}.jpg')
-                        cv2.imwrite(output_path, square_img)
-                        print(f'Saved {output_path}')
-                    print(f'Saved {len(merged_boxes)} boxes from {image_path}')
-                else:
-                    print(f'No boxes found in {image_path}')
+                            # 이미지 경계를 초과하지 않도록 조정
+                            if x_padded + w_padded > img.shape[1]:
+                                w_padded = img.shape[1] - x_padded
+                            if y_padded + h_padded > img.shape[0]:
+                                h_padded = img.shape[0] - y_padded
+
+                            # 실제 이미지 크롭
+                            cropped_img = img[y_padded:y_padded+h_padded, x_padded:x_padded+w_padded]
+                            
+                            # 1:1 비율로 만들기 위해 흰색 배경의 정사각형 이미지 생성
+                            square_size = max(w_padded, h_padded)
+                            square_img = np.ones((square_size, square_size, 3), dtype=np.uint8) * 255  # 흰색 배경
+                            
+                            # 원본 이미지를 정사각형 이미지의 중앙에 배치
+                            offset_x = (square_size - w_padded) // 2
+                            offset_y = (square_size - h_padded) // 2
+                            square_img[offset_y:offset_y+h_padded, offset_x:offset_x+w_padded] = cropped_img
+                            
+                            # 최종 이미지 저장
+                            base_name = os.path.basename(img_output_dir)
+                            output_path = os.path.join(img_output_dir, f'{base_name}_x_{x}_is_merged_{is_merged}.jpg')
+                            cv2.imwrite(output_path, square_img)
+                            print(f'Saved {output_path}')
+                        print(f'Saved {len(merged_boxes)} boxes from {image_path}')
+                    else:
+                        print(f'No boxes found in {image_path}')
 
 if __name__ == '__main__':
     # 3. ready_for_ocr.text_crop_final: horizontally cropped 이미지 -> text crop 이미지
     horizontally_cropped_dir = '/home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/cropped_datasets/horizontally_cropped'
 
-    process_images_in_directory(
-        input_dir=os.path.join(horizontally_cropped_dir, 'answer'),
-        output_dir='/home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/cropped_datasets/text_crop_new/answer',
-        is_answer=True
-    )
-
-    process_images_in_directory(
-        input_dir=os.path.join(horizontally_cropped_dir, 'question_number'),
-        output_dir='/home/jdh251425/2025_DKU_Capstone/AI/Algorithm/OCR/cropped_datasets/text_crop_new/question_number',
-        is_answer=False
-    ) 
+    process_images_in_directory(horizontally_cropped_dir) 
