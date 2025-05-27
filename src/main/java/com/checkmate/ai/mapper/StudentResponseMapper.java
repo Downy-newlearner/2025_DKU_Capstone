@@ -1,9 +1,11 @@
 package com.checkmate.ai.mapper;
 
+import com.checkmate.ai.entity.Student;
 import com.checkmate.ai.entity.StudentResponse;
 import com.checkmate.ai.entity.ExamResponse;
-import com.checkmate.ai.dto.StudentResponseDto;
+import com.checkmate.ai.dto.KafkaStudentResponseDto;
 import com.checkmate.ai.dto.ExamResponseDto;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -12,53 +14,43 @@ import java.util.stream.Collectors;
 @Component
 public class StudentResponseMapper {
 
-    // Entity -> DTO 변환
-    public StudentResponseDto toDto(StudentResponse studentResponse) {
-        StudentResponseDto dto = new StudentResponseDto();
-        dto.setStudent_id(studentResponse.getStudent_id());
+    @Autowired
+    private ExamResponseMapper examResponseMapper;
 
-        // ExamResponse 객체들을 ExamResponseDto로 변환
-        List<ExamResponseDto> examResponseDtos = studentResponse.getAnswers().stream()
-                .map(this::toExamResponseDto) // ExamResponse -> ExamResponseDto 변환
-                .collect(Collectors.toList());
-
-        dto.setAnswers(examResponseDtos);
-        return dto;
-    }
-
-    // ExamResponse -> ExamResponseDto 변환
-    private ExamResponseDto toExamResponseDto(ExamResponse examResponse) {
-        ExamResponseDto dto = new ExamResponseDto();
-        dto.setQuestion_number(examResponse.getQuestion_number());
-        dto.setStudent_answer(examResponse.getStudent_answer());
-        dto.setConfidence(examResponse.getConfidence());
-        dto.set_correct(examResponse.is_correct());
-        dto.setScore(examResponse.getScore());
-        return dto;
-    }
-
-    // DTO -> Entity 변환
-    public StudentResponse toEntity(StudentResponseDto dto) {
+    // KafkaStudentResponseDto -> StudentResponse 변환
+    public StudentResponse toEntity(KafkaStudentResponseDto dto, Student student) {
         StudentResponse studentResponse = new StudentResponse();
-        studentResponse.setStudent_id(dto.getStudent_id());
 
-        // ExamResponseDto -> ExamResponse 변환 처리
+        // 연관관계 설정
+        studentResponse.setStudent(student);
+
+        // 과목 설정
+        studentResponse.setSubject(dto.getSubject());
+
+        // 답안 변환
         List<ExamResponse> examResponses = dto.getAnswers().stream()
                 .map(this::toExamResponse)
                 .collect(Collectors.toList());
 
         studentResponse.setAnswers(examResponses);
+
+        // 총점 설정
+        studentResponse.setTotalScore(dto.getTotal_score());
+
         return studentResponse;
     }
 
-    // ExamResponseDto -> ExamResponse 변환
-    private ExamResponse toExamResponse(ExamResponseDto dto) {
+
+
+    // KafkaStudentResponseDto.ExamResponseDto -> ExamResponse 변환
+    private ExamResponse toExamResponse(KafkaStudentResponseDto.ExamResponseDto examResponseDto) {
         ExamResponse examResponse = new ExamResponse();
-        examResponse.setQuestion_number(dto.getQuestion_number());
-        examResponse.setStudent_answer(dto.getStudent_answer());
-        examResponse.setConfidence(dto.getConfidence());
-        examResponse.set_correct(dto.is_correct());
-        examResponse.setScore(dto.getScore());
+        examResponse.setQuestionNumber(examResponseDto.getQuestion_number());
+        examResponse.setStudentAnswer(examResponseDto.getStudent_answer());
+        examResponse.setAnswerCount(examResponseDto.getAnswer_count());
+        examResponse.setScore(examResponseDto.getScore());
+        examResponse.setCorrect(examResponseDto.is_correct());
+        examResponse.setConfidence(examResponseDto.getConfidence());
         return examResponse;
     }
 }

@@ -1,18 +1,29 @@
 package com.checkmate.ai.entity;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
+
 
 @Getter
 @Setter
+@Entity
 public class ExamResponse {
     @Id
-    private Long id;  // 데이터베이스에서 식별할 ID
-
-    private int question_number;
-    private String student_answer;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long examResponseId;  // 데이터베이스에서 식별할 ID
+    private int questionNumber;
+    private int subQuestionNumber;
+    private String studentAnswer;
+    private int answerCount;
     private int confidence;
-    private boolean is_correct;
+    private boolean isCorrect;
     private int score;
+
+
+
 }

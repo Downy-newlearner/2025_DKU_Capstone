@@ -1,19 +1,31 @@
 package com.checkmate.ai.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Entity
 @Getter
 @Setter
 @NoArgsConstructor
 public class Question {
 
-    private int question_number;
-    private String question_type; // e.g. "short_answer", "TF", "descriptive"
-    private int sub_question_number; // optional (null 허용)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long questionId;
+
+    private int questionNumber;
+    private String questionType;
+    private Integer subQuestionNumber;  // nullable
+
     private String answer;
+    private int answerCount;
     private int point;
 
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "exam_id")
+    @JsonBackReference
+    private Exam exam;
 }

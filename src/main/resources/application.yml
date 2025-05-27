@@ -1,7 +1,35 @@
 file:
   image-dir: /app/static/images
 
+flask:
+  server:
+    url: http://localhost:5000
+
+custom:
+  file:
+    base-url: http://localhost:8080/files/
+
 spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://3.35.142.68:3306/capstone?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: example
+
+
+
+  kafka:
+    bootstrap-servers: 43.202.183.74:9092  # Kafka 서버 주소
+    consumer:
+      group-id: exam-grading-group      # Consumer 그룹 ID
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      missing-topics-fatal: false
+
 
   session:
     store-type: redis
@@ -25,27 +53,44 @@ spring:
   application:
     name: checkmate_backend
 
-
-
-
-
   data:
     mongodb:
-      uri: mongodb://root:example@localhost:27017/capstone?authSource=admin
+      uri: mongodb://root:example@13.209.197.61:27017/capstone?authSource=admin
 
     redis:
-      host: ${SPRING_REDIS_HOST:localhost}
+
+      host: 13.209.197.61
+      # test 시
+      #   Docker의 경우 :localhost
+      #   ec2의 경우:  public ip,
+      #
+      # ec2 배포 시 (Docker)
+      # private ip(172.31.44.243)를 명시할 것
+
       port: 6379
+      password: example
+
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     generate-ddl: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
 
 app:
   reset-password:
     url: ${RESET_PASSWORD_URL:http://localhost:3000/reset-password?token=}
+
+redisson:
+  config: |
+    singleServerConfig:
+      address: "redis://13.209.197.61:6379"
+      password: example
+      timeout: 3000
+      connectionMinimumIdleSize: 1
+      connectionPoolSize: 10
+
 
 jwt:
   secret: "fhuiahfhaf98ahf89dshf8ahs9f8df89ahf89dshafffdfaf8as9fh89ashf98dashf9as8hfa89fhas89fhaf98dashfsa89fhdsa89fahf8d9sahfsa9f8hf8"

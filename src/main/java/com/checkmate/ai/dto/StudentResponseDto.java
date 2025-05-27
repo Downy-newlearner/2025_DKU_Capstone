@@ -9,6 +9,7 @@ import java.util.List;
 @Setter
 public class StudentResponseDto {
     private String student_id;
+    private String subject;
     private List<ExamResponseDto> answers;
     private int total_score;
     // Getters, Setters, Constructors

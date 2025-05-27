@@ -1,7 +1,7 @@
 package com.checkmate.ai.service;
 
 import com.checkmate.ai.entity.User;
-import com.checkmate.ai.repository.UserRepository;
+import com.checkmate.ai.repository.mongo.UserRepository;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +9,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +37,6 @@ public class TokenService {
         // 사용자 존재 여부 체크
         return user.isPresent(); // 사용자가 존재하면 true, 아니면 false
     }
-
 
     public boolean isTokenBlacklisted(String token) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(token));

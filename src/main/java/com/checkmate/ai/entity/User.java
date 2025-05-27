@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class User{
+public class User {
     @Id
     private String objectId;
 
@@ -32,7 +32,7 @@ public class User{
 
     @LastModifiedDate
     private LocalDateTime update_at;
-    private int total_score;
+
 
 //    private String resetToken;
 //    private LocalDateTime tokenExpiry;
