@@ -1,46 +1,71 @@
 package com.checkmate.ai.service;
 
+
 import com.checkmate.ai.dto.LowConfidenceImageDto;
 import com.checkmate.ai.dto.KafkaStudentResponseDto;
+import com.checkmate.ai.dto.StudentIdUpdateGetImageDto;
 import com.checkmate.ai.entity.Question;
+import com.checkmate.ai.entity.Student;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 
 @Service
 @Slf4j
 public class KafkaStudentResponseListener {
 
+
+
+
     @Autowired
     private StudentResponseService studentResponseService;
 
     @Autowired
-    LowConfidenceService lowConfidenceService;
+    private LowConfidenceService lowConfidenceService;
+
+    @Autowired
+    private StudentService studentService;
+
+
 
     @Autowired
     private ExamService examService; // 문제 조회용 서비스 (예: DB에서 불러오기)
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-
+    @Autowired
+    private QuestionService questionService;
 
 
     @KafkaListener(topics = "student-responses", groupId = "exam-grading-group")
     public void listen(String message) {
         try {
-            // Kafka 메시지 역직렬화
             KafkaStudentResponseDto dto = objectMapper.readValue(message, KafkaStudentResponseDto.class);
 
-            System.out.println("수신된 메시지 - 학생 ID: " + dto.getStudent_id() + ", 과목: " + dto.getSubject());
+            // 1. 학생 정보 조회 또는 저장
+            Student student = studentService.findById(dto.getStudent_id())
+                    .orElseGet(() -> {
+                        Student newStudent = new Student();
+                        newStudent.setStudentId(dto.getStudent_id());
+                        newStudent.setStudentName(dto.getStudent_name()); // dto에 학생 이름이 있다고 가정
+                        return studentService.save(newStudent);
+                    });
 
-            // 문제 정보 조회
-            List<Question> questions = examService.getQuestionsBySubject(dto.getSubject());
+            // 2. 문제 정보 조회
+            List<Question> questions = questionService.getQuestionsFromCache(dto.getSubject());
 
-            // Redis 기반 락을 사용한 안전한 자동 채점 수행
-            int totalScore = studentResponseService.safeGradeWithAnswerChecking(dto, questions);
+            // 3. 안전한 자동 채점 수행 (Student 엔티티 전달 가능하도록 수정)
+            int totalScore = studentResponseService.safeGradeWithAnswerChecking(dto, questions, student);
 
             if (totalScore >= 0) {
                 System.out.println("✅ 채점 완료 - 학생 ID: " + dto.getStudent_id() + ", 총점: " + totalScore);
@@ -53,6 +78,7 @@ public class KafkaStudentResponseListener {
             System.err.println("❌ Kafka 메시지 처리 중 오류 발생: " + e.getMessage());
         }
     }
+
 
 
 
@@ -73,4 +99,13 @@ public class KafkaStudentResponseListener {
         }
     }
 
-}
+
+
+    }
+
+
+
+
+
+
+

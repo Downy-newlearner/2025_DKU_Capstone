@@ -13,7 +13,7 @@ public class ExamMapper {
 
     public static ExamDto toDto(Exam exam) {
         ExamDto dto = new ExamDto();
-        dto.setId(exam.getId());
+        dto.setId(exam.getExamId());
         dto.setSubject(exam.getSubject());
         dto.setExam_date(exam.getExamDate());
         dto.setCreated_at(exam.getCreatedAt());
@@ -21,9 +21,9 @@ public class ExamMapper {
 
         List<QuestionDto> questionDtos = exam.getQuestions().stream().map(q -> {
             QuestionDto qdto = new QuestionDto();
-            qdto.setQuestion_number(q.getQuestion_number());
-            qdto.setQuestion_type(q.getQuestion_type());
-            qdto.setSub_question_number(q.getSub_question_number());
+            qdto.setQuestion_number(q.getQuestionNumber());
+            qdto.setQuestion_type(q.getQuestionType());
+            qdto.setSub_question_number(q.getSubQuestionNumber());
             qdto.setAnswer(q.getAnswer());
             qdto.setPoint(q.getPoint());
             return qdto;
@@ -33,19 +33,20 @@ public class ExamMapper {
         return dto;
     }
 
-    public static Exam toEntity(ExamDto dto) {
+    public static Exam toEntity(ExamDto dto, String email) {
         Exam exam = new Exam();
-        exam.setId(dto.getId());
+        exam.setExamId(dto.getId());
         exam.setSubject(dto.getSubject());
         exam.setExamDate(dto.getExam_date());
         exam.setCreatedAt(dto.getCreated_at());
         exam.setUpdatedAt(dto.getUpdate_at());
+        exam.setEmail(email);
 
         List<Question> questions = dto.getQuestions().stream().map(qdto -> {
             Question q = new Question();
-            q.setQuestion_number(qdto.getQuestion_number());
-            q.setQuestion_type(qdto.getQuestion_type());
-            q.setSub_question_number(qdto.getSub_question_number());
+            q.setQuestionNumber(qdto.getQuestion_number());
+            q.setQuestionType(qdto.getQuestion_type());
+            q.setSubQuestionNumber(qdto.getSub_question_number());
             q.setAnswer(qdto.getAnswer());
             q.setPoint(qdto.getPoint());
 
@@ -55,10 +56,12 @@ public class ExamMapper {
                         .map(String::trim)
                         .filter(s -> !s.isBlank())
                         .count();
-                q.setAnswer_count(count);
+                q.setAnswerCount(count);
             } else {
-                q.setAnswer_count(0);
+                q.setAnswerCount(0);
             }
+
+            q.setExam(exam);  // 이 부분 추가!
 
             return q;
         }).collect(Collectors.toList());

@@ -5,7 +5,18 @@ flask:
   server:
     url: http://localhost:5000
 
+custom:
+  file:
+    base-url: http://localhost:8080/files/
+
 spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://3.35.142.68:3306/capstone?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: example
+
+
 
   kafka:
     bootstrap-servers: 43.202.183.74:9092  # Kafka 서버 주소
@@ -65,6 +76,7 @@ spring:
       ddl-auto: update
     show-sql: true
     generate-ddl: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
 
 app:
   reset-password:

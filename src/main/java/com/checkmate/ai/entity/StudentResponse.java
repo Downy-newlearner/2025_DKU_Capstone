@@ -1,31 +1,44 @@
 package com.checkmate.ai.entity;
 
-import com.checkmate.ai.dto.KafkaStudentResponseDto;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-
-@RequiredArgsConstructor
-@Document
+@Entity
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)  // Auditing 활성화
 public class StudentResponse {
+
     @Id
-    private String id;  // MongoDB에서 자동 생성되는 식별자 (ObjectId)
-    private String studentId;  // 학생 ID
-    private String subject;  // 시험 과목 이름
-    private List<ExamResponse> answers;  // 학생의 응답 목록
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long studentResponseId;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "student_id")
+    private Student student;  // 연관관계 필드로 변경
+
+
+    private String subject;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "student_response_id")
+    private List<ExamResponse> answers = new ArrayList<>();
+
     private int totalScore;
 
+    // 생성/수정일 자동 처리 (JPA Auditing 활성화 필요)
+    @CreatedDate
+    private LocalDateTime createdAt;
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 
-
-
-    // 생성자, getter, setter
 }

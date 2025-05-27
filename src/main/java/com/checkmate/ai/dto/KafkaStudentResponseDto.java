@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class KafkaStudentResponseDto {
     private String student_id;
+    private String student_name;
     private String subject;
     private List<ExamResponseDto> answers;  // 학생의 응답 목록
     private int total_score;  // 전체 점수

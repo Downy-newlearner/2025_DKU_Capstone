@@ -2,6 +2,7 @@ package com.checkmate.ai.mapper;
 
 import com.checkmate.ai.dto.KafkaStudentResponseDto;
 import com.checkmate.ai.entity.ExamResponse;
+import com.checkmate.ai.entity.Student;
 import com.checkmate.ai.entity.StudentResponse;
 import org.springframework.stereotype.Component;
 
@@ -25,11 +26,13 @@ public class KafkaStudentResponseMapper {
     }
 
     // KafkaStudentResponseDto.ExamResponseDto를 StudentResponse 엔티티로 변환
-    public StudentResponse toEntity(KafkaStudentResponseDto dto) {
+    public StudentResponse toEntity(KafkaStudentResponseDto dto, Student student)
+    {
         StudentResponse entity = new StudentResponse();
 
         // StudentResponse의 studentId와 subject 설정
-        entity.setStudentId(dto.getStudent_id());
+        entity.setStudent(student);  // Student 객체를 파라미터로 받아야 함
+
         entity.setSubject(dto.getSubject());
 
         // ExamResponse 리스트 설정

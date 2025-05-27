@@ -1,11 +1,8 @@
 package com.checkmate.ai.service;
 
-import com.checkmate.ai.entity.Exam;
-import com.checkmate.ai.entity.ExamResponse;
-import com.checkmate.ai.entity.Question;
-import com.checkmate.ai.entity.StudentResponse;
-import com.checkmate.ai.repository.ExamRepository;
-import com.checkmate.ai.repository.StudentResponseRepository;
+import com.checkmate.ai.entity.*;
+import com.checkmate.ai.repository.jpa.ExamRepository;
+import com.checkmate.ai.repository.jpa.StudentResponseRepository;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -26,8 +23,20 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.io.font.constants.StandardFonts;
 import org.springframework.web.client.RestTemplate;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriter;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 
 @Service
@@ -54,26 +63,94 @@ public class PdfService {
 
 // ...
 
-    public byte[] generatePdf(String subject, String studentId) {
+
+    public void saveZipFile(byte[] zipData, String fileName) throws IOException {
+        Path outputPath = Paths.get("/app/report/", fileName);  // 예: /files/ 디렉토리
+        Files.write(outputPath, zipData);
+    }
+
+
+
+    public List<byte[]> fetchImagesFromFlask(String subject, String studentId) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        String url = "http://flask-server/image/" + subject + "/" + studentId;  // Flask 쪽에서 이미지들을 zip 또는 list로 반환한다고 가정
+
+        ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
+
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return List.of(response.getBody());  // Flask가 zip으로 줬다면 List 하나로
+        } else {
+            throw new RuntimeException("이미지를 불러오지 못했습니다");
+        }
+    }
+
+    public byte[] createZipWithPdfAndImages(String subject, Student student, byte[] pdfBytes, List<byte[]> imageBytesList) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ZipOutputStream zos = new ZipOutputStream(baos)) {
+
+            // 1. PDF 파일 추가 (예: 수학_20230002_김철수.pdf)
+            String sanitizedSubject = subject.replaceAll("[^a-zA-Z0-9가-힣_]", "_"); // 혹시 모를 특수문자 처리
+            String sanitizedName = student.getStudentName().replaceAll("\\s+", ""); // 이름 공백 제거
+            String pdfFileName = String.format("%s_%s_%s.pdf", sanitizedSubject, student.getStudentId(), sanitizedName);
+
+            ZipEntry pdfEntry = new ZipEntry(pdfFileName);
+            zos.putNextEntry(pdfEntry);
+            zos.write(pdfBytes);
+            zos.closeEntry();
+
+            // 2. 이미지 파일 추가
+            for (int i = 0; i < imageBytesList.size(); i++) {
+                byte[] imageBytes = imageBytesList.get(i);
+                String extension = detectImageExtension(imageBytes); // 확장자 감지
+                String imageFileName = String.format("image_%d.%s", i + 1, extension);
+                ZipEntry imageEntry = new ZipEntry(imageFileName);
+                zos.putNextEntry(imageEntry);
+                zos.write(imageBytes);
+                zos.closeEntry();
+            }
+
+            zos.finish();
+            return baos.toByteArray();
+        }
+    }
+
+
+
+    private String detectImageExtension(byte[] imageBytes) {
+        try (InputStream is = new ByteArrayInputStream(imageBytes)) {
+            BufferedImage image = ImageIO.read(is);
+            if (image == null) return "bin"; // 이미지가 아닐 경우
+            Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("png");
+            if (writers.hasNext()) return "png"; // 우선순위: PNG
+            writers = ImageIO.getImageWritersByFormatName("jpg");
+            if (writers.hasNext()) return "jpg";
+            return "img"; // 기본 fallback
+        } catch (IOException e) {
+            return "img";
+        }
+    }
+
+
+    public byte[] generatePdf(String subject, Student student) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         try (PdfWriter writer = new PdfWriter(out);
              PdfDocument pdf = new PdfDocument(writer);
              Document document = new Document(pdf)) {
 
-            // 제목
-            document.add(new Paragraph(subject + " - " + studentId + " Exam Report")
+            // 제목에 studentId → student.getName() 또는 student.getId() 사용
+            document.add(new Paragraph(subject + " - " + student.getStudentName()+"("+student.getStudentId()+")" + " Exam Report")
                     .setFont(PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD))
                     .setFontSize(16)
                     .setTextAlignment(TextAlignment.CENTER)
                     .setMarginBottom(20));
 
-            // 시험 정보 조회
             Exam exam = examRepository.findBySubject(subject)
                     .orElseThrow(() -> new RuntimeException("해당 과목 시험 정보가 없습니다."));
 
-            // 학생 응답 조회
-            StudentResponse response = studentResponseRepository.findByStudentIdAndSubject(studentId, subject)
+            // studentId 대신 student 객체를 넘겨야 함
+            StudentResponse response = studentResponseRepository.findByStudentAndSubject(student, subject)
                     .orElseThrow(() -> new RuntimeException("해당 학생의 응답이 존재하지 않습니다."));
 
             // 테이블 생성
@@ -81,7 +158,7 @@ public class PdfService {
                     .useAllAvailableWidth();
 
             // 컬럼 헤더 스타일
-            String[] headers = {"No.", "Student Answer", "Correct Answer", "Allocated Point"};
+            String[] headers = {"Question No.", "Student Answer", "Correct Answer", "Allocated Point"};
             for (String header : headers) {
                 Cell headerCell = new Cell()
                         .add(new Paragraph(header).setBold())
@@ -96,8 +173,8 @@ public class PdfService {
 
             for (ExamResponse answer : response.getAnswers()) {
                 Question question = exam.getQuestions().stream()
-                        .filter(q -> q.getQuestion_number() == answer.getQuestionNumber()
-                                && q.getSub_question_number() == answer.getSubQuestionNumber())
+                        .filter(q -> q.getQuestionNumber() == answer.getQuestionNumber()
+                                && q.getSubQuestionNumber() == answer.getSubQuestionNumber())
                         .findFirst()
                         .orElse(null);
 
@@ -117,7 +194,7 @@ public class PdfService {
             // 전체 점수 요약
             document.add(new Paragraph("\nTotal Score: " + response.getTotalScore())
                     .setTextAlignment(TextAlignment.RIGHT)
-                    .setFontSize(12)
+                    .setFontSize(24)
                     .setBold());
 
             document.add(table);

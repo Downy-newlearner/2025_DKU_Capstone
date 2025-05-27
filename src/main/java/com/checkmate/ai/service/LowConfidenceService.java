@@ -3,7 +3,7 @@ package com.checkmate.ai.service;
 import com.checkmate.ai.dto.LowConfidenceImageDto;
 import com.checkmate.ai.entity.LowConfidenceImage;
 import com.checkmate.ai.mapper.LowConfidenceImageMapper;
-import com.checkmate.ai.repository.LowConfidenceImageRepository;
+import com.checkmate.ai.repository.jpa.LowConfidenceImageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.Optional;

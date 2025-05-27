@@ -1,7 +1,9 @@
 package com.checkmate.ai.mapper;
 
 import com.checkmate.ai.dto.LowConfidenceImageDto;
+
 import com.checkmate.ai.entity.LowConfidenceImage;
+import com.checkmate.ai.entity.Image; // 별도 엔티티 Image import
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -13,18 +15,19 @@ public class LowConfidenceImageMapper {
     private static final Pattern QN_PATTERN = Pattern.compile("qn_(\\d+)");
     private static final Pattern AC_PATTERN = Pattern.compile("ac_(\\d+)");
 
+
+    // Mapper 내 toEntity 수정
     public static LowConfidenceImage toEntity(LowConfidenceImageDto dto) {
         LowConfidenceImage entity = new LowConfidenceImage();
         entity.setSubject(dto.getSubject());
 
-        List<LowConfidenceImage.Image> images = dto.getImages().stream()
+        List<Image> images = dto.getImages().stream()
                 .map(dtoImage -> {
-                    LowConfidenceImage.Image img = new LowConfidenceImage.Image();
-                    img.setFilename(dtoImage.getFile_name());
+                    Image img = new Image();
+                    img.setFileName(dtoImage.getFile_name());
                     img.setBase64Data(dtoImage.getBase64_data());
                     img.setStudentId(dtoImage.getStudent_id());
 
-                    // 파일명에서 questionNumber와 answerCount 파싱
                     img.setQuestionNumber(parseQuestionNumber(dtoImage.getFile_name()));
                     img.setSubQuestionNumber(parseAnswerCount(dtoImage.getFile_name()));
 
@@ -33,15 +36,18 @@ public class LowConfidenceImageMapper {
                 .collect(Collectors.toList());
 
         entity.setImages(images);
+
         return entity;
     }
+
+
 
     private static int parseQuestionNumber(String filename) {
         Matcher matcher = QN_PATTERN.matcher(filename);
         if (matcher.find()) {
             return Integer.parseInt(matcher.group(1));
         }
-        return 0; // 기본값 또는 에러 처리
+        return 0;
     }
 
     private static int parseAnswerCount(String filename) {
@@ -49,7 +55,7 @@ public class LowConfidenceImageMapper {
         if (matcher.find()) {
             return Integer.parseInt(matcher.group(1));
         }
-        return 0; // 기본값 또는 에러 처리
+        return 0;
     }
 
     public static LowConfidenceImageDto toDto(LowConfidenceImage entity) {
@@ -60,7 +66,7 @@ public class LowConfidenceImageMapper {
         dto.setImages(entity.getImages().stream()
                 .map(imgEntity -> {
                     LowConfidenceImageDto.Image imgDto = new LowConfidenceImageDto.Image();
-                    imgDto.setFile_name(imgEntity.getFilename());
+                    imgDto.setFile_name(imgEntity.getFileName());
                     imgDto.setBase64_data(imgEntity.getBase64Data());
                     imgDto.setStudent_id(imgEntity.getStudentId());
                     imgDto.setQuestion_number(imgEntity.getQuestionNumber());

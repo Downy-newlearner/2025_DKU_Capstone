@@ -1,4 +1,4 @@
-package com.checkmate.ai.repository;
+package com.checkmate.ai.repository.mongo;
 
 import com.checkmate.ai.entity.User;
 import org.springframework.data.mongodb.repository.MongoRepository;

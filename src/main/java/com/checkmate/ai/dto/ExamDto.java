@@ -7,7 +7,7 @@ import java.util.List;
 
 @Data
 public class  ExamDto {
-    private String id;
+    private Long id;
     private String subject;
     private LocalDateTime exam_date;
     private List<QuestionDto> questions;

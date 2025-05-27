@@ -3,7 +3,7 @@ package com.checkmate.ai.service;
 import com.checkmate.ai.dto.*;
 import com.checkmate.ai.entity.User;
 import com.checkmate.ai.mapper.UserMapper;
-import com.checkmate.ai.repository.UserRepository;
+import com.checkmate.ai.repository.mongo.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;

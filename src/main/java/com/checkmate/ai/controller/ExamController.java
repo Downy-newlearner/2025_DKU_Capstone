@@ -22,10 +22,7 @@ public class ExamController {
     private ExamService examService;
 
 
-    @GetMapping("/exams")
-    public List<Exam> getExams(@RequestParam String subject) {
-        return examService.getExamsBySubject(subject);
-    }
+
 
     @PostMapping("/final")
     public ResponseEntity<?> saveExam(@RequestBody ExamDto examDto) {
@@ -55,14 +52,19 @@ public class ExamController {
 
 
     @GetMapping("/{id}")
-    public ResponseEntity<ExamDto> getExam(@PathVariable String id) {
+    public ResponseEntity<ExamDto> getExam(@PathVariable Long id) {
         return ResponseEntity.ok(examService.getExamById(id));
     }
 
-    @GetMapping
-    public ResponseEntity<List<ExamDto>> getAllExams() {
-        return ResponseEntity.ok(examService.getAllExams());
+    @GetMapping()
+    public ResponseEntity<List<ExamDto>> getExamsByEmail() {
+        return ResponseEntity.ok(examService.getExamsByEmail());
     }
+
+//    @GetMapping
+//    public ResponseEntity<List<ExamDto>> getAllExams() {
+//        return ResponseEntity.ok(examService.getAllExams());
+//    }
 
 
 }

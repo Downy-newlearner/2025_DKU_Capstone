@@ -1,5 +1,6 @@
 package com.checkmate.ai.mapper;
 
+import com.checkmate.ai.entity.Student;
 import com.checkmate.ai.entity.StudentResponse;
 import com.checkmate.ai.entity.ExamResponse;
 import com.checkmate.ai.dto.KafkaStudentResponseDto;
@@ -17,18 +18,25 @@ public class StudentResponseMapper {
     private ExamResponseMapper examResponseMapper;
 
     // KafkaStudentResponseDto -> StudentResponse 변환
-    public StudentResponse toEntity(KafkaStudentResponseDto dto) {
+    public StudentResponse toEntity(KafkaStudentResponseDto dto, Student student) {
         StudentResponse studentResponse = new StudentResponse();
-        studentResponse.setStudentId(dto.getStudent_id());
-        studentResponse.setSubject(dto.getSubject());  // 과목명 설정
 
-        // KafkaStudentResponseDto의 답안을 ExamResponse 객체로 변환
+        // 연관관계 설정
+        studentResponse.setStudent(student);
+
+        // 과목 설정
+        studentResponse.setSubject(dto.getSubject());
+
+        // 답안 변환
         List<ExamResponse> examResponses = dto.getAnswers().stream()
-                .map(this::toExamResponse)  // ExamResponseDto를 변환
+                .map(this::toExamResponse)
                 .collect(Collectors.toList());
 
         studentResponse.setAnswers(examResponses);
-        studentResponse.setTotalScore(dto.getTotal_score());  // 총점 설정
+
+        // 총점 설정
+        studentResponse.setTotalScore(dto.getTotal_score());
+
         return studentResponse;
     }
 

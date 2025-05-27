@@ -16,6 +16,18 @@ services:
     networks:
       - test_net
 
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: capstone
+    ports:
+      - "3306:3306"
+    networks:
+      - test_net
+
   mongodb:
     image: mongo:5.0
     container_name: mongodb
