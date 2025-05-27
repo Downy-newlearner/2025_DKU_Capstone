@@ -2,7 +2,7 @@ package com.checkmate.ai.service;
 
 import com.checkmate.ai.dto.CustomUserDetails;
 import com.checkmate.ai.entity.User;
-import com.checkmate.ai.repository.UserRepository;
+import com.checkmate.ai.repository.mongo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;

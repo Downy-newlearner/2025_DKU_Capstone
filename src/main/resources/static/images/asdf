@@ -1,0 +1,40 @@
+useEffect(() => {
+    axios
+      .get("/exams", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((res) => setSubjects(res.data))
+      .catch((err) => console.error("과목 불러오기 실패", err));
+  }, []);
+
+  const fetchZipList = (subject) => {
+    setSelectedSubject(subject);
+    axios
+      .get(`/responses/${encodeURIComponent(subject)}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((res) => setZipList(res.data))
+      .catch((err) => console.error("ZIP 목록 불러오기 실패", err));
+  };
+
+  const handleDownload = async (url, fileName) => {
+    try {
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], { type: "application/zip" });
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
+      window.URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.error("다운로드 실패", err);
+    }
+  };
