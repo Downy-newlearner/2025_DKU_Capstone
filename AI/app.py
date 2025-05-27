@@ -22,6 +22,7 @@ if AI_MODULE_PATH not in sys.path:
 from Student_id_recognition.main import main as process_student_ids
 from Student_id_recognition.main import make_json as make_student_id_json # make_json도 가져오기
 from Student_id_recognition.decompression_parsing.decompression import extract_archive
+from Student_id_recognition.decompression_parsing.parsing_xlsx import parsing_xlsx # parsing_xlsx 임포트 추가
 
 # Algorithm.OCR 모듈 import
 from Algorithm.OCR.main_recognition import main_recognition_process
@@ -104,61 +105,34 @@ def recognize_student_id_endpoint():
 
         # 2. XLSX 파싱 (학번 리스트 생성)
         try:
-            df = pd.read_excel(xlsx_path)
-            # 학번이 있는 컬럼명을 알아야 함. 여기서는 '학번' 또는 첫 번째 컬럼으로 가정.
-            if '학번' in df.columns:
-                student_numbers_from_xlsx = df['학번'].astype(str).tolist()
-            elif not df.empty:
-                student_numbers_from_xlsx = df.iloc[:, 0].astype(str).tolist() # 첫번째 컬럼 사용
+            # student_numbers_from_xlsx = parsing_xlsx(xlsx_file_path=xlsx_path) # parsing_xlsx 함수 사용
+            # 위 라인 대신, 파일 존재 유무 확인 및 예외 처리 포함하여 main.py 스타일로 변경
+            if os.path.exists(xlsx_path):
+                student_numbers_from_xlsx = parsing_xlsx(xlsx_file_path=xlsx_path)
+                if student_numbers_from_xlsx:
+                    app.logger.info(f"{len(student_numbers_from_xlsx)}개의 학번 로드 완료 (parsing_xlsx 사용): {student_numbers_from_xlsx[:5]}...")
+                else:
+                    app.logger.warning(f"XLSX 파일({xlsx_path})에서 학번 정보를 추출하지 못했습니다 (parsing_xlsx 사용). 빈 리스트로 진행합니다.")
+                    student_numbers_from_xlsx = []
             else:
+                app.logger.error(f"XLSX 파일({xlsx_path})을 찾을 수 없습니다. 빈 리스트로 진행합니다.")
                 student_numbers_from_xlsx = []
-            app.logger.info(f"{len(student_numbers_from_xlsx)}개의 학번 로드 완료: {student_numbers_from_xlsx[:5]}...")
+
         except Exception as e:
-            app.logger.error(f"XLSX 파싱 실패: {xlsx_path}, 오류: {e}")
-            return jsonify({"error": f"Failed to parse xlsx file: {str(e)}"}), 500
-
-        # 3. Student_id_recognition 모듈의 main 함수 호출
-        # Student_id_recognition/main.py의 main 함수는 answer_sheet_dir_path를 인자로 받고,
-        # 내부적으로 student_num_list를 사용함. 이 부분을 수정하거나, 함수 호출 방식을 맞춰야 함.
-        # 여기서는 main.py의 make_json과 process_student_ids를 활용하여 로직을 구성
+            app.logger.error(f"XLSX 파싱 중 오류 발생 (parsing_xlsx 사용): {xlsx_path}, 오류: {e}")
+            return jsonify({"error": f"Failed to parse xlsx file using parsing_xlsx: {str(e)}"}), 500
         
-        # process_student_ids 함수가 직접 student_num_list를 받도록 수정하거나,
-        # 전역 변수 등으로 공유하는 대신, 명시적으로 전달하는 것이 좋음.
-        # 여기서는 main.py의 로직을 Flask에 맞게 조금 변형하여 직접 구성한다고 가정.
-        
-        # 먼저, Student_id_recognition/main.py의 make_json을 사용해 기본 구조 생성
-        output_json = make_student_id_json(extracted_images_path) # 과목명 대신 디렉토리명 사용됨
-        output_json["subject"] = subject_name # 요청받은 과목명으로 덮어쓰기
-        output_json["student_list_from_xlsx_count"] = len(student_numbers_from_xlsx)
-
-        # Student_id_recognition.main.process_student_ids를 직접 호출하는 대신,
-        # 해당 함수의 핵심 로직을 여기에 통합하거나, process_student_ids가 student_numbers_from_xlsx를 받도록 수정 필요.
-        # 현재 Student_id_recognition.main.main 함수는 student_num_list=[]로 시작하므로, XLSX 정보가 반영 안됨.
-        # 임시로, process_student_ids를 호출하되, XLSX 학번 리스트를 어떻게든 전달해야 함.
-        # 가장 간단한 방법은 process_student_ids 내부에서 XLSX를 읽도록 하거나, 전역변수 사용인데 좋지 않음.
-        # 여기서는 Student_id_recognition.main.py의 로직을 직접 가져와서 XLSX 학번 리스트를 사용하도록 수정했다고 가정.
-        # 또는, 해당 함수를 직접 호출하고, 그 결과를 후처리하는 방식을 취함.
-
-        # 여기서는 process_student_ids를 호출하고, 반환된 결과에 xlsx 정보를 추가하는 방식으로 가정.
-        # 이 방식은 process_student_ids 내부에서 student_num_list가 여전히 빈 리스트로 사용될 수 있음을 의미.
-        # **중요**: Student_id_recognition/main.py의 main 함수가 XLSX 학번 리스트를 사용하도록 수정하는 것이 근본적인 해결책.
-        
-        # 현재 제공된 Student_id_recognition/main.py의 main 함수는 다음과 같이 동작:
-        # 1. extracted_images_path (과목명 디렉토리)를 기준으로 JSON 기본 틀 생성
-        # 2. extracted_images_path 내부의 각 이미지에 대해 extract_student_num 호출 (YOLO + PaddleOCR)
-        # 3. 인식된 학번을 student_num_comparision에 전달 (이때 비교 대상 student_num_list는 함수 내에서 빈 리스트로 시작)
-        # 4. 결과에 따라 파일명 변경 또는 JSON에 base64 데이터 추가
-        
-        # 이 흐름을 유지하되, student_num_comparision에 XLSX의 학번 리스트가 전달되어야 함.
-        # 이를 위해 process_student_ids 함수 시그니처 변경 또는 내부 로직 수정이 필요.
-        # 여기서는 함수 시그니처가 process_student_ids(answer_sheet_dir_path, xlsx_student_list)로 변경되었다고 가정하고 진행
+        # 3. Student_id_recognition 모듈의 main 함수 호출 (process_student_ids로 alias됨)
+        # Student_id_recognition/main.py의 main 함수 시그니처는 (answer_sheet_dir_path, student_id_list) 입니다.
+        # extracted_images_path는 압축 해제된 이미지들이 있는 디렉토리 경로입니다.
+        # student_numbers_from_xlsx는 파싱된 학번 리스트입니다.
 
         app.logger.info(f"학번 인식 모듈 호출 시작: {extracted_images_path}")
         try:
-            # 수정된 process_student_ids 함수 호출
+            # Student_id_recognition/main.py의 main 함수 (여기서는 process_student_ids) 호출
             result_from_module = process_student_ids(extracted_images_path, student_numbers_from_xlsx)
             
-            # 과목명을 Flask에서 받은 것으로 통일
+            # 과목명을 Flask에서 받은 것으로 통일 (이미 JSON 구조 내에 subject가 있지만, 여기서 한번 더 보장)
             result_from_module["subject"] = subject_name
             
             app.logger.info(f"학번 인식 모듈 처리 완료.")

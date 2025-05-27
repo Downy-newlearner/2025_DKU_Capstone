@@ -30,7 +30,15 @@ def main(answer_sheet_dir_path: str, student_id_list: list): # student_id_list�
     data = make_json(actual_answer_sheet_dir)
 
     for root, dirs, files in os.walk(actual_answer_sheet_dir):
+        # __MACOSX 폴더 자체를 탐색에서 제외
+        if '__MACOSX' in dirs:
+            dirs.remove('__MACOSX')
+        
         for file in files:
+            # ._로 시작하는 숨김 파일 및 __MACOSX 내부 파일 건너뛰기
+            if file.startswith('._') or '__MACOSX' in root:
+                continue
+
             if not file.lower().endswith(('.png', '.jpg', '.jpeg')):
                 continue
                 

@@ -58,11 +58,11 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
             "save_txt=true"
         ]
         
-        print(f"실행 명령어: {' '.join(command)}")
+        # print(f"실행 명령어: {' '.join(command)}") # 주석 처리
         result = subprocess.run(command, capture_output=True, text=True)
         
         if result.returncode != 0:
-            print(f"YOLO detection failed for {os.path.basename(answer_sheet_img_path)}")
+            # print(f"YOLO detection failed for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
             return None
             
         # 2. 라벨 파일 경로 설정
@@ -70,14 +70,14 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
         label_path = Path(os.path.join(temp_dir, "labels")) / f"{image_name}.txt"
         
         if not label_path.exists():
-            print(f"Label file not found for {os.path.basename(answer_sheet_img_path)}")
+            # print(f"Label file not found for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
             return None
         
         # 3. 이미지 크롭
         # 이미지 읽기
         image = cv2.imread(answer_sheet_img_path)
         if image is None:
-            print(f"Could not read image: {os.path.basename(answer_sheet_img_path)}")
+            # print(f"Could not read image: {os.path.basename(answer_sheet_img_path)}") # 주석 처리
             return None
         
         height, width = image.shape[:2]
@@ -88,7 +88,7 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
             if len(line) >= 5:  # class_id, center_x, center_y, width, height
                 center_x, center_y, w, h = map(float, line[1:5])
             else:
-                print(f"Invalid label format for {os.path.basename(answer_sheet_img_path)}")
+                # print(f"Invalid label format for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
                 return None
         
         # 정규화된 좌표를 실제 픽셀 좌표로 변환
@@ -111,7 +111,7 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
         result = ocr.ocr(cropped_image, cls=True)
         
         if not result:
-            print(f"No text detected by OCR for {os.path.basename(answer_sheet_img_path)}")
+            # print(f"No text detected by OCR for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
             return None
             
         # OCR 결과에서 가장 높은 신뢰도를 가진 숫자 찾기
@@ -146,10 +146,10 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
                         continue
         
         if best_number is not None:
-            print(f"Found student ID: {best_number} for {os.path.basename(answer_sheet_img_path)}")
+            # print(f"Found student ID: {best_number} for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
             return best_number
         else:
-            print(f"No valid student number found for {os.path.basename(answer_sheet_img_path)}")
+            # print(f"No valid student number found for {os.path.basename(answer_sheet_img_path)}") # 주석 처리
             return None
             
     except Exception as e:
