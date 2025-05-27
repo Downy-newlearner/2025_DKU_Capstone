@@ -9,6 +9,7 @@ import os
 import json
 from datetime import datetime
 import shutil
+import traceback
 
 
 '''
@@ -117,10 +118,21 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
         best_number = None
         best_confidence = 0
         
-        for line in result:
-            for word_info in line:
-                text = word_info[1][0]  # Get detected text
-                confidence = float(word_info[1][1])  # Get confidence score
+        for line_ocr_result in result:
+            if line_ocr_result is None:
+                continue
+
+            for word_info in line_ocr_result:
+                # PaddleOCR v2.6 이상에서 word_info는 [bbox, (text, score)] 형태일 수 있음
+                # word_info[0]은 bbox 좌표 리스트
+                # word_info[1]은 (인식된 텍스트, 신뢰도 점수) 튜플
+                if len(word_info) >= 2 and isinstance(word_info[1], tuple) and len(word_info[1]) >= 2:
+                    text = word_info[1][0]
+                    confidence = float(word_info[1][1])
+                else:
+                    # 예상치 못한 형식의 word_info는 건너뜀
+                    # print(f"Unexpected word_info format: {word_info} for {os.path.basename(answer_sheet_img_path)}")
+                    continue
                 
                 # 숫자만 추출
                 numbers = ''.join(filter(str.isdigit, text))
@@ -142,6 +154,9 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
             
     except Exception as e:
         print(f"Error processing {os.path.basename(answer_sheet_img_path)}: {str(e)}")
+        print("--- Full Traceback ---")
+        traceback.print_exc()
+        print("--- End Traceback ---")
         return None
 
 
@@ -150,7 +165,7 @@ if __name__ == "__main__":
     test_dir = "/Users/ohyooseok/AI/Student_id_recognition/decompression_parsing/test_answer"
     
     # 결과를 저장할 딕셔너리
-    results = {
+    results_summary = {
         "test_time": datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
         "results": []
     }
@@ -158,7 +173,7 @@ if __name__ == "__main__":
     try:
         # 디렉토리 내의 모든 jpg 파일 처리
         for img_file in os.listdir(test_dir):
-            if img_file.endswith('.jpg'):
+            if img_file.lower().endswith(('.jpg', '.jpeg', '.png')):
                 img_path = os.path.join(test_dir, img_file)
                 print(f"\nProcessing image: {img_file}")
                 student_num = extract_student_num(img_path)
@@ -169,31 +184,35 @@ if __name__ == "__main__":
                     "student_number": student_num,
                     "success": student_num is not None
                 }
-                results["results"].append(result_entry)
+                results_summary["results"].append(result_entry)
                 
                 print(f"Result for {img_file}: {student_num}")
                 print("-" * 50)
     finally:
         # 임시 폴더 정리
-        temp_dir = os.path.join(os.path.dirname(__file__), "results", "temp_detection")
-        if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+        temp_detection_dir = os.path.join(os.path.dirname(__file__), "results", "temp_detection")
+        if os.path.exists(temp_detection_dir):
+            shutil.rmtree(temp_detection_dir)
             print("\nCleaned up temporary directory")
     
     # 결과를 JSON 파일로 저장
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    result_file = os.path.join(os.path.dirname(__file__), f"test_results_{timestamp}.json")
+    result_file_path = os.path.join(os.path.dirname(__file__), f"test_results_{timestamp}.json")
     
-    with open(result_file, 'w', encoding='utf-8') as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
+    with open(result_file_path, 'w', encoding='utf-8') as f:
+        json.dump(results_summary, f, ensure_ascii=False, indent=2)
     
-    print(f"\nTest results saved to: {result_file}")
+    print(f"\nTest results saved to: {result_file_path}")
     
     # 성공/실패 통계 출력
-    total = len(results["results"])
-    successful = sum(1 for r in results["results"] if r["success"])
-    print(f"\nProcessing Statistics:")
-    print(f"Total images: {total}")
-    print(f"Successful: {successful}")
-    print(f"Failed: {total - successful}")
-    print(f"Success rate: {(successful/total)*100:.2f}%")
+    if results_summary["results"]:
+        total = len(results_summary["results"])
+        successful = sum(1 for r in results_summary["results"] if r["success"])
+        print(f"\nProcessing Statistics:")
+        print(f"Total images: {total}")
+        print(f"Successful: {successful}")
+        print(f"Failed: {total - successful}")
+        if total > 0:
+            print(f"Success rate: {(successful/total)*100:.2f}%")
+    else:
+        print("\nNo images processed or found.")

@@ -20,6 +20,9 @@ written by 정다훈 250521
 '''
 
 def student_num_comparision(student_num: int, list: list[int]) -> bool:
+    if student_num == None:
+        return True
+
     # 학번이 8자리가 아닌 경우
     if len(str(student_num)) != 8:
         return True
