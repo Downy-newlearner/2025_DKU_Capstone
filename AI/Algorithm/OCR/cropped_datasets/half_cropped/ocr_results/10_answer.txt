@@ -1,7 +1,0 @@
-Text: answer, Confidence: 0.7942000989803546, BBox: [[np.int32(722), np.int32(28)], [np.int32(868), np.int32(28)], [np.int32(868), np.int32(60)], [np.int32(722), np.int32(60)]]
-Text: 눕, Confidence: 0.15650090920225157, BBox: [[np.int32(157), np.int32(99)], [np.int32(219), np.int32(99)], [np.int32(219), np.int32(167)], [np.int32(157), np.int32(167)]]
-Text: 5, Confidence: 0.6364706325231025, BBox: [[np.int32(155), np.int32(205)], [np.int32(217), np.int32(205)], [np.int32(217), np.int32(277)], [np.int32(155), np.int32(277)]]
-Text: 2, Confidence: 0.9886515268784455, BBox: [[np.int32(160), np.int32(324)], [np.int32(208), np.int32(324)], [np.int32(208), np.int32(382)], [np.int32(160), np.int32(382)]]
-Text: 2, Confidence: 0.992088649443307, BBox: [[np.int32(169), np.int32(427)], [np.int32(213), np.int32(427)], [np.int32(213), np.int32(485)], [np.int32(169), np.int32(485)]]
-Text: 나, Confidence: 0.9666576535927653, BBox: [[np.int32(152), np.int32(556)], [np.int32(208), np.int32(556)], [np.int32(208), np.int32(618)], [np.int32(152), np.int32(618)]]
-Text: 2, Confidence: 0.9999984502798362, BBox: [[np.int32(138), np.int32(784)], [np.int32(190), np.int32(784)], [np.int32(190), np.int32(836)], [np.int32(138), np.int32(836)]]

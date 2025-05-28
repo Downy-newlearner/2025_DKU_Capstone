@@ -25,8 +25,8 @@ from Student_id_recognition.decompression_parsing.decompression import extract_a
 from Student_id_recognition.decompression_parsing.parsing_xlsx import parsing_xlsx # parsing_xlsx 임포트 추가
 
 # Algorithm.OCR 모듈 import
-from Algorithm.OCR.main_recognition import main_recognition_process
-from Algorithm.OCR.main_recognition import DEFAULT_QN_DIRECTORY_PATH, DEFAULT_ANSWER_JSON_PATH, DEFAULT_OCR_RESULTS_JSON_PATH
+from Answer_recognition.main_recognition import main_recognition_process
+from Answer_recognition.main_recognition import DEFAULT_QN_DIRECTORY_PATH, DEFAULT_ANSWER_JSON_PATH, DEFAULT_OCR_RESULTS_JSON_PATH
 
 app = Flask(__name__)
 

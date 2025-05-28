@@ -1,1 +1,0 @@
-Text: wer, Confidence: 0.6757379174232483, BBox: [[0, np.int32(26)], [np.int32(86), np.int32(26)], [np.int32(86), np.int32(58)], [0, np.int32(58)]]

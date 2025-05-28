@@ -1,1 +1,0 @@
-Text: 7(b), Confidence: 0.8913767427180849, BBox: [[np.int32(4), np.int32(14)], [np.int32(94), np.int32(14)], [np.int32(94), np.int32(62)], [np.int32(4), np.int32(62)]]
