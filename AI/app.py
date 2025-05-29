@@ -200,6 +200,10 @@ def recognize_answer_endpoint():
     except Exception as e:
         app.logger.error(f"2차 답안 인식 처리 중 오류: {traceback.format_exc()}")
         return jsonify({"error": f"An unexpected error occurred during answer recognition: {str(e)}"}), 500
+    
+@app.route('/hello', methods=['GET'])
+def hello():
+    return "Hello, World", 200
 
 if __name__ == '__main__':
     # Spring과의 통신을 위해 0.0.0.0으로 호스트를 설정하고, 지정된 포트(예: 8080)를 사용합니다.
