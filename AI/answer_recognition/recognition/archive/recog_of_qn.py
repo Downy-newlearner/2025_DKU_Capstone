@@ -4,6 +4,10 @@ import cv2
 from transformers import pipeline
 from PIL import Image
 
+# INTER_LINEAR이 없으면 대체값 직접 설정 (보통 1)
+if not hasattr(cv2, 'INTER_LINEAR'):
+    cv2.INTER_LINEAR = 1
+
 # 모델 로드
 pipe = pipeline("image-classification", model="farleyknight/mnist-digit-classification-2022-09-04", device=-1)
 

@@ -1,5 +1,10 @@
 from PIL import Image
 import cv2
+
+# INTER_LINEAR이 없으면 대체값 직접 설정 (보통 1)
+if not hasattr(cv2, 'INTER_LINEAR'):
+    cv2.INTER_LINEAR = 1
+
 import numpy as np
 from typing import List, Tuple, Dict, Any, Optional
 

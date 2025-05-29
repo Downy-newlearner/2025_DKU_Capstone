@@ -34,6 +34,10 @@ import pandas as pd
 import os
 import json
 
+# INTER_LINEAR이 없으면 대체값 직접 설정 (보통 1)
+if not hasattr(cv2, 'INTER_LINEAR'):
+    cv2.INTER_LINEAR = 1
+
 # text crop 이미지를 넣으면 bb를 만들어주는 함수
 def generate_bounding_boxes_from_text_crop(text_crop_image_path):
     # 이미지 읽기

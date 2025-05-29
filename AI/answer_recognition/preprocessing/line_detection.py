@@ -23,6 +23,10 @@ import cv2
 import numpy as np
 import os
 
+# INTER_LINEAR이 없으면 대체값 직접 설정 (보통 1)
+if not hasattr(cv2, 'INTER_LINEAR'):
+    cv2.INTER_LINEAR = 1
+
 def enhance_horizontal_lines(image):
     # 그레이스케일로 변환
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

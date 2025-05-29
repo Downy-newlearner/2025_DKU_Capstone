@@ -24,6 +24,10 @@ import cv2
 import numpy as np
 import os
 
+# INTER_LINEAR이 없으면 대체값 직접 설정 (보통 1)
+if not hasattr(cv2, 'INTER_LINEAR'):
+    cv2.INTER_LINEAR = 1
+
 # 새로운 병합 로직 함수
 def merge_contours_v2(contours, merge_distance_threshold=50, output_dir=None, img=None): # output_dir, img는 디버깅 용도
     # 바운딩 박스 정보 저장
