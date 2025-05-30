@@ -20,15 +20,31 @@ def make_json(processed_dir_path):
     # JSON 구조 생성
     data = {
         "subject": subject,
-        "student_list": [],  # 학번 리스트 추가
         "base64_data": []
     }
     return data
 
 # 메인 처리 함수
-def main(answer_sheet_dir_path: str, student_id_list: list): # student_id_list는 인식 성공/실패 판별에 사용
+def main(answer_sheet_dir_path: str, student_id_list: list) -> dict:
+    """
+    지정된 디렉토리 내의 답안지 이미지들에서 학번을 인식하고,
+    학적부의 학번 리스트와 비교하여 파일명을 변경하거나 특정 JSON 구조에 추가합니다.
+
+    Args:
+        answer_sheet_dir_path (str): (압축 해제된) 답안지 이미지들이 있는 디렉토리 경로.
+        student_id_list (list): 학적부에서 파싱된 학번 문자열 리스트.
+
+    Returns:
+        dict: 처리 결과를 담은 딕셔너리. JSON 형식은 다음과 같습니다:
+              {
+                  "subject": "과목명(디렉토리명 기반)",
+                  "base64_data": ["해당_학번영역_크롭이미지_base64_문자열1", ...]
+              }
+              - "base64_data"는 인식에 실패했거나 학적부와 일치하지 않아
+                파일명 변경이 되지 않은 경우에만 데이터가 추가됩니다.
+    """
     actual_answer_sheet_dir = answer_sheet_dir_path
-    data = make_json(actual_answer_sheet_dir)
+    result_json = make_json(actual_answer_sheet_dir)
 
     for root, dirs, files in os.walk(actual_answer_sheet_dir):
         # __MACOSX 폴더 자체를 탐색에서 제외
@@ -36,8 +52,7 @@ def main(answer_sheet_dir_path: str, student_id_list: list): # student_id_list�
             dirs.remove('__MACOSX')
         
         for file in files:
-            # ._로 시작하는 숨김 파일 및 __MACOSX 내부 파일 건너뛰기
-            if file.startswith('._') or '__MACOSX' in root:
+            if file.startswith('._') or '__MACOSX' in root: # ._로 시작하는 숨김 파일 및 __MACOSX 내부 파일 건너뛰기
                 continue
 
             if not file.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -45,28 +60,24 @@ def main(answer_sheet_dir_path: str, student_id_list: list): # student_id_list�
                 
             answer_sheet = os.path.join(root, file)
             student_num, cropped_stduend_ID_image_base64_data = extract_student_num(answer_sheet) 
-            print(f"DEBUG: Processing {file}, extracted student_num: {student_num}") # student_num 값 확인
+            print(f"DEBUG: Processing {file}, extracted student_num: {student_num}")
             
-            # base64 데이터 디버깅
             print(f"DEBUG: Base64 data is None: {cropped_stduend_ID_image_base64_data is None}")
             if cropped_stduend_ID_image_base64_data:
                 print(f"DEBUG: Base64 data length: {len(cropped_stduend_ID_image_base64_data)}")
                 print(f"DEBUG: Base64 data preview: {cropped_stduend_ID_image_base64_data[:50]}...")
             
             go_to_json = student_num_comparision(student_num, student_id_list)
-            print(f"DEBUG: For {file}, student_num_comparision returned: {go_to_json}") # go_to_json 값 확인
+            print(f"DEBUG: For {file}, student_num_comparision returned: {go_to_json}")
             
-            # 3. 조건에 따라 결과 저장
             if go_to_json:
-                data['student_list'].append(str(student_num))
-                data['base64_data'].append(cropped_stduend_ID_image_base64_data)
-                print(f"DEBUG: Added base64 data to list. Current list length: {len(data['base64_data'])}")
+                result_json['base64_data'].append(cropped_stduend_ID_image_base64_data)
+                print(f"DEBUG: Added base64 data to list. Current list length: {len(result_json['base64_data'])}")
                 continue
             
-            else: # go_to_json == False (인식 성공 및 학번부와 8자리 일치)
-                if student_num: # student_num이 정상적으로 추출된 경우에만 파일명 변경 시도
+            else: 
+                if student_num: 
                     base, ext = os.path.splitext(file)
-                    # student_num_comparision에서 이미 8자리 검증을 했으므로, 여기서 추가 검증은 불필요할 수 있음
                     new_file_name = f"{student_num}{ext if ext else '.jpg'}" 
                     new_file_path = os.path.join(root, new_file_name)
                     
@@ -79,11 +90,9 @@ def main(answer_sheet_dir_path: str, student_id_list: list): # student_id_list�
                         except Exception as e:
                             print(f"파일명 변경 실패 {answer_sheet}: {e}")       
                 else:
-                    # 이 경우는 student_num_comparision 로직 상 발생하기 어려움
-                    # (student_num이 None이면 go_to_json이 True가 되어야 함)
                     print(f"학번 추출 실패(None)했으나 파일명 변경 로직 진입 (예상치 못한 상황): {answer_sheet}")
     
-    return data
+    return result_json
 
 # 예시 실행 코드
 if __name__ == '__main__':

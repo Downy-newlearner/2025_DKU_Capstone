@@ -12,6 +12,9 @@ import shutil
 import traceback
 import base64
 
+# INTER_LINEAR이 없으면 대체값 직접 설정 (보통 1)
+if not hasattr(cv2, 'INTER_LINEAR'):
+    cv2.INTER_LINEAR = 1
 
 '''
 - 함수 이름: extract_student_num

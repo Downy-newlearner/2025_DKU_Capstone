@@ -43,6 +43,10 @@ from .utils.key_utils import (
     generate_final_key_for_ans_crop
 )
 
+# INTER_LINEAR이 없으면 대체값 직접 설정 (보통 1)
+if not hasattr(cv2, 'INTER_LINEAR'):
+    cv2.INTER_LINEAR = 1
+
 # --- Configuration --- # 삭제 시작
 # YOLO_MODEL_PATH = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/answer_recognition/preprocessing/yolov10_model/best.pt'
 # YOLO_CLASS_QN = 0
