@@ -1,5 +1,4 @@
-# 여기에 패들 코드, yolo 코드를 통합하여 extract_student_num 함수 작성
-
+# student_id_recognition/extract_student_num/extract_student_num.py
 import subprocess
 from pathlib import Path
 import cv2
@@ -16,32 +15,19 @@ import base64
 if not hasattr(cv2, 'INTER_LINEAR'):
     cv2.INTER_LINEAR = 1
 
-'''
-- 함수 이름: extract_student_num
-
-- Param: `answer_sheet_img_path` → str
-    - `answer_sheet_img_path`: 답안지 이미지 경로
-
-- Return: `student_num` → int | None
-    - 추출된 학번 (8자리 정수)
-    - 인식 실패시 None 반환
-
-- Logic:
-    1. YOLO로 학번 영역 검출
-    2. 검출된 영역 이미지 크롭
-    3. OCR로 숫자 인식
-    4. 가장 높은 신뢰도를 가진 숫자 반환
-'''
-def extract_student_num(answer_sheet_img_path: str) -> int | None:
+def extract_student_num(answer_sheet_img_path: str) -> tuple[int | None, str]:
     """
-    답안지 이미지에서 학번을 추출하는 함수
+    답안지 이미지에서 학번을 추출하고 크롭된 학번 영역의 Base64를 반환합니다.
     
     Args:
         answer_sheet_img_path (str): 답안지 이미지 경로
     
     Returns:
-        int | None: 추출된 학번 (8자리 정수), 인식 실패시 None
+        tuple[int | None, str]: (추출된 학번, 학번 영역 이미지의 Base64 문자열).
+                                학번 인식 실패 시 (None, 해당 시점까지 생성된 Base64 문자열).
+                                Base64 생성 실패 또는 오류 발생 시 (학번 또는 None, "").
     """
+    img_base64 = "" # 예외 발생 또는 조기 반환 시 기본값
     try:
         # YOLO 결과를 저장할 임시 디렉토리 설정
         temp_dir = os.path.join(os.path.dirname(__file__), "results", "temp_detection")
@@ -51,7 +37,6 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
             shutil.rmtree(temp_dir)
         
         # 1. YOLO를 통한 학번 영역 검출
-        # YOLO 명령어 구성 및 실행
         command = [
             "yolo",
             "predict",
@@ -62,11 +47,10 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
             "save_txt=true"
         ]
         
-        # print(f"실행 명령어: {' '.join(command)}") # 주석 처리
-        result = subprocess.run(command, capture_output=True, text=True)
+        process_result = subprocess.run(command, capture_output=True, text=True)
         
-        if result.returncode != 0:
-            print(f"YOLO detection failed for {os.path.basename(answer_sheet_img_path)}")
+        if process_result.returncode != 0:
+            print(f"YOLO detection failed for {os.path.basename(answer_sheet_img_path)}: {process_result.stderr}")
             return None, ""
             
         # 2. 라벨 파일 경로 설정
@@ -78,7 +62,6 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
             return None, ""
         
         # 3. 이미지 크롭
-        # 이미지 읽기
         image = cv2.imread(answer_sheet_img_path)
         if image is None:
             print(f"Could not read image: {os.path.basename(answer_sheet_img_path)}")
@@ -86,64 +69,63 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
         
         height, width = image.shape[:2]
         
-        # bbox 좌표 읽기
         with open(label_path, 'r') as f:
             line = f.readline().strip().split()
-            if len(line) >= 5:  # class_id, center_x, center_y, width, height
+            if len(line) >= 5:
                 center_x, center_y, w, h = map(float, line[1:5])
             else:
                 print(f"Invalid label format for {os.path.basename(answer_sheet_img_path)}")
                 return None, ""
         
-        # 정규화된 좌표를 실제 픽셀 좌표로 변환
         x1 = int((center_x - w/2) * width)
         y1 = int((center_y - h/2) * height)
         x2 = int((center_x + w/2) * width)
         y2 = int((center_y + h/2) * height)
         
-        # 좌표가 이미지 범위를 벗어나지 않도록 조정
         x1 = max(0, x1)
         y1 = max(0, y1)
         x2 = min(width, x2)
         y2 = min(height, y2)
         
-        # 이미지 자르기
         cropped_image = image[y1:y2, x1:x2]
         
-        # 이미지를 base64로 변환
-        # NumPy 배열을 연속적인 메모리로 만들고, JPEG로 인코딩
-        _, buffer = cv2.imencode('.jpg', cropped_image)
-        img_base64 = base64.b64encode(buffer).decode('utf-8')
+        # 디버깅: 크롭된 이미지 상태 확인
+        if cropped_image is None or cropped_image.size == 0:
+            print(f"DEBUG: Cropped image is empty or invalid for {os.path.basename(answer_sheet_img_path)}. Shape: {cropped_image.shape if cropped_image is not None else 'None'}")
+            img_base64 = "" # 빈 이미지에 대한 Base64는 빈 문자열로 설정
+        else:
+            print(f"DEBUG: Cropped image shape for {os.path.basename(answer_sheet_img_path)}: {cropped_image.shape}")
+            # 이미지를 base64로 변환
+            retval, buffer = cv2.imencode('.jpg', cropped_image)
+            if retval and buffer is not None:
+                print(f"DEBUG: cv2.imencode success. Buffer length: {len(buffer)} for {os.path.basename(answer_sheet_img_path)}")
+                img_base64 = base64.b64encode(buffer).decode('utf-8')
+            else:
+                print(f"DEBUG: cv2.imencode failed or returned empty buffer for {os.path.basename(answer_sheet_img_path)}. retval: {retval}")
+                img_base64 = "" # 인코딩 실패 시 빈 문자열
         
         # 4. OCR로 학번 인식
-        ocr = PaddleOCR(use_angle_cls=True, lang='en')
-        result = ocr.ocr(cropped_image, cls=True)
+        ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False) # show_log=False 추가하여 PaddleOCR 로그 줄임
+        ocr_result = ocr.ocr(cropped_image, cls=True)
         
-        if not result:
+        if not ocr_result or not ocr_result[0]: # OCR 결과가 비었거나, 첫 번째 라인이 없는 경우
             print(f"No text detected by OCR for {os.path.basename(answer_sheet_img_path)}")
             return None, img_base64
             
-        # OCR 결과에서 가장 높은 신뢰도를 가진 숫자 찾기
         best_number = None
         best_confidence = 0
         
-        for line_ocr_result in result:
+        for line_ocr_result in ocr_result:
             if line_ocr_result is None:
                 continue
 
             for word_info in line_ocr_result:
-                # PaddleOCR v2.6 이상에서 word_info는 [bbox, (text, score)] 형태일 수 있음
-                # word_info[0]은 bbox 좌표 리스트
-                # word_info[1]은 (인식된 텍스트, 신뢰도 점수) 튜플
                 if len(word_info) >= 2 and isinstance(word_info[1], tuple) and len(word_info[1]) >= 2:
                     text = word_info[1][0]
                     confidence = float(word_info[1][1])
                 else:
-                    # 예상치 못한 형식의 word_info는 건너뜀
-                    # print(f"Unexpected word_info format: {word_info} for {os.path.basename(answer_sheet_img_path)}")
                     continue
                 
-                # 숫자만 추출
                 numbers = ''.join(filter(str.isdigit, text))
                 
                 if numbers and confidence > best_confidence:
@@ -155,10 +137,10 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
                         continue
         
         if best_number is not None:
-            print(f"Found student ID: {best_number} for {os.path.basename(answer_sheet_img_path)}")
+            # print(f"Found student ID: {best_number} for {os.path.basename(answer_sheet_img_path)}") # 로그 레벨 조정을 위해 주석 처리 가능
             return best_number, img_base64
         else:
-            print(f"No valid student number found for {os.path.basename(answer_sheet_img_path)}")
+            # print(f"No valid student number found for {os.path.basename(answer_sheet_img_path)}") # 로그 레벨 조정을 위해 주석 처리 가능
             return None, img_base64
             
     except Exception as e:
@@ -166,12 +148,14 @@ def extract_student_num(answer_sheet_img_path: str) -> int | None:
         print("--- Full Traceback ---")
         traceback.print_exc()
         print("--- End Traceback ---")
+        if 'img_base64' not in locals(): # 예외 발생 시 img_base64가 정의되지 않았을 수 있음
+            img_base64 = ""
         return None, img_base64
 
 
 if __name__ == "__main__":
     # 테스트용 디렉토리 경로
-    test_dir = "/Users/ohyooseok/AI/Student_id_recognition/decompression_parsing/test_answer"
+    test_dir = "/Users/ohyooseok/AI/Student_id_recognition/decompression_parsing/test_answer" # 실제 경로로 수정 필요
     
     # 결과를 저장할 딕셔너리
     results_summary = {
@@ -180,23 +164,23 @@ if __name__ == "__main__":
     }
     
     try:
-        # 디렉토리 내의 모든 jpg 파일 처리
+        # 디렉토리 내의 모든 지원 이미지 파일 처리
         for img_file in os.listdir(test_dir):
-            if img_file.endswith('.jpg'):
+            if img_file.lower().endswith(('.jpg', '.jpeg', '.png')): # 다양한 이미지 확장자 지원
                 img_path = os.path.join(test_dir, img_file)
                 print(f"\nProcessing image: {img_file}")
-                student_num, img_base64 = extract_student_num(img_path)
+                student_num, current_img_base64 = extract_student_num(img_path)
                 
                 # 결과 저장
                 result_entry = {
                     "image_file": img_file,
                     "student_number": student_num,
                     "success": student_num is not None,
-                    "cropped_image_base64": img_base64  # base64 이미지 데이터 추가
+                    "cropped_image_base64": current_img_base64 
                 }
                 results_summary["results"].append(result_entry)
                 
-                print(f"Result for {img_file}: {student_num}")
+                print(f"Result for {img_file}: StudentNum={student_num}, Base64Length={len(current_img_base64) if current_img_base64 else 0}")
                 print("-" * 50)
     finally:
         # 임시 폴더 정리
@@ -214,7 +198,6 @@ if __name__ == "__main__":
     
     print(f"\nTest results saved to: {result_file_path}")
     
-    # 성공/실패 통계 출력
     if results_summary["results"]:
         total = len(results_summary["results"])
         successful = sum(1 for r in results_summary["results"] if r["success"])

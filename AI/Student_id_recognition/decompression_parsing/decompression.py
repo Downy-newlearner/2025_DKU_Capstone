@@ -41,30 +41,7 @@ def extract_archive(archive_path: str, extract_path: str = None) -> bool:
         # ZIP 파일 처리
         if extension == '.zip':
             with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-                # ZIP 파일 내부의 모든 파일 목록 가져오기
-                for file_info in zip_ref.filelist:
-                    # CP949(한글 Windows의 기본 인코딩)로 파일명 디코딩 시도
-                    try:
-                        # 원본 파일명을 CP949로 디코딩
-                        filename = file_info.filename.encode('cp437').decode('cp949')
-                    except:
-                        try:
-                            # CP949 실패시 utf-8로 시도
-                            filename = file_info.filename.encode('cp437').decode('utf-8')
-                        except:
-                            # 모두 실패하면 원본 파일명 사용
-                            filename = file_info.filename
-                    
-                    # 파일 압축 해제
-                    source = zip_ref.open(file_info)
-                    target_path = os.path.join(extract_path, filename)
-                    
-                    # 필요한 경우 중간 디렉토리 생성
-                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                    
-                    target = open(target_path, "wb")
-                    with source, target:
-                        shutil.copyfileobj(source, target)
+                zip_ref.extractall(extract_path)
                 
         # TAR, TAR.GZ, TGZ 파일 처리
         elif extension in ['.tar', '.gz', '.tgz']:

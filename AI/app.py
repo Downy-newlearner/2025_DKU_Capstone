@@ -6,6 +6,7 @@ import traceback
 import zipfile # decompression 모듈 내부에서 사용하지만, 여기서도 파일 타입 체크 등에 사용 가능
 import pandas as pd # XLSX 처리용
 from werkzeug.utils import secure_filename # 안전한 파일명 생성
+import uuid # UUID 추가
 
 # TODO: 각 모듈의 main 함수 또는 필요한 함수들을 import
 # from AI.Student_id_recognition.main import main as process_student_ids # 예시
@@ -105,8 +106,29 @@ def recognize_student_id_endpoint():
         session_temp_dir = tempfile.mkdtemp(dir=current_app.config['UPLOAD_FOLDER_BASE'])
         app.logger.info(f"세션 임시 폴더 생성: {session_temp_dir}")
 
-        zip_filename = secure_filename(zip_file_obj.filename)
-        xlsx_filename = secure_filename(xlsx_file_obj.filename)
+        # 원본 파일명 가져오기
+        original_zip_filename = zip_file_obj.filename
+        original_xlsx_filename = xlsx_file_obj.filename
+
+        # 파일명에서 이름과 확장자 분리
+        zip_name_part, zip_ext_part = os.path.splitext(original_zip_filename)
+        xlsx_name_part, xlsx_ext_part = os.path.splitext(original_xlsx_filename)
+
+        # 파일 이름 부분만 secure_filename으로 처리
+        secure_zip_name_part = secure_filename(zip_name_part)
+        secure_xlsx_name_part = secure_filename(xlsx_name_part)
+
+        # 만약 secure_filename 처리 후 이름 부분이 비어있다면, UUID를 사용하여 고유한 기본 파일명 생성
+        if not secure_zip_name_part:
+            secure_zip_name_part = f"zipfile_{uuid.uuid4().hex[:12]}" # 예: zipfile_a1b2c3d4e5f6
+            app.logger.warning(f"Sanitized zip filename was empty. Using default: {secure_zip_name_part}")
+        if not secure_xlsx_name_part:
+            secure_xlsx_name_part = f"xlsxfile_{uuid.uuid4().hex[:12]}" # 예: xlsxfile_a1b2c3d4e5f6
+            app.logger.warning(f"Sanitized xlsx filename was empty. Using default: {secure_xlsx_name_part}")
+
+        # 처리된 이름과 원본 확장자 결합
+        zip_filename = secure_zip_name_part + zip_ext_part
+        xlsx_filename = secure_xlsx_name_part + xlsx_ext_part
         
         zip_path = os.path.join(session_temp_dir, zip_filename)
         xlsx_path = os.path.join(session_temp_dir, xlsx_filename)
