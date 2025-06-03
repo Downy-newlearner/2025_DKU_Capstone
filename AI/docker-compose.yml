@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Kafka 컨테이너 (KRaft 모드, Zookeeper 없이 운영)
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    networks:
+      - test_net
+
+  # Flask Kafka Producer (내부 포트 5000, 외부 포트 9054)
+  flask-producer:
+    build:
+      context: ./flask-producer
+    container_name: flask-producer
+    ports:
+      - "9054:5000"  # 내부는 5000, 외부는 9054
+    environment:
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - test_net
+
+networks:
+  test_net:
+    driver: bridge
+

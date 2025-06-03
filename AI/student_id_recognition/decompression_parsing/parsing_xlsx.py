@@ -71,7 +71,7 @@ def parsing_xlsx(xlsx_file_path: str) -> list:
 
 if __name__ == '__main__':
     # 사용자가 제공한 경로로 테스트 코드를 작성합니다.
-    xlsx_path = "/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data/학적정보.xlsx"
+    xlsx_path = "/home/jdh251425/2025_DKU_Capstone-AI-2/AI/test_data/학적정보.xlsx"
     
     print(f"--- 테스트 시작: '{xlsx_path}' 파일 파싱 ---")
     student_numbers = parsing_xlsx(xlsx_path)

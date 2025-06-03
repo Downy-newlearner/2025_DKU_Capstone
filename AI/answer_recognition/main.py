@@ -281,8 +281,8 @@ if __name__ == "__main__":
     # 또는, 아래 경로들을 절대경로로 명시하거나, 테스트 환경에 맞게 조정해야 합니다.
 
     # 사용자가 제공한 테스트 파일 경로
-    test_image_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data/test_answer/32174515.jpg'
-    test_answer_key_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data/test_answer.json'
+    test_image_path = '/home/jdh251425/2025_DKU_Capstone-AI-2/AI/test_data/test_answer/32174515.jpg'
+    test_answer_key_path = '/home/jdh251425/2025_DKU_Capstone-AI-2/AI/test_data/test_answer.json'
 
     print(f"--- Starting Test for {test_image_path} ---")
 

@@ -10,12 +10,13 @@ from datetime import datetime
 import shutil
 import traceback
 import base64
+from typing import Union, Tuple
 
 # INTER_LINEAR이 없으면 대체값 직접 설정 (보통 1)
 if not hasattr(cv2, 'INTER_LINEAR'):
     cv2.INTER_LINEAR = 1
 
-def extract_student_num(answer_sheet_img_path: str) -> tuple[int | None, str]:
+def extract_student_num(answer_sheet_img_path: str) -> Tuple[Union[int, None], str]:
     """
     답안지 이미지에서 학번을 추출하고 크롭된 학번 영역의 Base64를 반환합니다.
     
@@ -52,6 +53,7 @@ def extract_student_num(answer_sheet_img_path: str) -> tuple[int | None, str]:
         if process_result.returncode != 0:
             print(f"YOLO detection failed for {os.path.basename(answer_sheet_img_path)}: {process_result.stderr}")
             return None, ""
+            
             
         # 2. 라벨 파일 경로 설정
         image_name = Path(answer_sheet_img_path).stem

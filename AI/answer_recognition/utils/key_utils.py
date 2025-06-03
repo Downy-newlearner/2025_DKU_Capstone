@@ -87,48 +87,68 @@ def create_question_info_dict(
     y_coords_to_use = detected_objects_y_coords
     match_type = ""
 
-    # Step 3: 매칭 로직
-    is_case_a_equals_b = (len_a == len_b)
+    # --- TEMPORARY DEBUG OVERRIDE ---
+    # Set to True to force matching with B-type question count (len_b)
+    # This helps debug downstream processes if QN detection count is off.
+    FORCE_MATCH_WITH_B_COUNT = False 
+    # --- END TEMPORARY DEBUG OVERRIDE ---
 
-    if is_case_a_equals_b: # 하위 문제 없음 (a==b)
-        if num_detected_text_objects == len_b: # 개수 정확히 일치 (헤더 X)
-            target_question_list = sorted_question_list_b
-            match_type = f"Exact match with B ({len_b}) - No header assumed."
-        elif num_detected_text_objects == len_b + 1: # 헤더 포함 가능성 (1개 더 많음)
-            target_question_list = sorted_question_list_b
-            y_coords_to_use = detected_objects_y_coords[1:] # 첫번째 객체(헤더) 제외
-            match_type = f"Match with B ({len_b}) after removing 1 header. Detected: {num_detected_text_objects}"
-        elif num_detected_text_objects == len_b - 1: # 1개 부족
-            target_question_list = sorted_question_list_b
-            # y_coords_to_use는 그대로 두고, 짧은 쪽(num_detected_text_objects) 만큼만 매칭
-            match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than B ({len_b}). Matching shorter length."
-        else: # 그 외 불일치
-            match_type = f"Mismatch: Detected ({num_detected_text_objects}) vs B ({len_b})."
-    else: # 하위 문제 있음 (a!=b)
-        # 1. '개수'가 a 또는 b와 일치 (헤더 X)
-        if num_detected_text_objects == len_a:
-            target_question_list = sorted_question_list_a
-            match_type = f"Exact match with A ({len_a}) - No header assumed."
-        elif num_detected_text_objects == len_b:
-            target_question_list = sorted_question_list_b
-            match_type = f"Exact match with B ({len_b}) - No header assumed."
-        # 2. '개수'가 a+-1 또는 b+-1 (헤더 가능성)
-        elif num_detected_text_objects == len_a + 1:
-            target_question_list = sorted_question_list_a
-            y_coords_to_use = detected_objects_y_coords[1:]
-            match_type = f"Match with A ({len_a}) after removing 1 header. Detected: {num_detected_text_objects}"
-        elif num_detected_text_objects == len_b + 1:
-            target_question_list = sorted_question_list_b
-            y_coords_to_use = detected_objects_y_coords[1:]
-            match_type = f"Match with B ({len_b}) after removing 1 header. Detected: {num_detected_text_objects}"
-        elif num_detected_text_objects == len_a - 1:
-            target_question_list = sorted_question_list_a
-            match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than A ({len_a}). Matching shorter length."
-        elif num_detected_text_objects == len_b - 1:
-            target_question_list = sorted_question_list_b
-            match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than B ({len_b}). Matching shorter length."
-        else:
-             match_type = f"Mismatch: Detected ({num_detected_text_objects}) vs A ({len_a}) or B ({len_b})."
+    if FORCE_MATCH_WITH_B_COUNT and len_b > 0:
+        print(f"DEBUG: APPLYING FORCED MATCH WITH B. Original num_detected: {num_detected_text_objects}, Target QN count (from key B): {len_b}")
+        target_question_list = sorted_question_list_b
+        
+        # Use the first len_b detected y-coordinates.
+        # If fewer than len_b were detected in total, y_coords_to_use will contain all detected coordinates.
+        y_coords_to_use = detected_objects_y_coords[:len_b] 
+        
+        match_type = f"FORCED_MATCH_AS_B ({len_b})"
+        
+        # This print statement indicates how many will actually be mapped based on available data
+        print(f"Info (create_question_info_dict): {match_type}. Using {len(y_coords_to_use)} detected y_coords for mapping against {len(target_question_list)} questions from key B.")
+        # The actual population of y_coordinates_dict happens in the common block below.
+    else:
+        # Step 3: 매칭 로직
+        is_case_a_equals_b = (len_a == len_b)
+
+        if is_case_a_equals_b: # 하위 문제 없음 (a==b)
+            if num_detected_text_objects == len_b: # 개수 정확히 일치 (헤더 X)
+                target_question_list = sorted_question_list_b
+                match_type = f"Exact match with B ({len_b}) - No header assumed."
+            elif num_detected_text_objects == len_b + 1: # 헤더 포함 가능성 (1개 더 많음)
+                target_question_list = sorted_question_list_b
+                y_coords_to_use = detected_objects_y_coords[1:] # 첫번째 객체(헤더) 제외
+                match_type = f"Match with B ({len_b}) after removing 1 header. Detected: {num_detected_text_objects}"
+            elif num_detected_text_objects == len_b - 1: # 1개 부족
+                target_question_list = sorted_question_list_b
+                # y_coords_to_use는 그대로 두고, 짧은 쪽(num_detected_text_objects) 만큼만 매칭
+                match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than B ({len_b}). Matching shorter length."
+            else: # 그 외 불일치
+                match_type = f"Mismatch: Detected ({num_detected_text_objects}) vs B ({len_b})."
+        else: # 하위 문제 있음 (a!=b)
+            # 1. '개수'가 a 또는 b와 일치 (헤더 X)
+            if num_detected_text_objects == len_a:
+                target_question_list = sorted_question_list_a
+                match_type = f"Exact match with A ({len_a}) - No header assumed."
+            elif num_detected_text_objects == len_b:
+                target_question_list = sorted_question_list_b
+                match_type = f"Exact match with B ({len_b}) - No header assumed."
+            # 2. '개수'가 a+-1 또는 b+-1 (헤더 가능성)
+            elif num_detected_text_objects == len_a + 1:
+                target_question_list = sorted_question_list_a
+                y_coords_to_use = detected_objects_y_coords[1:]
+                match_type = f"Match with A ({len_a}) after removing 1 header. Detected: {num_detected_text_objects}"
+            elif num_detected_text_objects == len_b + 1:
+                target_question_list = sorted_question_list_b
+                y_coords_to_use = detected_objects_y_coords[1:]
+                match_type = f"Match with B ({len_b}) after removing 1 header. Detected: {num_detected_text_objects}"
+            elif num_detected_text_objects == len_a - 1:
+                target_question_list = sorted_question_list_a
+                match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than A ({len_a}). Matching shorter length."
+            elif num_detected_text_objects == len_b - 1:
+                target_question_list = sorted_question_list_b
+                match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than B ({len_b}). Matching shorter length."
+            else:
+                 match_type = f"Mismatch: Detected ({num_detected_text_objects}) vs A ({len_a}) or B ({len_b})."
 
     # print(f"Debug: Match type: {match_type}")
     # print(f"Debug: Target question list (len={len(target_question_list)}): {target_question_list[:5]}...")

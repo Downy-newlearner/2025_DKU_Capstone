@@ -4,7 +4,7 @@ from transformers import pipeline
 import re
 
 # --- Configuration ---
-YOLO_MODEL_PATH = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/answer_recognition/preprocessing/yolov10_model/best.pt'
+YOLO_MODEL_PATH = '/home/jdh251425/2025_DKU_Capstone-AI-2/AI/answer_recognition/preprocessing/yolov10_model/best.pt'
 YOLO_CLASS_QN = 0
 YOLO_CLASS_ANS = 1
 

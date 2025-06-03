@@ -8,6 +8,7 @@ import shutil
 from pathlib import Path
 from pymongo import MongoClient
 from bson import ObjectId
+import base64
 
 client = MongoClient('mongodb://localhost:27017')  # 연결 정보에 맞게 수정
 db = client['capstone']
@@ -20,8 +21,41 @@ def make_json(processed_dir_path):
     # JSON 구조 생성
     data = {
         "subject": subject,
-        "base64_data": []
+        "images": []  # 키 변경 및 초기화
     }
+
+    # 처리할 이미지 파일 확장자 정의
+    allowed_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp')
+
+    try:
+        for filename in os.listdir(processed_dir_path):
+            if filename.lower().endswith(allowed_extensions):
+                file_path = os.path.join(processed_dir_path, filename)
+                if os.path.isfile(file_path):
+                    try:
+                        with open(file_path, "rb") as image_file:
+                            # 이미지를 base64로 인코딩하고 utf-8 문자열로 디코딩
+                            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                        
+                        data["images"].append({
+                            "file_name": filename,
+                            "base64_data": encoded_string
+                        })
+                    except Exception as e:
+                        # 개별 파일 처리 중 오류 발생 시 로그 (실제 환경에서는 logging 모듈 사용 권장)
+                        print(f"Error processing file {file_path}: {e}")
+    except FileNotFoundError:
+        print(f"Error: Directory not found at {processed_dir_path}")
+        # 필요시 data 딕셔너리에 오류 정보 추가 가능
+        # data["error"] = f"Directory not found: {processed_dir_path}"
+    except PermissionError:
+        print(f"Error: Permission denied for directory {processed_dir_path}")
+        # data["error"] = f"Permission denied: {processed_dir_path}"
+    except Exception as e:
+        # 기타 디렉토리 접근 오류 처리
+        print(f"An unexpected error occurred while accessing directory {processed_dir_path}: {e}")
+        # data["error"] = f"Unexpected error: {str(e)}"
+
     return data
 
 # 메인 처리 함수
@@ -71,8 +105,11 @@ def main(answer_sheet_dir_path: str, student_id_list: list) -> dict:
             print(f"DEBUG: For {file}, student_num_comparision returned: {go_to_json}")
             
             if go_to_json:
-                result_json['base64_data'].append(cropped_stduend_ID_image_base64_data)
-                print(f"DEBUG: Added base64 data to list. Current list length: {len(result_json['base64_data'])}")
+                result_json['images'].append({
+                    "file_name": file,
+                    "base64_data": cropped_stduend_ID_image_base64_data
+                })
+                print(f"DEBUG: Added base64 data to list. Current list length: {len(result_json['images'])}")
                 continue
             
             else: 
@@ -97,7 +134,7 @@ def main(answer_sheet_dir_path: str, student_id_list: list) -> dict:
 # 예시 실행 코드
 if __name__ == '__main__':
     # --- 설정 ---
-    base_dir = "/Users/ohyooseok/캡스톤/capstone_AI/AI/test_data"
+    base_dir = "/home/jdh251425/2025_DKU_Capstone-AI-2/AI/test_data"
     test_zip_file_path = os.path.join(base_dir, "test_answer.zip")
     test_xlsx_file_path = os.path.join(base_dir, "학적정보.xlsx")
     
@@ -148,6 +185,5 @@ if __name__ == '__main__':
     if result_data:
         print(json.dumps(result_data, ensure_ascii=False, indent=4))
     else:
-        print("처리 중 오류가 발생했거나 결과 데이터가 없습니다.")
-            
+        print("처리 중 오류가 발생했거나 결과 데이터가 없습니다.")            
     # print("\n--- 테스트 종료 ---") # 주석 처리
