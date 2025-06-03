@@ -5,7 +5,12 @@ import re
 # 현재 key_utils.py는 answer_recognition/utils/ 안에 위치
 from ..data_structures import DetectedArea
 # 이미지 처리 함수들 import
-from ..preprocessing.image_utils import preprocess_line_image_for_text_contours, merge_contours_and_crop_text_pil
+from ..preprocessing.image_utils import (
+    preprocess_line_image_for_text_contours, 
+    merge_contours_and_crop_text_pil,
+    enhance_and_find_contours_for_lines,
+    crop_between_lines
+)
 # 숫자 인식 함수는 이제 직접 사용하지 않음
 
 
@@ -46,37 +51,27 @@ def create_question_info_dict(
         print("Error (create_question_info_dict): No QN areas detected by YOLO."); return {}
 
     # Step 2: QN 영역 내 텍스트 객체 검출 및 y좌표 추출
-    # 여러 QN 영역이 있을 경우 첫 번째 것을 사용 (이전과 동일)
-    if len(qn_detected_areas) > 1:
-        print(f"Warning (create_question_info_dict): Multiple QN areas ({len(qn_detected_areas)}) detected. Using the first one.")
+    # 이제 항상 하나의 QN 영역만 존재한다고 가정합니다.
     main_qn_area = qn_detected_areas[0]
     qn_area_pil = main_qn_area['image_obj'] # qn_half_cropped 이미지에 해당
     # qn_area_orig_y_offset = main_qn_area['bbox'][1] # 원본 답안지 기준 y 오프셋. 이제 사용하지 않음.
 
-    text_contours_in_qn = preprocess_line_image_for_text_contours(qn_area_pil)
-    # merge_distance_threshold: 텍스트 객체들이 잘 분리되도록 적절한 값 필요 (실험적)
-    # padding: y좌표 계산에 영향 미치므로, 실제 텍스트 영역에 가깝도록 작게 설정
-    text_blocks_in_qn = merge_contours_and_crop_text_pil(qn_area_pil, text_contours_in_qn, merge_distance_threshold=15, padding=3)
+    # 수정된 로직: 수평선을 기준으로 QN 영역을 자르고, 그 개수를 사용합니다.
+    line_contours_in_qn = enhance_and_find_contours_for_lines(qn_area_pil)
+    # crop_between_lines는 [{'image_obj': Image, 'y_top_in_area': int, 'y_bottom_in_area': int}, ...] 형태의 리스트 반환
+    line_cropped_list_in_qn = crop_between_lines(qn_area_pil, line_contours_in_qn)
 
     detected_objects_y_coords: List[Tuple[int, int]] = []
-    for block_info in text_blocks_in_qn:
-        y_in_qn_area = block_info['y_in_line'] # qn_half_cropped 이미지 내에서의 상대 y (패딩 전 bbox의 y)
-        original_h = block_info.get('original_h') 
-        if original_h is None: 
-            # print("Warning: 'original_h' not in block_info from merge_contours_and_crop_text_pil. Y-coord for QN might be less accurate.")
-            original_h = block_info['image_obj'].height
-        
-        # abs_y_top = qn_area_orig_y_offset + y_in_qn_area # 이전: 원본 답안지 기준
-        # abs_y_bottom = qn_area_orig_y_offset + y_in_qn_area + original_h # 이전: 원본 답안지 기준
-
-        # 수정: qn_half_cropped 이미지 기준 y_top, y_bottom
-        y_top_in_qn_half_cropped = y_in_qn_area
-        y_bottom_in_qn_half_cropped = y_in_qn_area + original_h
-        
+    for line_info in line_cropped_list_in_qn:
+        # qn_half_cropped 이미지 (즉, qn_area_pil) 기준의 y좌표를 사용합니다.
+        y_top_in_qn_half_cropped = line_info['y_top_in_area']
+        y_bottom_in_qn_half_cropped = line_info['y_bottom_in_area']
         detected_objects_y_coords.append((y_top_in_qn_half_cropped, y_bottom_in_qn_half_cropped))
     
+    # crop_between_lines에서 이미 y_top 기준으로 정렬된 결과를 반환할 수 있지만,
+    # 안전을 위해 여기서 다시 명시적으로 정렬합니다.
     detected_objects_y_coords.sort(key=lambda y_pair: y_pair[0])
-    num_detected_text_objects = len(detected_objects_y_coords)
+    num_detected_text_objects = len(detected_objects_y_coords) # 또는 len(line_cropped_list_in_qn)
 
     # print(f"Debug: Num detected text objects in QN: {num_detected_text_objects}")
     # print(f"Debug: Detected objects y_coords (first 5): {detected_objects_y_coords[:5]}")
@@ -87,68 +82,49 @@ def create_question_info_dict(
     y_coords_to_use = detected_objects_y_coords
     match_type = ""
 
-    # --- TEMPORARY DEBUG OVERRIDE ---
-    # Set to True to force matching with B-type question count (len_b)
-    # This helps debug downstream processes if QN detection count is off.
-    FORCE_MATCH_WITH_B_COUNT = False 
-    # --- END TEMPORARY DEBUG OVERRIDE ---
+    # Step 3: 매칭 로직
+    is_case_a_equals_b = (len_a == len_b)
 
-    if FORCE_MATCH_WITH_B_COUNT and len_b > 0:
-        print(f"DEBUG: APPLYING FORCED MATCH WITH B. Original num_detected: {num_detected_text_objects}, Target QN count (from key B): {len_b}")
-        target_question_list = sorted_question_list_b
-        
-        # Use the first len_b detected y-coordinates.
-        # If fewer than len_b were detected in total, y_coords_to_use will contain all detected coordinates.
-        y_coords_to_use = detected_objects_y_coords[:len_b] 
-        
-        match_type = f"FORCED_MATCH_AS_B ({len_b})"
-        
-        # This print statement indicates how many will actually be mapped based on available data
-        print(f"Info (create_question_info_dict): {match_type}. Using {len(y_coords_to_use)} detected y_coords for mapping against {len(target_question_list)} questions from key B.")
-        # The actual population of y_coordinates_dict happens in the common block below.
-    else:
-        # Step 3: 매칭 로직
-        is_case_a_equals_b = (len_a == len_b)
-
-        if is_case_a_equals_b: # 하위 문제 없음 (a==b)
-            if num_detected_text_objects == len_b: # 개수 정확히 일치 (헤더 X)
-                target_question_list = sorted_question_list_b
-                match_type = f"Exact match with B ({len_b}) - No header assumed."
-            elif num_detected_text_objects == len_b + 1: # 헤더 포함 가능성 (1개 더 많음)
-                target_question_list = sorted_question_list_b
-                y_coords_to_use = detected_objects_y_coords[1:] # 첫번째 객체(헤더) 제외
-                match_type = f"Match with B ({len_b}) after removing 1 header. Detected: {num_detected_text_objects}"
-            elif num_detected_text_objects == len_b - 1: # 1개 부족
-                target_question_list = sorted_question_list_b
-                # y_coords_to_use는 그대로 두고, 짧은 쪽(num_detected_text_objects) 만큼만 매칭
-                match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than B ({len_b}). Matching shorter length."
-            else: # 그 외 불일치
-                match_type = f"Mismatch: Detected ({num_detected_text_objects}) vs B ({len_b})."
-        else: # 하위 문제 있음 (a!=b)
-            # 1. '개수'가 a 또는 b와 일치 (헤더 X)
-            if num_detected_text_objects == len_a:
-                target_question_list = sorted_question_list_a
-                match_type = f"Exact match with A ({len_a}) - No header assumed."
-            elif num_detected_text_objects == len_b:
-                target_question_list = sorted_question_list_b
-                match_type = f"Exact match with B ({len_b}) - No header assumed."
-            # 2. '개수'가 a+-1 또는 b+-1 (헤더 가능성)
-            elif num_detected_text_objects == len_a + 1:
-                target_question_list = sorted_question_list_a
-                y_coords_to_use = detected_objects_y_coords[1:]
-                match_type = f"Match with A ({len_a}) after removing 1 header. Detected: {num_detected_text_objects}"
-            elif num_detected_text_objects == len_b + 1:
-                target_question_list = sorted_question_list_b
-                y_coords_to_use = detected_objects_y_coords[1:]
-                match_type = f"Match with B ({len_b}) after removing 1 header. Detected: {num_detected_text_objects}"
-            elif num_detected_text_objects == len_a - 1:
-                target_question_list = sorted_question_list_a
-                match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than A ({len_a}). Matching shorter length."
-            elif num_detected_text_objects == len_b - 1:
-                target_question_list = sorted_question_list_b
-                match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than B ({len_b}). Matching shorter length."
-            else:
-                 match_type = f"Mismatch: Detected ({num_detected_text_objects}) vs A ({len_a}) or B ({len_b})."
+    if is_case_a_equals_b: # 하위 문제 없음 (a==b)
+        if num_detected_text_objects == len_b: # 개수 정확히 일치 (헤더 X)
+            target_question_list = sorted_question_list_b
+            match_type = f"Exact match with B ({len_b}) - No header assumed."
+        elif num_detected_text_objects == len_b + 1: # 헤더 포함 가능성 (1개 더 많음)
+            target_question_list = sorted_question_list_b
+            y_coords_to_use = detected_objects_y_coords[1:] # 첫번째 객체(헤더) 제외
+            match_type = f"Match with B ({len_b}) after removing 1 header. Detected: {num_detected_text_objects}"
+        elif num_detected_text_objects == len_b - 1: # 1개 부족
+            target_question_list = sorted_question_list_b
+            # y_coords_to_use는 그대로 두고, 짧은 쪽(num_detected_text_objects) 만큼만 매칭
+            match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than B ({len_b}). Matching shorter length."
+        else: # 그 외 불일치
+            match_type = f"Mismatch: Detected ({num_detected_text_objects}) vs B ({len_b})."
+            
+    else: # 하위 문제 있음 (a!=b)
+        # 1. '개수'가 a 또는 b와 일치 (헤더 X)
+        if num_detected_text_objects == len_a:
+            target_question_list = sorted_question_list_a
+            match_type = f"Exact match with A ({len_a}) - No header assumed."
+        elif num_detected_text_objects == len_b:
+            target_question_list = sorted_question_list_b
+            match_type = f"Exact match with B ({len_b}) - No header assumed."
+        # 2. '개수'가 a+-1 또는 b+-1 (헤더 가능성)
+        elif num_detected_text_objects == len_a + 1:
+            target_question_list = sorted_question_list_a
+            y_coords_to_use = detected_objects_y_coords[1:]
+            match_type = f"Match with A ({len_a}) after removing 1 header. Detected: {num_detected_text_objects}"
+        elif num_detected_text_objects == len_b + 1:
+            target_question_list = sorted_question_list_b
+            y_coords_to_use = detected_objects_y_coords[1:]
+            match_type = f"Match with B ({len_b}) after removing 1 header. Detected: {num_detected_text_objects}"
+        elif num_detected_text_objects == len_a - 1:
+            target_question_list = sorted_question_list_a
+            match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than A ({len_a}). Matching shorter length."
+        elif num_detected_text_objects == len_b - 1:
+            target_question_list = sorted_question_list_b
+            match_type = f"Potential mismatch: Detected ({num_detected_text_objects}) is 1 less than B ({len_b}). Matching shorter length."
+        else:
+             match_type = f"Mismatch: Detected ({num_detected_text_objects}) vs A ({len_a}) or B ({len_b})."
 
     # print(f"Debug: Match type: {match_type}")
     # print(f"Debug: Target question list (len={len(target_question_list)}): {target_question_list[:5]}...")
