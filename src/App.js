@@ -17,6 +17,7 @@ import GradingSecondPending from "./components/GradingSecondPending";
 import PastResultsPage from "./components/PastResultsPage";
 import ReviewLowConfidenceStudentIds from "./components/ReviewLowConfidenceStudentIds";
 import GradingResults from "./components/GradingResults";
+import SubjectZipList from "./components/SubjectZipList";
 
 
 import './App.css'; // Tailwind를 적용하기 위해 유지
@@ -25,6 +26,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/subject-zip-list" element={<SubjectZipList />} />
         <Route path="/grading-results" element={<GradingResults />} />
         <Route path="/past-results" element={<PastResultsPage />} />
         <Route path="/grading-second-pending" element={<GradingSecondPending />} />

@@ -21,7 +21,6 @@ const ReviewLowConfidenceStudentIds = () => {
       })
       .then((res) => {
         const prepared = res.data.student_list.map((item) => ({
-          studentId: item.student_id,
           fileName: item.file_name,
           base64Data: item.base64_data[0], // 단일 문자열로 가정
           confirmedId: "",
@@ -33,10 +32,10 @@ const ReviewLowConfidenceStudentIds = () => {
       });
   }, [subject]);
 
-  const handleChange = (studentId, value) => {
+  const handleChange = (fileName, value) => {
     setEntries((prev) =>
       prev.map((entry) =>
-        entry.studentId === studentId ? { ...entry, confirmedId: value } : entry
+        entry.fileName === fileName ? { ...entry, confirmedId: value } : entry
       )
     );
   };
@@ -44,11 +43,9 @@ const ReviewLowConfidenceStudentIds = () => {
   const handleSubmit = () => {
     const payload = {
       subject,
-      student_list: entries.map(({ studentId, confirmedId, fileName, base64Data }) => ({
-        student_id: studentId,
+      student_list: entries.map(({ confirmedId, fileName }) => ({
         confirmed_id: confirmedId,
         file_name: fileName,
-        base64_data: base64Data, // ✅ 단일 문자열
       })),
     };
 
@@ -74,7 +71,7 @@ const ReviewLowConfidenceStudentIds = () => {
       <div className="grid gap-6 w-full max-w-4xl">
         {entries.map((entry, index) => (
           <div
-            key={entry.studentId}
+            key={entry.fileName}
             className="flex items-center gap-6 border p-4 rounded shadow bg-white"
           >
             <div className="w-[200px] h-[200px] border flex items-center justify-center">
@@ -88,7 +85,7 @@ const ReviewLowConfidenceStudentIds = () => {
               <Input
                 placeholder="학번을 입력하세요"
                 value={entry.confirmedId}
-                onChange={(e) => handleChange(entry.studentId, e.target.value)}
+                onChange={(e) => handleChange(entry.fileName, e.target.value)}
               />
             </div>
           </div>

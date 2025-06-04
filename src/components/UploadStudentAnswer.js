@@ -21,7 +21,7 @@ const UploadStudentAnswer = () => {
     formData.append("attendanceSheet", xlsxFile);
 
     axios
-      .post("/exams/upload-answer", formData, {
+      .post("/responses/upload-answer", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${localStorage.getItem("token")}`,

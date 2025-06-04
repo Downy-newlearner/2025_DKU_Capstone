@@ -22,36 +22,6 @@ const PastResultsPage = () => {
       .catch((err) => console.error("과목 불러오기 실패", err));
   }, []);
 
-  const fetchZipList = (subject) => {
-    setSelectedSubject(subject);
-    axios
-      .get(`/responses/${encodeURIComponent(subject)}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      })
-      .then((res) => setZipList(res.data))
-      .catch((err) => console.error("ZIP 목록 불러오기 실패", err));
-  };
-
-  const handleDownload = async (url, fileName) => {
-    try {
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        responseType: "blob",
-      });
-
-      const blob = new Blob([response.data], { type: "application/zip" });
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = fileName;
-      link.click();
-      window.URL.revokeObjectURL(link.href);
-    } catch (err) {
-      console.error("다운로드 실패", err);
-    }
-  };
-
   return (
     <div className="bg-white flex flex-row justify-center w-full min-h-screen">
           <div className="bg-white w-full max-w-[1440px] h-[900px] relative">
@@ -88,49 +58,23 @@ const PastResultsPage = () => {
               />
             </button>
             <div className="p-20">
-              <h1 className="text-3xl font-bold mb-6">📁 채점한 과목별 ZIP 다운로드</h1>
+              <h1 className="text-3xl font-bold mb-6">📁 채점한 과목 목록</h1>
 
-              <div className="mb-8 flex flex-wrap gap-4">
-                {subjects.map((subject) => (
+              <div className="mb-8 flex flex-col gap-2">
+                {subjects.map((subjectObj) => (
                   <Button
-                    key={subject}
+                    key={subjectObj.id}
                     className={`${
-                      selectedSubject === subject ? "bg-purple-600 text-white" : "bg-gray-200"
-                    } px-5 py-2 rounded`}
-                    onClick={() => fetchZipList(subject)}
+                      selectedSubject === subjectObj.subject 
+                      ? "bg-gray-300 text-black" 
+                      : "bg-gray-100 hover:bg-gray-200 text-black"
+                    } text-left px-5 py-2 rounded`}
+                    onDoubleClick={() => navigate("/subject-zip-list", { state: { subject: subjectObj.subject } })}
                   >
-                    {subject}
+                    {subjectObj.subject}
                   </Button>
                 ))}
               </div>
-
-              {selectedSubject && (
-                <>
-                  <h2 className="text-2xl font-semibold mb-4">
-                    🧾 {selectedSubject} ZIP 파일 목록
-                  </h2>
-                  {zipList.length === 0 ? (
-                    <p className="text-gray-500">해당 과목에 대한 ZIP 파일이 없습니다.</p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {zipList.map((item, index) => (
-                        <Card key={index} className="flex justify-between items-center p-4">
-                          <CardContent className="flex justify-between items-center w-full px-0">
-                            <span className="text-md font-medium">{item.fileName}</span>
-                            <Button
-                              variant="ghost"
-                              onClick={() => handleDownload(item.downloadUrl, item.fileName)}
-                              className="text-indigo-600 hover:text-indigo-800"
-                            >
-                              <Download className="w-5 h-5" />
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
             </div>
           </div>
         </div>

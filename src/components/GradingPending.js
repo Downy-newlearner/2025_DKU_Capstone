@@ -5,7 +5,7 @@ import axios from "../api/axios";
 
 const GradingPending = () => {
   const navigate = useNavigate();
-  const { state } = useLocation(); // examId를 state로부터 받음
+  const { state } = useLocation();
   const subject = state?.subject;
 
   useEffect(() => {
@@ -17,15 +17,15 @@ const GradingPending = () => {
           },
         })
         .then((res) => {
-          const { status, lowConfidence } = res.data;
+          const { status, images } = res.data;
 
           if (status === "DONE") {
             clearInterval(interval);
 
-            if (lowConfidence && lowConfidence.length > 0) {
+            if (images && images.length > 0) {
               navigate("/review-answers", {
                 state: {
-                  images: lowConfidence,
+                  images,         // 백에서 받은 이미지 리스트
                   subject,
                   examDate: state.examDate,
                 },

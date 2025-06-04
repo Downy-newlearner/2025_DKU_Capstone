@@ -6,24 +6,25 @@ import { Loader2 } from "lucide-react";
 const StudentIdPending = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const subject = state?.subject; // ✅ subject로 변경
+  const subject = state?.subject;
 
   useEffect(() => {
     const interval = setInterval(() => {
       axios
-        .get(`/exams/student-id-status?subject=${encodeURIComponent(subject)}`, {
+        .get(`/student/${encodeURIComponent(subject)}/images`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         })
         .then((res) => {
-          const { status, lowConfidenceIds } = res.data;
+          const { status, lowConfidenceImages } = res.data;
 
           if (status === "DONE") {
             clearInterval(interval);
-            if (lowConfidenceIds && lowConfidenceIds.length > 0) {
+
+            if (lowConfidenceImages && lowConfidenceImages.length > 0) {
               navigate("/review-low-confidence-ids", {
-                state: { subject },
+                state: { subject, lowConfidenceImages },
               });
             } else {
               navigate("/grading-pending", { state: { subject } });
@@ -45,7 +46,9 @@ const StudentIdPending = () => {
           <Loader2 className="animate-spin text-indigo-600 w-10 h-10 mr-4" />
           <h1 className="text-4xl font-extrabold">학번 인식 중입니다...</h1>
         </div>
-        <p className="text-gray-600 text-lg">출석부를 기반으로 학번을 분석 중입니다. 잠시만 기다려주세요.</p>
+        <p className="text-gray-600 text-lg">
+          출석부를 기반으로 학번을 분석 중입니다. 잠시만 기다려주세요.
+        </p>
       </div>
     </div>
   );
