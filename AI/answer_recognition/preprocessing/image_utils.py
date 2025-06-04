@@ -95,10 +95,52 @@ def merge_contours_and_crop_text_pil(
 ) -> List[Dict[str, Any]]: # [{'image_obj': Image, 'x_in_line': int, 'y_in_line': int}]
     bounding_boxes_initial: List[Dict[str, Any]] = []
     img_width = line_pil_image.width
+    img_height = line_pil_image.height
+    
+    # PIL 이미지를 numpy 배열로 변환 (텍스트 밀도 체크용)
+    line_np_array = np.array(line_pil_image.convert('L'))  # 그레이스케일로 변환
+    
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        if w > 0.90 * img_width or w < 5 or h < 5 or w > 3 * h or h > 3 * w:
+        
+        # 기본 크기 및 비율 필터링 (조건 완화)
+        if (w > 0.90 * img_width or w < 8 or h < 8 or 
+            w > 8 * h or h > 8 * w):
             continue
+            
+        # 면적 기반 필터링 (조건 완화)
+        area = w * h
+        if area < 50:  # 최소 50 픽셀 면적으로 완화
+            continue
+            
+        # 텍스트 밀도 체크 (조건 완화)
+        # 해당 영역의 검은 픽셀 비율을 계산
+        roi = line_np_array[y:y+h, x:x+w]
+        if roi.size > 0:
+            # 임계값을 통해 검은/흰 픽셀 구분 (128 이하를 검은색으로 간주)
+            dark_pixels = np.sum(roi < 128)
+            total_pixels = roi.size
+            dark_ratio = dark_pixels / total_pixels
+            
+            # 검은 픽셀 비율이 너무 낮으면 (텍스트가 거의 없으면) 제외 (조건 완화)
+            if dark_ratio < 0.005:  # 0.5% 미만의 검은 픽셀로 완화
+                continue
+                
+            # 검은 픽셀 비율이 너무 높으면 (표나 선일 가능성) 제외
+            if dark_ratio > 0.9:  # 90% 이상의 검은 픽셀로 완화
+                continue
+        
+        # 컨투어 복잡도 체크 (조건 완화)
+        contour_area = cv2.contourArea(contour)
+        contour_perimeter = cv2.arcLength(contour, True)
+        if contour_perimeter > 0:
+            # 원형도 계산 (4π * 면적 / 둘레²)
+            # 값이 1에 가까울수록 원에 가까움
+            circularity = 4 * np.pi * contour_area / (contour_perimeter * contour_perimeter)
+            # 너무 원형이거나 너무 복잡한 모양 제거 (범위 확대)
+            if circularity > 0.95 or circularity < 0.05:
+                continue
+        
         bounding_boxes_initial.append({'x':x, 'y':y, 'w':w, 'h':h, 'xc': x + w/2, 'yc': y + h/2, 'merged': False})
 
     if not bounding_boxes_initial:
@@ -156,6 +198,10 @@ def merge_contours_and_crop_text_pil(
         if r_p <= x_p or b_p <= y_p: continue
 
         text_crop_pil = line_pil_image.crop((x_p, y_p, r_p, b_p))
+        
+        # 최종 크기 체크 (조건 완화)
+        if text_crop_pil.width < 10 or text_crop_pil.height < 10:
+            continue
         
         target_w, target_h = text_crop_pil.width, text_crop_pil.height
         square_size = max(target_w, target_h)
