@@ -1,5 +1,7 @@
 from typing import Dict, List, Any, Tuple
 import re
+import os # 디버그 이미지 저장용
+from pathlib import Path # 디버그 이미지 저장용
 
 # data_structures는 상위 디렉토리 또는 answer_recognition 패키지 레벨에서 가져와야 함
 # 현재 key_utils.py는 answer_recognition/utils/ 안에 위치
@@ -156,19 +158,49 @@ def generate_final_key_for_ans_crop(
     question_info_dict: Dict[str, List[int]],
     answer_key_data: Dict[str, Any]
 ) -> str:
+    # 디버그: 현재 처리중인 텍스트 조각 정보
+    line_id_for_debug = ans_text_crop_full_info.get('line_id_in_ans_area', 'unknownLine')
+    x_coord_for_debug = ans_text_crop_full_info.get('x_in_line', -1)
+    print(f"[Debug KeyGen] 처리 시작: ID={subject_student_id_base}, Line={line_id_for_debug}, X={x_coord_for_debug}")
+
     y_in_line = ans_text_crop_full_info['y_in_line_relative_to_line_crop_top']
     line_y_top = ans_text_crop_full_info['line_y_top_relative_to_ans_area']
     ans_area_y_offset = ans_text_crop_full_info['ans_area_y_offset_orig']
     text_crop_height = ans_text_crop_full_info['image_obj'].height
     abs_y_top_of_text_crop = ans_area_y_offset + line_y_top + y_in_line
-    abs_y_center_of_text_crop = abs_y_top_of_text_crop + (text_crop_height // 2)
+    abs_y_center_of_text_crop = line_y_top + (text_crop_height // 2)
+
+    print(f"  [Debug KeyGen] 계산된 텍스트 y 중심: {abs_y_center_of_text_crop}")
 
     matching_qn_str = "unknownQN"
+    print(f"  [Debug KeyGen] 문제번호 매칭 시도...")
     for qn_key, y_range_orig in question_info_dict.items():
+        print(f"    - 확인 중: qn_key='{qn_key}', y_range={y_range_orig}. (텍스트 y 중심: {abs_y_center_of_text_crop})")
         if y_range_orig[0] <= abs_y_center_of_text_crop <= y_range_orig[1]:
             matching_qn_str = qn_key
+            print(f"      ==> 매칭 성공: '{matching_qn_str}'")
             break
+    
+    if matching_qn_str == "unknownQN":
+        print(f"  [Debug KeyGen] 최종 문제번호 매칭 실패: matching_qn_str = 'unknownQN'")
+        # --- "unknownQN"으로 매칭된 경우 ans_text_crop_pil 이미지 저장 디버그 코드 시작 ---
+        try:
+            image_to_save = ans_text_crop_full_info['image_obj']
+            debug_image_dir = Path("debug_unknown_qn_images")
+            os.makedirs(debug_image_dir, exist_ok=True)
             
+            # 파일명에 특수문자나 공백이 없도록 처리 고려 (여기서는 간단히 처리)
+            safe_subject_id_base = re.sub(r'[^a-zA-Z0-9_\-]', '_', subject_student_id_base)
+            safe_line_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', line_id_for_debug)
+
+            filename = f"{safe_subject_id_base}_{safe_line_id}_x{x_coord_for_debug}_yCenter{abs_y_center_of_text_crop}.png"
+            save_path = debug_image_dir / filename
+            image_to_save.save(save_path)
+            print(f"  [Debug KeyGen] 'unknownQN' 이미지 저장됨: {save_path}")
+        except Exception as e:
+            print(f"  [Debug KeyGen] 'unknownQN' 이미지 저장 중 오류: {e}")
+        # --- "unknownQN"으로 매칭된 경우 ans_text_crop_pil 이미지 저장 디버그 코드 끝 ---
+
     answer_count_for_qn = 0
     for q_entry in answer_key_data.get('questions', []):
         qn_str_key = str(q_entry.get('question_number'))
@@ -180,9 +212,9 @@ def generate_final_key_for_ans_crop(
             break
             
     x_in_line_coord = ans_text_crop_full_info['x_in_line']
-    ans_area_id = ans_text_crop_full_info.get('ans_area_id', 'ansAreaX')
     line_id_in_ans_area = ans_text_crop_full_info.get('line_id_in_ans_area','lineX')
 
-    key_base = f"{subject_student_id_base}_{ans_area_id}_L{line_id_in_ans_area}_x{x_in_line_coord}_qn{matching_qn_str}_ac{answer_count_for_qn}"
+    # ans_area_id 부분을 키에서 제거
+    key_base = f"{subject_student_id_base}_L{line_id_in_ans_area}_x{x_in_line_coord}_qn{matching_qn_str}_ac{answer_count_for_qn}"
     
     return key_base.replace(" ", "") 

@@ -90,14 +90,14 @@ def preprocess_line_image_for_text_contours(line_pil_image: Image.Image) -> List
 def merge_contours_and_crop_text_pil(
     line_pil_image: Image.Image, 
     contours: List[np.ndarray],
-    merge_distance_threshold: int = 30,
+    merge_distance_threshold: int = 40,
     padding: int = 5
 ) -> List[Dict[str, Any]]: # [{'image_obj': Image, 'x_in_line': int, 'y_in_line': int}]
     bounding_boxes_initial: List[Dict[str, Any]] = []
     img_width = line_pil_image.width
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        if w > 0.90 * img_width or w < 5 or h < 5:
+        if w > 0.90 * img_width or w < 5 or h < 5 or w > 3 * h or h > 3 * w:
             continue
         bounding_boxes_initial.append({'x':x, 'y':y, 'w':w, 'h':h, 'xc': x + w/2, 'yc': y + h/2, 'merged': False})
 
