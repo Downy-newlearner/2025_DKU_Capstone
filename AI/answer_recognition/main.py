@@ -92,7 +92,6 @@ def preprocess_answer_sheet(
     # 여기서는 전체를 출력합니다.
     try:
         print(json.dumps(question_info_dict, indent=2, ensure_ascii=False))
-        print("여깄어요!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
     except TypeError as e:
         # PIL Image 객체 등이 직접 포함되어 json.dumps가 실패하는 경우를 대비
         print(f"    question_info_dict를 JSON으로 변환 중 오류 (직접 출력 시도): {e}")
@@ -120,27 +119,9 @@ def preprocess_answer_sheet(
     # line_idx는 현재 라인의 인덱스, line_crop_data는 현재 라인 이미지와 y정보를 담은 딕셔너리입니다.
     for line_idx, line_crop_data in enumerate(line_cropped_ans_list):
         line_ans_pil = line_crop_data['image_obj']
-        # # --- line_ans_pil 저장 디버그 코드 시작 ---
-        # try:
-        #     debug_line_img_dir = Path("debug_line_images")
-        #     os.makedirs(debug_line_img_dir, exist_ok=True)
-            
-        #     # 파일명 생성을 위해 current_line_id를 여기서 임시로 정의 또는 사용
-        #     temp_line_id_for_filename = f"L{line_idx}"
 
-        #     safe_subject_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', subject_student_id_base)
-        #     safe_ans_area_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', current_ans_area_id) # current_ans_area_id는 이 루프 바깥에서 정의됨
-        #     safe_line_id = re.sub(r'[^a-zA-Z0-9_\-]', '_', temp_line_id_for_filename)
-
-        #     line_filename = f"{safe_subject_id}_{safe_ans_area_id}_{safe_line_id}.png"
-        #     line_save_path = debug_line_img_dir / line_filename
-        #     line_ans_pil.save(line_save_path)
-        #     print(f"  [Debug Main] 라인 이미지 저장됨: {line_save_path}")
-        # except Exception as e:
-        #     print(f"  [Debug Main] 라인 이미지 저장 중 오류: {e}")
-        # # --- line_ans_pil 저장 디버그 코드 끝 ---
         line_y_top_in_ans_area = line_crop_data['y_top_in_area']
-        current_line_id = f"L{line_idx}" # 실제 current_line_id는 여기서 할당됨 (키 생성 등에 사용)
+        current_line_id = f"{line_idx}" # 실제 current_line_id는 여기서 할당됨 (키 생성 등에 사용)
 
         # 라인 내 텍스트 컨투어(윤곽선) 검출
         text_contours_cv = preprocess_line_image_for_text_contours(line_ans_pil)
@@ -174,205 +155,381 @@ def preprocess_answer_sheet(
                 key_suffix += 1
                 temp_key = f"{final_key_base}_dup{key_suffix}"
             final_key = temp_key
-            # --- final_key에 "qnunknownQN" 포함 시 line_ans_pil 이미지 저장 디버그 코드 시작 ---
-            if "qnunknownQN" in final_key:
-                try:
-                    debug_unknown_line_dir = Path("debug_unknown_qn_lines")
-                    os.makedirs(debug_unknown_line_dir, exist_ok=True)
-                    
-                    # final_key를 기반으로 파일명 생성, 라인 이미지임을 명시
-                    line_image_filename = f"{final_key}_LINE.png"
-                    line_image_save_path = debug_unknown_line_dir / line_image_filename
-                    
-                    # 현재 루프의 line_ans_pil (해당 텍스트 조각이 속한 전체 라인 이미지) 저장
-                    line_ans_pil.save(line_image_save_path)
-                    print(f"    [Debug Main] 'unknownQN' 포함 라인 이미지 저장됨: {line_image_save_path}")
-                except Exception as e:
-                    print(f"    [Debug Main] 'unknownQN' 포함 라인 이미지 저장 중 오류: {e}")
-            # --- final_key에 "qnunknownQN" 포함 시 line_ans_pil 이미지 저장 디버그 코드 끝 ---
             final_ans_text_crop_dict[final_key] = ans_text_crop_pil
-            # --- ans_text_crop_pil 저장 디버그 코드 시작 ---
-            # try:
-            #     debug_text_crop_dir = Path("debug_text_crop_images")
-            #     os.makedirs(debug_text_crop_dir, exist_ok=True)
-                
-            #     # final_key를 파일명으로 사용 (특수문자 처리 등은 final_key 생성 시 이미 어느정도 반영되었거나, 필요시 추가)
-            #     # 여기서는 final_key가 이미 적절한 문자열이라고 가정
-            #     # 만약 final_key에 파일명으로 부적절한 문자가 포함될 가능성이 있다면 re.sub 등으로 처리 필요
-            #     text_crop_filename = f"{final_key}.png"
-            #     text_crop_save_path = debug_text_crop_dir / text_crop_filename
-            #     ans_text_crop_pil.save(text_crop_save_path)
-            #     # print(f"    [Debug Main] 텍스트 조각 이미지 저장됨: {text_crop_save_path}") # 너무 많은 로그를 유발할 수 있어 주석 처리
-            # except Exception as e:
-            #     print(f"    [Debug Main] 텍스트 조각 이미지 저장 중 오류: {e}")
-            # # --- ans_text_crop_pil 저장 디버그 코드 끝 ---
+
     
     print(f"  전처리 완료: {subject_student_id_base}. 총 {len(final_ans_text_crop_dict)}개의 잘린 답변 텍스트 이미지 생성됨.") # DEBUG KOR
     return final_ans_text_crop_dict
 
-# --- Main Recognition Function (UPDATED) ---
 def recognize_answer_sheet_data(
-    processed_ans_crops: Dict[str, Image.Image],
-    answer_key_data: Dict[str, Any] # answer_key_data는 현재 직접 사용되지 않지만, 향후 확장성을 위해 유지될 수 있습니다.
+    processed_ans_crops: Dict[str, Image.Image], # preprocess_answer_sheet 함수의 반환 값
+    answer_key_data: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
-    전처리된 답안 텍스트 조각 이미지들로부터 숫자를 인식하여 최종 답안을 생성합니다.
-
-    Args:
-        processed_ans_crops: 키(고유 식별자)와 PIL Image 객체(텍스트 조각)를 값으로 가지는 딕셔너리.
-        answer_key_data: (현재 직접 사용 X) 원본 답안 키 JSON 데이터. 
-                         키 파싱을 통해 얻은 정보(예: answer_count)가 이 데이터에서 비롯됩니다.
+    전처리된 답안 텍스트 조각 이미지들로부터 숫자를 인식하여
+    최종적으로 answer_json 및 failure_json을 생성합니다.
 
     Returns:
-        인식 성공 및 실패 정보를 담은 딕셔너리.
-        {
-            "success_json": { "학번_과목": {"문제번호": ["인식된 답1", "인식된 답2"], ...} ... },
-            "failure_json": { "학번_과목": {"문제번호": {"reason": "실패 이유"}, ...} ... }
-        }
+        Dict[str, Any]: answer_json과 failure_json을 포함하는 딕셔너리.
     """
-    print(f"Recognition started for {len(processed_ans_crops)} ans_text_crop objects.")
+    import re # Moved here
+    from collections import defaultdict # Moved here
+    
+    # --- 0단계: 초기 유효성 검증 및 기본 정보 파싱 ---
+    # 입력으로 받은 processed_ans_crops가 비어 있는 경우, 에러 메시지를 출력하고 빈 결과를 반환 (early return)
+    # processed_ans_crops의 첫 번째 key를 샘플로 사용하여 아래 정보를 파싱:
+        # 학번(student_id): key 내 8자리 숫자를 정규표현식으로 추출
+        # 과목명(subject): key 내에서 학번 앞까지의 문자열 중 마지막 '_'를 기준으로 학번 제외
+    # 이후 단계에서 사용할 결과 저장용 딕셔너리 answer_result / failure_result 초기화
 
-    # --- 단계 1: 입력 데이터(processed_ans_crops)를 (학번_과목, 문제번호) 기준으로 그룹핑 ---
-    # 목적: 동일 문제에 속하는 여러 텍스트 조각들을 함께 처리하기 위함.
-    #       예를 들어, "1, 2, 3"과 같이 여러 조각으로 나뉘어 크롭된 답도 하나의 문제로 묶습니다.
-    grouped_for_recognition: Dict[Tuple[str, str], List[Dict[str,Any]]] = {}
+    if not processed_ans_crops:
+        print("[Error] 입력된 processed_ans_crops가 비어 있습니다.")
+        return {
+            "answer_json": {},
+            "failure_json": {}
+        }
 
-    for full_key, img_obj in processed_ans_crops.items():
-        # full_key 예시: "test_answer_32174515_LlineX_x220_qn1-1_ac1"
-        match = KEY_PARSING_REGEX.match(full_key) # 정규표현식을 사용해 키 정보를 파싱합니다.
-        if not match:
-            print(f"  Error: Key '{full_key}' did not match expected pattern. Skipping.")
+    # 첫 번째 키 하나를 샘플로 추출하여 subject와 student_id 파싱
+    sample_key = next(iter(processed_ans_crops))
+    try:
+        # 예시 키: test_answer_32174515_LL1_x60_qn1_ac0
+        student_id_match = re.search(r"\d{8}", sample_key)
+        if not student_id_match:
+            raise ValueError("학번(8자리 숫자)을 key에서 찾을 수 없습니다.")
+        
+        student_id = student_id_match.group()
+        subject_with_id = sample_key[:sample_key.find(student_id) + len(student_id)]
+        subject = subject_with_id.rsplit("_", 1)[0]
+
+        print(f"[Init] 파싱된 subject: {subject}, student_id: {student_id}")
+    except Exception as e:
+        print(f"[Error] Key 파싱 실패 - 예외: {e}")
+        return {
+            "answer_json": {},
+            "failure_json": {}
+        }
+
+    # 결과 저장용 딕셔너리 초기화
+    answer_result: Dict[str, Dict[str, Any]] = {}
+    failure_result: Dict[str, List[Dict[str, Any]]] = {}
+
+    # --- 0단계 확인을 위한 임시 반환 ---
+    # return {
+    #     "parsed_subject": subject,
+    #     "parsed_student_id": student_id,
+    #     "initial_answer_result": answer_result,
+    #     "initial_failure_result": failure_result,
+    #     "message": "0단계 (초기화 및 파싱) 테스트 완료"
+    # }
+
+
+
+
+
+
+
+
+
+    # --- 1단계: 이미지 그룹핑 및 좌표 파싱 ---
+    # • processed_ans_crops의 key를 순회하며 question number(qn)를 추출
+    # • key 내부에서 x, y 좌표도 정규표현식으로 추출
+    # • qn 값이 없을 경우 unknownQN으로 처리
+    # • 각 qn에 대해 리스트 생성: { key, img, x, y } 딕셔너리 추가
+    # • 각 qn 리스트 내 객체들을 y 오름차순 → x 오름차순으로 정렬
+
+    # import re  # 꼭 상단에 import 되어 있어야 함
+
+    # grouped_answers_by_qn = {}
+
+    # for key, img in processed_ans_crops.items():
+    #     # qn 파싱
+    #     qn_match = re.search(r'_qn([a-zA-Z0-9\-]+)', key)
+    #     qn = qn_match.group(1) if qn_match else "unknownQN"
+
+    #     # x, y 좌표 파싱
+    #     x_match = re.search(r'_x(\d+)', key)
+    #     y_match = re.search(r'_y(\d+)', key)
+    #     x = int(x_match.group(1)) if x_match else -1
+    #     y = int(y_match.group(1)) if y_match else -1
+
+    #     # 항목 구성
+    #     entry = {
+    #         "key": key,
+    #         "img": img,
+    #         "x": x,
+    #         "y": y
+    #     }
+
+    #     if qn not in grouped_answers_by_qn:
+    #         grouped_answers_by_qn[qn] = []
+
+    #     grouped_answers_by_qn[qn].append(entry)
+
+    # # TODO: y 오름차순 정렬 -> 꼬리문제 처리 -> x 오름차순 정렬
+
+
+
+
+
+
+
+
+
+
+
+
+
+    import re
+    from collections import defaultdict
+    from sklearn.cluster import KMeans
+    import numpy as np
+
+    def extract_tail_question_counts(answer_key_data: dict) -> dict:
+        """
+        answer_key_data로부터 각 문제(qn)의 꼬리문제 개수(sub_question_number의 개수)를 계산합니다.
+
+        Returns:
+            tail_question_counts: Dict[str, int]
+                예: {"1": 28, "2": 1, "3": 1, ...}
+        """
+        tail_question_counts = defaultdict(int)
+
+        for q in answer_key_data.get("questions", []):
+            qn = str(q["question_number"])
+            tail_question_counts[qn] += 1
+
+        return dict(tail_question_counts)
+    
+    
+
+    # --- 1단계: 문제 번호(qn) 기준으로 그룹핑 및 좌표 정렬 ---
+    # • processed_ans_crops의 각 key에서 문제 번호(qn), x, y 좌표를 파싱
+    # • 각 qn별로 이미지들을 모아서 grouped_answers_by_qn에 저장
+    # • 이때 (x, y) 좌표 정보를 함께 포함시켜 추후 정렬/클러스터링에 사용
+    # • tail_question_counts를 기반으로 y 기준 KMeans 클러스터링이 필요한 문제를 식별함
+
+
+    grouped_answers_by_qn = {}
+
+
+    for key, img in processed_ans_crops.items():
+        # 1. 문제 번호 파싱 (qn)
+        qn_match = re.search(r'_qn([a-zA-Z0-9\-]+)', key)
+        qn = qn_match.group(1) if qn_match else "unknownQN"
+
+        # 좌표 파싱
+        x_match = re.search(r'_x(\d+)', key)
+        y_match = re.search(r'_y(\d+)', key)
+        x = int(x_match.group(1)) if x_match else -1
+        y = int(y_match.group(1)) if y_match else -1
+
+        entry = {
+            "key": key,
+            "img": img,
+            "x": x,
+            "y": y
+        }
+        
+        # unknownQN인 경우 경고 메시지 출력하고 건너뛰기
+        if qn == "unknownQN":
+            print(f"[Warning] Key '{key}'에서 유효한 문제 번호(qn)를 찾을 수 없습니다. 건너뜁니다.")
             continue
+            
+        # 2. 문제 단위 그룹핑
+        if qn not in grouped_answers_by_qn:
+            grouped_answers_by_qn[qn] = []
 
-        parsed_key_data = match.groupdict() # 파싱된 결과를 딕셔너리 형태로 가져옵니다.
-        subject_student_id_base = parsed_key_data['subject_student_id_base'] # 예: "test_answer_32174515"
-        qn_str = parsed_key_data['qn_str'] # 예: "1-1" (하이픈 포함 가능)
-        ac_val = int(parsed_key_data['ac_val']) # 예: 1 (해당 문제의 예상 답안 개수)
-        x_val = int(parsed_key_data['x_val']) # 예: 220 (라인 내 텍스트 조각의 x 좌표)
+        grouped_answers_by_qn[qn].append(entry)
 
-        # 그룹핑 키: (과목명_학번, 문제번호) 튜플을 사용합니다.
-        group_key = (subject_student_id_base, qn_str)
-        if group_key not in grouped_for_recognition:
-            grouped_for_recognition[group_key] = []
+    # 3. qn - sub_qn 할당
+    # 이제 각 qn에 대해 y 정렬 또는 KMeans 클러스터링을 적용해 sub_qn 할당
+    grouped_answers_by_qn_and_subqn = {}
+    tail_question_counts = extract_tail_question_counts(answer_key_data)
+    '''
+    tail_question_counts 예시:
+    {
+        "1": 28,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        ...
+    }
+    '''
 
-        # 그룹에 현재 텍스트 조각의 정보(이미지, x좌표, 예상 답안 개수 등)를 추가합니다.
-        grouped_for_recognition[group_key].append({
-            'full_key': full_key,
-            'image_obj': img_obj,
-            'x_coord_of_text_crop_in_line': x_val,
-            'expected_answer_count': ac_val # 이 값은 digit_recognizer.group_and_combine_digits에서 사용됩니다.
-        })
+    # 3-1. 시험지 유형1: 꼬리문제가 없는 경우
+        # x 기준 정렬만 수행한다.
+        # 왜냐하면 각 qn에는 꼬리문제가 없으므로, y 기준 정렬은 불필요하기 때문이다.
+    if all(value == 1 for value in tail_question_counts.values()):
+        for qn, entries in grouped_answers_by_qn.items():
+            # 꼬리문제가 없는 경우: qn만 사용하여 x 기준 정렬
+            for idx, entry in enumerate(sorted(entries, key=lambda e: e["x"])):
+                full_qn = qn  # sub_qn 없음
 
-    recognition_results_by_sheet_and_qn: Dict[str, Dict[str, Any]] = {} # 최종 인식 결과를 저장할 딕셔너리
+                if full_qn not in grouped_answers_by_qn_and_subqn:
+                    grouped_answers_by_qn_and_subqn[full_qn] = []
 
-    # --- 단계 2: MNIST 모델 로드 상태 확인 ---
-    # 모델이 로드되지 않았으면, 모든 문제에 대해 인식 실패 처리.
-    if not mnist_recognition_pipeline:
-        print("MNIST model not loaded. Cannot perform recognition.")
-        for (subject_student_id, qn_str_key), _ in grouped_for_recognition.items():
-            if subject_student_id not in recognition_results_by_sheet_and_qn:
-                recognition_results_by_sheet_and_qn[subject_student_id] = {}
-            recognition_results_by_sheet_and_qn[subject_student_id][qn_str_key] = {'status': 'failure', 'reason': 'MNIST model not available'}
-    else: # MNIST model is loaded
-        # --- 단계 3: 그룹핑된 문제별로 숫자 인식 처리 ---
-        for (subject_student_id, qn_str_key), crop_infos_for_qn_list in grouped_for_recognition.items():
-            if subject_student_id not in recognition_results_by_sheet_and_qn:
-                recognition_results_by_sheet_and_qn[subject_student_id] = {}
+                grouped_answers_by_qn_and_subqn[full_qn].append(entry)
 
-            # --- 단계 3-1: 현재 문제에 속한 텍스트 조각들을 x 좌표 기준으로 정렬 ---
-            # 답안이 여러 조각으로 나뉘었을 경우, 왼쪽에서 오른쪽 순서로 처리하기 위함입니다.
-            sorted_text_crops_for_qn = sorted(crop_infos_for_qn_list, key=lambda x: x['x_coord_of_text_crop_in_line'])
 
-            all_recognized_digits_for_this_qn_globally_sorted: List[Dict[str, Any]] = [] # 현재 문제의 모든 텍스트 조각에서 인식된 숫자 정보를 저장 (전체 문제 영역 기준 x좌표로 정렬 예정)
+    # 3-2. 시험지 유형2: 꼬리문제가 있고 qn에 포함되는 경우 - 신호와 시스템 시험지 유형
+        # 신호와 시스템 시험지의 경우 꼬리문제가 있고 qn에 포함된다.
+        # 이런 경우 '시험지 유형1'과 동일하게 처리한다.
+        # 참고로 '2(a)', '7(b)'와 같은 꼬리문제 형식이어도 qn은 항상 '2-1', '7-2'과 같은 형식으로 처리된다.(이는 preprocess_answer_sheet 함수와 답지.json에서 확인할 수 있다.)
+    elif any('-' in key for key in grouped_answers_by_qn.keys()):
+        for qn, entries in grouped_answers_by_qn.items():
+            # 꼬리문제가 없는 경우: qn만 사용하여 x 기준 정렬
+            for idx, entry in enumerate(sorted(entries, key=lambda e: e["x"])):
+                full_qn = qn  # sub_qn 없음
 
-            # --- 단계 3-2: 정렬된 각 텍스트 조각 이미지에서 숫자 검출 및 인식 ---
-            for text_crop_data in sorted_text_crops_for_qn:
-                current_text_crop_pil = text_crop_data['image_obj'] # 현재 처리할 텍스트 조각 PIL 이미지
-                x_offset_of_this_text_crop = text_crop_data['x_coord_of_text_crop_in_line'] # 라인 내에서 현재 텍스트 조각의 시작 x 좌표
+                if full_qn not in grouped_answers_by_qn_and_subqn:
+                    grouped_answers_by_qn_and_subqn[full_qn] = []
 
-                # --- 단계 3-2-1: 텍스트 조각 내에서 개별 숫자 윤곽선(bounding box) 찾기 ---
-                # min_contour_area는 너무 작은 노이즈를 필터링하기 위한 값입니다.
-                digit_bboxes_in_current_text_crop = pil_find_digit_contours_in_text_crop(current_text_crop_pil, min_contour_area=3)
-                if not digit_bboxes_in_current_text_crop: continue # 숫자가 검출되지 않으면 다음 텍스트 조각으로 넘어감
+                grouped_answers_by_qn_and_subqn[full_qn].append(entry)
 
-                # --- 단계 3-2-2: 검출된 각 숫자 윤곽선 영역에 대해 MNIST 모델로 숫자 인식 ---
-                recognized_digits_within_this_text_crop = pil_recognize_digits_from_bboxes(current_text_crop_pil, digit_bboxes_in_current_text_crop)
 
-                # 인식된 숫자 정보를 저장. x 좌표는 전체 문제 영역 기준의 'global_x_center'로 변환하여 저장합니다.
-                for r_digit_info in recognized_digits_within_this_text_crop:
-                    all_recognized_digits_for_this_qn_globally_sorted.append({
-                        'text': r_digit_info['text'], # 인식된 숫자 (문자열)
-                        'confidence': r_digit_info['confidence'], # 인식 신뢰도
-                        'global_x_center': x_offset_of_this_text_crop + r_digit_info['center_x_in_text_crop'], # 문제 라인에서의 전역 x 중심 좌표
-                        'digit_width': r_digit_info['bbox_in_text_crop'][2] # 숫자 bounding box의 너비
-                    })
+    # 3-3. 시험지 유형3: 꼬리문제가 있고 qn에 포함되지 않는 경우 - 인공지능 시험지 유형
+        # 인공지능 시험지의 1번 문제의 경우 꼬리문제가 있고 qn_yolo_area(yolo 검출 기준)에 꼬리문제가 포함되지 않는다.
+        # 이런 경우 꼬리문제가 있는 문제에 대해 텍스트 크롭 이미지들을 y 기준 정렬한다.
+        # 그 후 꼬리문제 개수를 기준으로 KMeans 클러스터링을 수행한다.
+    else:
+        for qn, entries in grouped_answers_by_qn.items():
+            entries_sorted = sorted(entries, key=lambda e: e["y"])
 
-            current_qn_status = "success" # 현재 문제의 인식 상태 초기값
-            reason_for_failure = "Unknown" # 실패 시 이유
+            if qn in tail_question_counts and tail_question_counts[qn] > 1:
+                # 어떤 주 문제의 꼬리문제가 여러 개인 경우: y 기준 KMeans 클러스터링 사용
 
-            # --- 단계 3-3: 현재 문제에 대해 인식된 모든 숫자를 종합하여 최종 답안 생성 ---
-            if not all_recognized_digits_for_this_qn_globally_sorted:
-                # 현재 문제에서 숫자가 전혀 인식되지 않은 경우
-                current_qn_status = "failure"; reason_for_failure = "No digits recognized for this QN"
+                k = tail_question_counts[qn]
+                y_values = np.array([e["y"] for e in entries_sorted]).reshape(-1, 1)
+
+                try:
+                    kmeans = KMeans(n_clusters=k, random_state=0, n_init="auto")
+                    cluster_labels = kmeans.fit_predict(y_values)
+
+                    # 중심 y값 기준으로 sub_qn 재정렬
+                    cluster_centers = kmeans.cluster_centers_.flatten()
+                    sorted_cluster_indices = np.argsort(cluster_centers)
+                    cluster_to_subqn = {cluster_idx: sub_qn + 1 for sub_qn, cluster_idx in enumerate(sorted_cluster_indices)}
+
+                except Exception as e:
+                    print(f"[Error] qn {qn} KMeans 실패: {e}")
+                    cluster_labels = list(range(len(entries_sorted)))
+                    cluster_to_subqn = {i: i + 1 for i in range(len(entries_sorted))}
+
+                for idx, entry in enumerate(entries_sorted):
+                    cluster_idx = cluster_labels[idx]
+                    sub_qn = cluster_to_subqn[cluster_idx]
+                    full_qn = f"{qn}-{sub_qn}"
+
+                    if full_qn not in grouped_answers_by_qn_and_subqn:
+                        grouped_answers_by_qn_and_subqn[full_qn] = []
+                    grouped_answers_by_qn_and_subqn[full_qn].append(entry)
+
             else:
-                # --- 단계 3-3-1: 인식된 숫자들을 전역 x 중심 좌표 기준으로 다시 정렬 ---
-                all_recognized_digits_for_this_qn_globally_sorted.sort(key=lambda d: d['global_x_center'])
+                for idx, entry in enumerate(sorted(entries_sorted, key=lambda e: e["x"])):
+                    full_qn = qn
+                    if full_qn not in grouped_answers_by_qn_and_subqn:
+                        grouped_answers_by_qn_and_subqn[full_qn] = []
+                    grouped_answers_by_qn_and_subqn[full_qn].append(entry)
 
-                # --- 단계 3-3-2: 예상 답안 개수 및 숫자 간 간격 임계값 설정 ---
-                # expected_answer_count는 키 파싱 시 얻은 ac_val 값입니다.
-                num_expected_answers = sorted_text_crops_for_qn[0]['expected_answer_count'] if sorted_text_crops_for_qn else 0
-                # 숫자 너비의 평균을 기준으로 동적 간격 임계값 설정 (숫자들이 너무 붙어있거나 떨어져 있는 경우를 처리)
-                avg_digit_width = np.mean([d['digit_width'] for d in all_recognized_digits_for_this_qn_globally_sorted if d['digit_width'] > 0]) if any(d['digit_width'] > 0 for d in all_recognized_digits_for_this_qn_globally_sorted) else 10
-                dynamic_spacing_threshold = max(5.0, avg_digit_width * 0.75) # 최소 5픽셀, 또는 평균 너비의 75%
+    # 4. full_qn 기준으로 grouped_answers_by_qn_and_subqn 정렬
+        # full_qn이 '1-2'와 같이 꼬리문제를 포함하는 경우를 고려해 정렬되도록 key를 float 값으로 변환
+        # 예: '1-2' → 1.02, '2' → 2.00으로 변환하여 번호 순 정렬을 자연스럽게 수행
+    def qn_sort_key(qn_str):
+        if '-' in qn_str:
+            major, minor = qn_str.split('-')
+            return float(f"{int(major)}.{int(minor):02d}")
+        else:
+            return float(f"{int(qn_str)}.00")
 
-                # --- 단계 3-3-3: 정렬된 숫자 정보를 바탕으로 그룹핑하여 최종 답안 문자열 리스트 생성 ---
-                # 예: [ {'text':'1', 'global_x_center':10}, {'text':'2', 'global_x_center':20}, {'text':'3', 'global_x_center':50} ]
-                #      -> expected_answer_count=1 이면 ["12", "3"] 또는 ["123"] 등 (간격에 따라)
-                #      -> expected_answer_count=2 이고, 답이 "1, 23" 이면 ["1", "23"] 과 같이 그룹핑 시도
-                final_answer_strings = group_and_combine_digits(
-                    all_recognized_digits_for_this_qn_globally_sorted,
-                    max_spacing_threshold=dynamic_spacing_threshold,
-                    expected_answer_count=num_expected_answers
-                )
-                if not final_answer_strings:
-                    current_qn_status = "failure"; reason_for_failure = "Digit combination resulted in no answer strings"
-                else:
-                    # 성공적으로 답안 문자열이 생성된 경우
-                    recognition_results_by_sheet_and_qn[subject_student_id][qn_str_key] = {'status': 'success', 'recognized_answers': final_answer_strings}
+    grouped_answers_by_qn_and_subqn = dict(
+        sorted(grouped_answers_by_qn_and_subqn.items(), key=lambda x: qn_sort_key(x[0]))
+    )
 
-            # --- 단계 3-4: 현재 문제 인식 실패 시 결과 저장 ---
-            if current_qn_status == "failure":
-                 recognition_results_by_sheet_and_qn[subject_student_id][qn_str_key] = {'status': 'failure', 'reason': reason_for_failure}
+    
 
-    # --- 단계 4: 최종 결과 집계 및 반환 형식 구성 ---
-    # 인식 결과를 성공(success_json)과 실패(failure_json)로 나누어 구성합니다.
-    final_success_json = {}
-    final_failure_json = {}
-    for subject_student_id_base, qn_results_map in recognition_results_by_sheet_and_qn.items():
-        sheet_all_success = True; sheet_answers = {}; sheet_failures = {}; has_any_qn_data = False
-        for qn, result in qn_results_map.items():
-            has_any_qn_data = True # 해당 답안지에 처리된 문제가 하나라도 있는지 확인
-            if result['status'] == 'success':
-                sheet_answers[qn] = result['recognized_answers']
-            else:
-                sheet_all_success = False # 하나라도 실패하면 전체 성공은 아님
-                sheet_failures[qn] = {'reason': result.get('reason', 'Unknown failure')}
 
-        # 해당 답안지에 대해 처리된 문제가 전혀 없는 경우 (예: 그룹핑 후 필터링 등)
-        if not has_any_qn_data and subject_student_id_base not in final_failure_json:
-            final_failure_json[subject_student_id_base] = {"reason": f"No questions processed or recognized for this sheet {subject_student_id_base}."}
-            continue
 
-        if sheet_answers: # 성공적으로 인식된 답안이 하나라도 있는 경우
-            final_success_json[subject_student_id_base] = sheet_answers
-            if not sheet_all_success and sheet_failures: # 부분적으로 실패한 문제가 있는 경우
-                 if subject_student_id_base not in final_failure_json: final_failure_json[subject_student_id_base] = {}
-                 final_failure_json[subject_student_id_base].update({"partial_failures": sheet_failures})
-        elif sheet_failures: # 모든 문제가 실패한 경우
-            final_failure_json[subject_student_id_base] = {"overall_status": "complete_failure", "details": sheet_failures}
 
-    print(f"  Recognition finished. Success entries: {len(final_success_json)}, Failure entries: {len(final_failure_json)}")
-    return {"success_json": final_success_json, "failure_json": final_failure_json}
+
+
+
+
+    # --- 1단계 확인을 위한 임시 반환 ---
+    # grouped_answers_by_qn_and_subqn을 직렬화합니다.
+    # 각 딕셔너리 내부의 'img' PIL Image 객체를 크기 정보로 대체합니다.
+    grouped_answers_serializable = {}
+    for full_qn, entries in grouped_answers_by_qn_and_subqn.items():
+        serializable_entries = []
+        for entry in entries:
+            serializable_entry = entry.copy() # 원본 entry 수정을 피하기 위해 복사
+            img_obj = serializable_entry.pop("img") # img 객체를 꺼내고 entry에서 제거
+            serializable_entry["img_size"] = img_obj.size if hasattr(img_obj, 'size') else 'N/A'
+            serializable_entries.append(serializable_entry)
+        grouped_answers_serializable[full_qn] = serializable_entries
+    
+    return {
+        "parsed_subject": subject,
+        "parsed_student_id": student_id,
+        "grouped_answers_by_qn_and_subqn": grouped_answers_serializable, # 직렬화된 새 변수 사용 및 키 변경
+        "message": "1단계 (이미지 그룹핑 및 sub_qn 할당) 테스트 완료" # 메시지 업데이트
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # --- 2단계: 개별 이미지에 대한 숫자 인식 수행 ---
+    # • 이미지 내 숫자 컨투어 검출
+    # • 컨투어 기반으로 숫자 박스 추출
+    # • 모델을 통해 각 숫자 박스에 대해 숫자 인식 수행
+    # • 인식된 숫자를 조합하여 최종 답안 문자열 생성
+
+    # --- 3단계: 인식 성공/실패 분류 및 기록 ---
+    # • 인식된 문자열이 존재하면 answer_json 형태로 저장
+    # • 인식 실패하거나 공란이면 failure_json용 이미지로 저장 (base64 포함)
+
+    # --- 4단계: 최종 answer_json 생성 ---
+    # • student_id별로 answers 리스트를 구성
+    # • answer_json 구조: { subject: "과목", studentAnswersList: [ {...}, {...} ] }
+
+    # --- 5단계: 최종 failure_json 생성 ---
+    # • 실패한 이미지들을 모아 subject와 함께 구조화
+    # • failure_json 구조: { subject: "과목", images: [ {...}, {...} ] }
+
+    # --- 6단계: 반환 ---
+    # • answer_json과 failure_json을 포함한 딕셔너리 반환
+    return {
+        "answer_json": {},
+        "failure_json": {}
+    }
 
 if __name__ == "__main__":
     # preprocess_answer_sheet 함수 테스트
@@ -400,5 +557,18 @@ if __name__ == "__main__":
             else:
                 print(f"  Key: {key}, Image Object Type: {type(img_obj)} (Size not available)")
 
+        # --- recognize_answer_sheet_data 함수 테스트 (1단계까지) ---
+        print("\n--- Running Recognition Test (Step 1) --- ")
+        # answer_key_data 로드 (recognize_answer_sheet_data 함수에 필요)
+        try:
+            with open(test_answer_key_json_path, 'r', encoding='utf-8') as f:
+                answer_key_data_for_test = json.load(f)
+            
+            recognition_step1_result = recognize_answer_sheet_data(processed_crops, answer_key_data_for_test)
+            print("\nRecognition Step 1 Result:")
+            # 보기 쉽게 json.dumps를 사용하여 출력
+            print(json.dumps(recognition_step1_result, indent=2, ensure_ascii=False))
+        except Exception as e:
+            print(f"Error during recognition test (Step 1): {e}")
 
     print("\n--- Test Script Finished ---")
