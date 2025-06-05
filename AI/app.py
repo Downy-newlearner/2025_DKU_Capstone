@@ -1,5 +1,5 @@
 import sys # 경로 추가를 위해 import
-from flask import Flask, request, jsonify, current_app
+from flask import Flask, request, jsonify, current_app, send_file # send_file 추가
 import os
 import tempfile
 import traceback
@@ -16,6 +16,16 @@ import threading
 from kafka import KafkaProducer
 # Flask의 jsonify와 이름 충돌을 피하기 위해 json 모듈은 보통 그대로 사용합니다.
 # value_serializer에서 json.dumps를 사용하므로 import json은 필요합니다.
+
+# PDF 및 그래프 생성용 라이브러리 임포트
+import io
+import matplotlib
+matplotlib.use('Agg') # 백엔드에서 Matplotlib 사용을 위한 설정
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import numpy as np
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 
 
 # TODO: 각 모듈의 main 함수 또는 필요한 함수들을 import
@@ -47,7 +57,7 @@ app.config['JSON_AS_ASCII'] = False # 한글을 ASCII로 이스케이프하지 �
 producer = None
 try:
     producer = KafkaProducer(
-        bootstrap_servers='localhost:9092', # TODO: 실제 Kafka 서버 주소로 변경!
+        bootstrap_servers='43.202.183.74:9092', # TODO: 실제 Kafka 서버 주소로 변경!
         value_serializer=lambda v: json.dumps(v).encode('utf-8')
     )
     app.logger.info("Kafka Producer initialized successfully.")
@@ -105,8 +115,20 @@ def background_task(subject_name, zip_path, xlsx_path, extracted_images_path, pr
 
         # 6. 학번 인식 (및 조건부 파일명 변경)
         logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 학번 인식 모듈 호출 (subject_name: {subject_name})...")
+        
+        # Define Kafka topic for student_id_recognition module
+        student_id_recognition_topic = "student-id-recognition-progress" # Or any other appropriate topic name
+        task_identifier = os.path.basename(processing_folder_path)
+
         # process_student_ids (main.main) 함수에 subject_name 인자 전달
-        result_from_module = process_student_ids(extracted_images_path, student_numbers_from_xlsx, subject_name)
+        result_from_module = process_student_ids(
+            extracted_images_path,
+            student_numbers_from_xlsx,
+            subject_name,
+            producer, # Pass the Kafka producer
+            student_id_recognition_topic, # Pass the Kafka topic
+            task_identifier # Pass a task_id
+        )
         
         # main.py의 main 함수가 반환하는 result_json은 이미 subject 필드를 포함하고 있으므로,
         # 여기서 다시 설정할 필요가 없습니다. (또는 main.py에서 설정된 값을 신뢰)
@@ -114,12 +136,12 @@ def background_task(subject_name, zip_path, xlsx_path, extracted_images_path, pr
         
         # 1차 인식 결과에 session_id 추가 (추후 상태 추적 또는 결과 매칭에 사용 가능)
         result_from_module["processing_folder"] = os.path.basename(processing_folder_path)
-        logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 학번 인식 완료. Kafka 전송 대상 이미지 수: {len(result_from_module.get('images', []))}")
+        logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 학번 인식 완료. Kafka 전송 대상 이미지 수: {len(result_from_module.get('lowConfidenceImages', []))}")
 
         # 7. Kafka로 결과 전송 (2차 수정이 필요한 이미지 정보만 전송됨)
         if producer:
             try:
-                topic_name = "student-id-recognition-result" # 필요시 토픽명 변경
+                topic_name = "student-id-image-requests" # 필요시 토픽명 변경
                 producer.send(topic_name, result_from_module)
                 producer.flush()
                 logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] Kafka 전송 완료. Topic: {topic_name}, Message: {result_from_module}")
@@ -442,6 +464,184 @@ def background_rename_files_task(subject_name, student_list, base_image_path, pa
         logger.error(f"[BG RENAME TASK - {task_id}] 백그라운드 작업 중 전역 예외 발생: {traceback.format_exc()}")
         # 부분 성공/실패 결과가 있다면 results에 기록되었을 것이고, Kafka 등으로 보낼 수 있음
 
+
+
+
+@app.route('/generate-report', methods=['POST'])
+def generate_report():
+    data = request.get_json(force=True)
+
+    subject = data.get("subject")
+    responses = data.get("responses", [])
+
+    # 1. 점수 수집
+    scores = [r.get("totalScore", 0) for r in responses]
+
+    # 2. 통계 계산
+    mean_score = np.mean(scores) if scores else 0
+    std_dev = np.std(scores) if scores else 0
+
+    # 3. 히스토그램 생성 (세로축: 인원 수, 가로축: 점수)
+    plt.figure(figsize=(10, 6))
+    # scores가 비어있거나 모든 점수가 동일한 경우 hist가 에러를 발생시킬 수 있음
+    if not scores or len(set(scores)) == 1:
+        # 단일 값 또는 빈 값에 대한 처리: bins를 1로 설정하거나, hist 대신 다른 시각화
+        if scores: # 모든 점수가 같은 경우
+             plt.hist(scores, bins=1, color='skyblue', edgecolor='black')
+        else: # scores가 빈 경우
+            plt.hist([], bins=10, color='skyblue', edgecolor='black') # 빈 히스토그램
+    else:
+        plt.hist(scores, bins=10, color='skyblue', edgecolor='black')
+
+    plt.xlabel('Score')
+    plt.ylabel('Number of Students')
+    plt.title(f'Score Distribution - {subject if subject else "Unknown Subject"}')
+    plt.grid(True)
+
+    plt.gca().yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+
+    # 평균, 표준편차 텍스트
+    stat_text = f"Mean: {mean_score:.2f}, Std Dev: {std_dev:.2f}"
+    plt.text(0.95, 0.95, stat_text, transform=plt.gca().transAxes,
+             fontsize=10, verticalalignment='top', horizontalalignment='right',
+             bbox=dict(boxstyle="round,pad=0.3", edgecolor='gray', facecolor='white'))
+
+    plt.tight_layout()
+
+    # 4. 그래프를 이미지로 저장
+    img_buf = io.BytesIO()
+    plt.savefig(img_buf, format='png')
+    img_buf.seek(0)
+    plt.close() # 그래프 생성 후 리소스 해제
+
+    # 5. PDF 생성
+    pdf_buf = io.BytesIO()
+    # reportlab에서 한글 사용을 위해 폰트 설정 (필요한 경우)
+    # from reportlab.pdfbase import pdfmetrics
+    # from reportlab.pdfbase.ttfonts import TTFont
+    # NanumGothic.ttf 와 같은 한글 폰트 파일이 필요합니다.
+    # 실제 경로에 맞게 수정해야 합니다.
+    # try:
+    #     pdfmetrics.registerFont(TTFont('NanumGothic', '/usr/share/fonts/truetype/nanum/NanumGothic.ttf')) # 예시 경로
+    #     font_name = 'NanumGothic'
+    # except: # 폰트 로드 실패 시 기본 폰트 사용
+    #     app.logger.warning("NanumGothic font not found. Using default font for PDF.")
+    #     font_name = 'Helvetica'
+    
+    # 임시로 기본 폰트 사용
+    font_name = 'Helvetica'
+
+    c = canvas.Canvas(pdf_buf, pagesize=letter)
+    
+    # 제목 폰트 설정 및 그리기
+    c.setFont(font_name, 16)
+    subject_text = f"Subject: {subject if subject else 'Unknown Subject'}"
+    c.drawString(100, 750, subject_text)
+
+    # 통계 정보 폰트 설정 및 그리기
+    c.setFont(font_name, 12)
+    stats_string = f"Mean: {mean_score:.2f}, Standard Deviation: {std_dev:.2f}"
+    c.drawString(100, 720, stats_string)
+
+    # 이미지 삽입 (임시 파일 생성 없이 BytesIO 직접 사용 가능성 확인)
+    # ReportLab은 BytesIO에서 직접 이미지를 로드할 수 있습니다.
+    img_buf.seek(0) # BytesIO 포인터를 다시 처음으로
+    # ReportLab의 ImageReader는 BytesIO 객체를 직접 받을 수 있습니다.
+    from reportlab.lib.utils import ImageReader
+    img_reader = ImageReader(img_buf)
+    c.drawImage(img_reader, 100, 350, width=400, height=300) # x, y, width, height
+
+    c.showPage()
+    c.save()
+    pdf_buf.seek(0)
+
+    return send_file(
+        pdf_buf,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f"{secure_filename(subject if subject else 'report')}_report.pdf" # 파일명 보안 처리
+    )
+
+@app.route('/get-student-image', methods=['GET'])
+def get_student_image():
+    try:
+        subject_name = request.args.get('subject')
+        student_id_query = request.args.get('student_id')
+        # image_folder_name 파라미터 제거
+
+        if not subject_name:
+            return jsonify({"error": "Missing 'subject' query parameter"}), 400
+        if not student_id_query:
+            return jsonify({"error": "Missing 'student_id' query parameter"}), 400
+        # image_folder_name 파라미터 검사 제거
+
+        app.logger.info(f"[get-student-image] Request for subject: '{subject_name}', student_id: '{student_id_query}'") # 로깅 수정
+
+        # 과목명으로 기본 경로 설정
+        subject_name_for_path = subject_name 
+        subject_path = os.path.join(APP_ROOT, subject_name_for_path)
+
+        if not os.path.isdir(subject_path):
+            app.logger.error(f"[get-student-image] Subject base path not found: {subject_path}")
+            return jsonify({"error": f"Directory for subject '{subject_name_for_path}' not found."}), 404
+
+        # 과목 폴더 내의 하위 디렉토리(압축 해제된 이미지 폴더) 찾기 - 이전 로직 복원
+        try:
+            subdirectories = [d for d in os.listdir(subject_path) 
+                              if os.path.isdir(os.path.join(subject_path, d)) and 
+                              d != 'debug_cropped_images' and not d.startswith('.')]
+        except OSError as e:
+            app.logger.error(f"[get-student-image] Error listing subdirectories in {subject_path}: {e}")
+            return jsonify({"error": f"Could not read subject directory contents for '{subject_name_for_path}'."}), 500
+
+        if len(subdirectories) == 0:
+            app.logger.error(f"[get-student-image] No image data subdirectories found in {subject_path} for subject '{subject_name_for_path}'.")
+            return jsonify({"error": f"No processed image folder found for subject '{subject_name_for_path}'."}), 404
+        elif len(subdirectories) > 1:
+            app.logger.warning(f"[get-student-image] Multiple image data subdirectories found in {subject_path}: {subdirectories}. Using the first one: {subdirectories[0]}")
+            # 또는 필요시 에러 처리:
+            # return jsonify({"error": f"Multiple processed image folders found for subject '{subject_name_for_path}'. Cannot determine target."}), 409
+        
+        target_image_folder_name = subdirectories[0] # 스캔을 통해 찾은 폴더명 사용
+        base_image_path = os.path.join(subject_path, target_image_folder_name)
+        app.logger.info(f"[get-student-image] Target image path: {base_image_path} (determined by scanning)")
+
+        if not os.path.isdir(base_image_path): # 이 검사는 여전히 유효
+            app.logger.error(f"[get-student-image] Determined image folder is not a directory: {base_image_path}")
+            return jsonify({"error": f"Determined image folder '{target_image_folder_name}' for subject '{subject_name_for_path}' is not a valid directory."}), 500
+
+        normalized_student_id_query = unicodedata.normalize('NFC', student_id_query)
+        found_image_path = None
+
+        try:
+            for filename_raw in os.listdir(base_image_path):
+                if os.path.isfile(os.path.join(base_image_path, filename_raw)):
+                    filename_nfc = unicodedata.normalize('NFC', filename_raw)
+                    base_name_nfc, ext = os.path.splitext(filename_nfc)
+                    
+                    if '_' in base_name_nfc:
+                        parts = base_name_nfc.split('_')
+                        file_student_id_part = parts[-1]
+                        
+                        if file_student_id_part == normalized_student_id_query:
+                            found_image_path = os.path.join(base_image_path, filename_raw) # 원본 파일명으로 경로 생성
+                            app.logger.info(f"[get-student-image] Found matching image: {found_image_path}")
+                            break 
+            
+            if found_image_path:
+                return send_file(found_image_path) # mimetype은 send_file이 자동 감지 시도
+            else:
+                app.logger.warning(f"[get-student-image] Image for student_id '{student_id_query}' not found in {base_image_path}")
+                return jsonify({"error": f"Image for student ID '{student_id_query}' not found."}), 404
+
+        except OSError as e:
+            app.logger.error(f"[get-student-image] Error reading image directory {base_image_path}: {e}")
+            return jsonify({"error": "Error accessing image files."}), 500
+
+    except Exception as e:
+        app.logger.error(f"[get-student-image] Unexpected error: {traceback.format_exc()}")
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+
 @app.route('/hello', methods=['GET'])
 def hello():
     return "Hello, World", 200
@@ -450,3 +650,4 @@ if __name__ == '__main__':
     # Spring과의 통신을 위해 0.0.0.0으로 호스트를 설정하고, 지정된 포트(예: 8080)를 사용합니다.
     # Docker 환경에서는 이 포트가 외부로 노출됩니다.
     app.run(host='0.0.0.0', port=5000, debug=True) # debug=True는 개발 중에만 사용
+
