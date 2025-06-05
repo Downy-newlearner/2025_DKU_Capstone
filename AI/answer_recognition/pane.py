@@ -151,3 +151,102 @@ recognize_answer_sheet_data 함수는 최종적으로 두 개의 주요 키 "ans
 
 '''
 
+from PIL import Image
+from pathlib import Path
+
+# --- 테스트용 Dummy 데이터 정의 ---
+subject_student_id_base = "신호및시스템_20240101"
+
+ans_text_crop_full_info = {
+    "y_in_line_relative_to_line_crop_top": 15,
+    "line_y_top_relative_to_ans_area": 100,
+    "ans_area_y_offset_orig": 1000,
+    "x_in_line": 200,
+    "line_id_in_ans_area": "1",
+    "image_obj": Image.new("RGB", (50, 20))  # 50x20 크기의 dummy 이미지
+}
+
+# 예: 실제 위치가 1000 + 100 + 15 + 10 = 1125쯤 되는 곳이면...
+question_info_dict = {
+    "2-1": [1100, 1130],  # y 중심 좌표 1125가 이 범위에 포함
+    "2-2": [1140, 1170]
+}
+
+# 실제 test_answer_json에서 가져온 일부
+answer_key_data = {
+    "questions": [
+        {
+            "question_number": 2,
+            "sub_question_number": 1,
+            "answer": "8",
+            "allocated_score": 5,
+            "answer_count": 1
+        },
+        {
+            "question_number": 2,
+            "sub_question_number": 2,
+            "answer": "6",
+            "allocated_score": 5,
+            "answer_count": 1
+        }
+    ]
+}
+
+# --- 테스트 함수 정의 (이전 함수 그대로 사용) ---
+def generate_final_key_for_ans_crop(
+    subject_student_id_base: str,
+    ans_text_crop_full_info: dict,
+    question_info_dict: dict,
+    answer_key_data: dict
+) -> str:
+    y_in_line = ans_text_crop_full_info['y_in_line_relative_to_line_crop_top']
+    line_y_top = ans_text_crop_full_info['line_y_top_relative_to_ans_area']
+    ans_area_y_offset = ans_text_crop_full_info['ans_area_y_offset_orig']
+    text_crop_height = ans_text_crop_full_info['image_obj'].height
+    abs_y_top_of_text_crop = ans_area_y_offset + line_y_top + y_in_line
+    abs_y_center_of_text_crop = line_y_top + (text_crop_height // 2)
+
+    matching_qn_str = "unknownQN"
+    for qn_key, y_range_orig in question_info_dict.items():
+        if y_range_orig[0] <= abs_y_center_of_text_crop <= y_range_orig[1]:
+            matching_qn_str = qn_key
+            break
+
+    answer_count_for_qn = 0
+    for q_entry in answer_key_data.get('questions', []):
+        qn_str_key = str(q_entry.get('question_number'))
+        sub_qn_val = q_entry.get('sub_question_number', 0)
+        sub_qn_str_key = str(sub_qn_val) if sub_qn_val and str(sub_qn_val) != "0" else ""
+        current_key_in_answer_data = f"{qn_str_key}-{sub_qn_str_key}" if sub_qn_str_key else qn_str_key
+        if current_key_in_answer_data == matching_qn_str:
+            answer_count_for_qn = q_entry.get('answer_count', 0)
+            break
+
+    x_in_line_coord = ans_text_crop_full_info['x_in_line']
+    line_id_in_ans_area = ans_text_crop_full_info.get('line_id_in_ans_area','lineX')
+
+    key_base = f"{subject_student_id_base}_L{line_id_in_ans_area}_x{x_in_line_coord}_y{abs_y_top_of_text_crop}_qn{matching_qn_str}_ac{answer_count_for_qn}"
+
+
+      # 현재 중심 좌  표 확인
+    print(f"[디버그] abs_y_center_of_text_crop: {abs_y_center_of_text_crop}")
+
+    # 범위 확인
+    for qn_key, y_range_orig in question_info_dict.items():
+        print(f"[디버그] checking {qn_key}: {y_range_orig} vs {abs_y_center_of_text_crop}")
+        
+    return key_base.replace(" ", "")
+
+
+
+# --- 실행 및 결과 출력 ---
+final_key = generate_final_key_for_ans_crop(
+    subject_student_id_base,
+    ans_text_crop_full_info,
+    question_info_dict,
+    answer_key_data
+)
+
+print("[Test Result] 최종 Key 생성 결과:")
+print(final_key)
+

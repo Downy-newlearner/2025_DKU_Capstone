@@ -80,65 +80,52 @@ def preprocess_line_image_for_text_contours(line_pil_image: Image.Image) -> List
     cv_image = np.array(line_pil_image)
     if cv_image.shape[0] < 5 or cv_image.shape[1] < 5: return []
 
+    # split_and_recognize_single_digits.py와 동일한 단순하고 효과적인 방법 사용
     gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
-    blurred = cv2.GaussianBlur(gray, (3, 3), 0)
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                    cv2.THRESH_BINARY_INV, 9, 2)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
     return contours
 
 def merge_contours_and_crop_text_pil(
     line_pil_image: Image.Image, 
     contours: List[np.ndarray],
-    merge_distance_threshold: int = 40,
+    merge_distance_threshold: int = 100,
     padding: int = 5
 ) -> List[Dict[str, Any]]: # [{'image_obj': Image, 'x_in_line': int, 'y_in_line': int}]
     bounding_boxes_initial: List[Dict[str, Any]] = []
     img_width = line_pil_image.width
     img_height = line_pil_image.height
     
-    # PIL 이미지를 numpy 배열로 변환 (텍스트 밀도 체크용)
-    line_np_array = np.array(line_pil_image.convert('L'))  # 그레이스케일로 변환
+    # 빈 박스 필터링을 위한 그레이스케일 배열
+    line_np_array = np.array(line_pil_image.convert('L'))
     
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
         
-        # 기본 크기 및 비율 필터링 (더욱 완화 - 숫자 1을 위해)
-        if (w > 0.90 * img_width or w < 6 or h < 6 or 
-            w > 15 * h or h > 15 * w):
+        # 만약 w가 원본 이미지의 95% 이상이면 병합 대상에서 제외
+        if w > 0.95 * img_width:
             continue
-            
-        # 면적 기반 필터링 (더욱 완화)
-        area = w * h
-        if area < 30:  # 최소 30 픽셀 면적으로 더 완화
+
+        # 만약 너무 작은 박스면 병합 대상에서 제외
+        if w < 10 or h < 10:
             continue
-            
-        # 텍스트 밀도 체크 (더욱 완화)
-        # 해당 영역의 검은 픽셀 비율을 계산
+        
+        # 가로선(표의 일부) 제거 - 가로세로 비율이 너무 큰 것들 제거
+        aspect_ratio = w / h
+        if aspect_ratio > 1.8:  # 가로가 세로의 6배 이상이면 가로선으로 간주
+            continue
+        
+        # 빈 박스나 테두리만 있는 영역 제거 (과감하게 엄격함)
         roi = line_np_array[y:y+h, x:x+w]
         if roi.size > 0:
-            # 임계값을 통해 검은/흰 픽셀 구분 (128 이하를 검은색으로 간주)
-            dark_pixels = np.sum(roi < 128)
+            # 검은 픽셀 비율 계산
+            dark_pixels = np.sum(roi < 150)  # 180 → 120으로 과감하게 엄격
             total_pixels = roi.size
             dark_ratio = dark_pixels / total_pixels
             
-            # 검은 픽셀 비율이 너무 낮으면 (완전히 빈 영역만) 제외
-            if dark_ratio < 0.002:  # 0.2% 미만의 검은 픽셀로 더 완화
-                continue
-                
-            # 검은 픽셀 비율이 너무 높으면 (완전히 검은 영역만) 제외
-            if dark_ratio > 0.95:  # 95% 이상의 검은 픽셀로 더 완화
-                continue
-        
-        # 컨투어 복잡도 체크를 매우 관대하게 수정 (숫자 9를 위해)
-        contour_area = cv2.contourArea(contour)
-        contour_perimeter = cv2.arcLength(contour, True)
-        if contour_perimeter > 0:
-            # 원형도 계산 (4π * 면적 / 둘레²)
-            # 값이 1에 가까울수록 원에 가까움
-            circularity = 4 * np.pi * contour_area / (contour_perimeter * contour_perimeter)
-            # 극단적으로 이상한 모양만 제거 (거의 모든 숫자 모양 허용)
-            if circularity > 0.98 or circularity < 0.01:
+            # 빈 영역 제외 조건을 과감하게 엄격하게
+            if dark_ratio < 0.04:  # 1.5% → 5%로 과감하게 엄격
                 continue
         
         bounding_boxes_initial.append({'x':x, 'y':y, 'w':w, 'h':h, 'xc': x + w/2, 'yc': y + h/2, 'merged': False})
@@ -199,11 +186,8 @@ def merge_contours_and_crop_text_pil(
 
         text_crop_pil = line_pil_image.crop((x_p, y_p, r_p, b_p))
         
-        # 최종 크기 체크 (더욱 완화)
-        if text_crop_pil.width < 6 or text_crop_pil.height < 6:
-            continue
-        
         target_w, target_h = text_crop_pil.width, text_crop_pil.height
+        
         square_size = max(target_w, target_h)
         
         square_canvas_pil = Image.new('RGB', (square_size, square_size), (255, 255, 255))
