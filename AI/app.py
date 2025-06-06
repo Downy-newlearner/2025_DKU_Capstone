@@ -49,6 +49,9 @@ from student_id_recognition.decompression_parsing.parsing_xlsx import parsing_xl
 # from answer_recognition.main import main_recognition_process 
 # from answer_recognition.main import DEFAULT_QN_DIRECTORY_PATH, DEFAULT_ANSWER_JSON_PATH, DEFAULT_OCR_RESULTS_JSON_PATH
 
+# Algorithm.OCR 모듈 import
+from answer_recognition.main import preprocess_answer_sheet, recognize_answer_sheet_data
+
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False # 한글을 ASCII로 이스케이프하지 않도록 설정
 
@@ -320,14 +323,118 @@ def recognize_answer_endpoint():
         task_info_id = f"{subject_name_for_path}-{target_zip_folder_name}"
         app.logger.info(f"백그라운드 파일명 변경 스레드 시작됨 ({thread.name}) for {task_info_id}")
 
-        return jsonify({
-            "status": "processing_started",
-            "message": "File renaming process started in background.",
-            "task_reference_id": task_info_id 
-        }), 202
+        # return jsonify({
+        #     "status": "processing_started",
+        #     "message": "File renaming process started in background.",
+        #     "task_reference_id": task_info_id 
+        # }), 202
 
     except Exception as e:
         app.logger.error(f"Error in /recognize/answer endpoint (before starting background task): {traceback.format_exc()}")
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+
+    # 정다훈 코드
+    try:
+        app.logger.info("답안 인식 엔드포인트 시작")
+
+        dir_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/신호및시스템-1/신호및시스템-1'
+        answer_key_json_path = os.path.join(dir_path, '..', 'answer_key.json')
+        
+        if not os.path.exists(dir_path):
+            app.logger.error(f"디렉토리를 찾을 수 없습니다: {dir_path}")
+            return jsonify({"error": f"Directory not found: {dir_path}"}), 400
+
+        if not os.path.exists(answer_key_json_path):
+            app.logger.error(f"답안 키 JSON 파일을 찾을 수 없습니다: {answer_key_json_path}")
+            return jsonify({"error": f"Answer key JSON not found: {answer_key_json_path}"}), 400
+
+        image_extensions = ['.jpg', '.jpeg', '.png']
+        image_files = []
+        for ext in image_extensions:
+            image_files.extend([f for f in os.listdir(dir_path) if f.lower().endswith(ext)])
+
+        if not image_files:
+            app.logger.warning(f"이미지 파일을 찾을 수 없습니다: {dir_path}")
+            return jsonify({"error": "No image files found in directory"}), 400
+
+        app.logger.info(f"발견된 이미지 파일 {len(image_files)}개: {image_files}")
+
+        processing_results = []
+        errors = []
+
+        answer_json = {
+            "subject": "math",
+            "studentAnswersList": []
+        }
+        failure_json = {
+            "subject": "math",
+            "images": []
+        }
+
+        # answer_key_data는 반복문 밖에서 로드
+        with open(answer_key_json_path, 'r', encoding='utf-8') as f:
+            answer_key_data = json.load(f)
+
+        for image_file in image_files:
+            try:
+                image_path = os.path.join(dir_path, image_file)
+                app.logger.info(f"처리 중: {image_file}")
+
+                # 1. 전처리
+                app.logger.info(f"  단계 1: {image_file} 전처리 시작")
+                processed_crops = preprocess_answer_sheet(image_path, answer_key_json_path)
+
+                if not processed_crops:
+                    app.logger.warning(f"  전처리 결과가 없음: {image_file}")
+                    errors.append({
+                        "file": image_file,
+                        "error": "No crops from preprocessing"
+                    })
+                    continue
+
+                app.logger.info(f"  전처리 완료: {len(processed_crops)}개 텍스트 조각 생성")
+
+                # 2. 인식
+                app.logger.info(f"  단계 2: {image_file} 답안 인식 시작")
+                recognition_result = recognize_answer_sheet_data(processed_crops, answer_key_data)
+
+                # 결과 통합
+                student_answer_obj = recognition_result.get("answer_json", {})
+                answer_json["studentAnswersList"].append(student_answer_obj)
+
+                failure_images = recognition_result.get("failure_json", [])
+                failure_json["images"].extend(failure_images)
+
+                # 개별 파일 결과 저장
+                processing_results.append({
+                    "file": image_file,
+                    "processed_crops_count": len(processed_crops),
+                    "answer_json": recognition_result.get("answer_json", {}),
+                    "failure_json": recognition_result.get("failure_json", [])
+                })
+
+                app.logger.info(f"  답안 인식 완료: {image_file}")
+
+            except Exception as e:
+                app.logger.error(f"이미지 처리 중 오류 ({image_file}): {traceback.format_exc()}")
+                errors.append({
+                    "file": image_file,
+                    "error": str(e)
+                })
+
+        # 최종 결과 반환
+        return jsonify({
+            "status": "completed",
+            "processed_files": len(processing_results),
+            "failed_files": len(errors),
+            "results": processing_results,
+            "answer_json": answer_json,
+            "failure_json": failure_json,
+            "errors": errors
+        }), 200
+
+    except Exception as e:
+        app.logger.error(f"recognize_answer_endpoint 예외 발생: {traceback.format_exc()}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
 def background_rename_files_task(subject_name, student_list, base_image_path, parent_logger):

@@ -1,5 +1,5 @@
 from PIL import Image
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 # config와 data_structures는 상위 디렉토리 또는 answer_recognition 패키지 레벨에서 가져와야 함
 # 현재 yolo_detector.py는 answer_recognition/preprocessing/ 안에 위치
@@ -9,17 +9,18 @@ from ..data_structures import DetectedArea
 def yolo_predict_and_extract_areas_pil(
     original_pil_image: Image.Image,
     original_image_identifier: str
-) -> Tuple[List[DetectedArea], List[DetectedArea]]:
+) -> Tuple[Optional[DetectedArea], Optional[DetectedArea]]:
     """
-    원본 PIL Image에 YOLO 예측을 수행하여 qn 영역과 ans 영역 정보를 DetectedArea 객체 리스트로 반환.
+    원본 PIL Image에 YOLO 예측을 수행하여 qn 영역과 ans 영역 정보를 DetectedArea 객체로 반환.
     이 함수는 config.py에 로드된 yolo_model을 사용합니다.
+    항상 각 타입별로 하나의 객체만 반환하거나, 없으면 None을 반환합니다.
     """
     if not yolo_model:
         print("YOLO model is not loaded. Cannot perform detection.")
-        return [], []
+        return None, None
 
-    qn_areas: List[DetectedArea] = []
-    ans_areas: List[DetectedArea] = []
+    qn_area: Optional[DetectedArea] = None
+    ans_area: Optional[DetectedArea] = None
 
     results = yolo_model(original_pil_image, verbose=False)
 
@@ -33,29 +34,28 @@ def yolo_predict_and_extract_areas_pil(
             cropped_pil_image = original_pil_image.crop((x1, y1, x2, y2))
             area_type_str = ""
 
-            if class_id == YOLO_CLASS_QN:
+            if class_id == YOLO_CLASS_QN and qn_area is None:
                 area_type_str = "question_number"
-                area_info = DetectedArea(
+                qn_area = DetectedArea(
                     bbox=(x1, y1, x2, y2),
                     class_id=class_id,
                     area_type=area_type_str,
                     image_obj=cropped_pil_image,
                     original_image_ref=original_image_identifier
                 )
-                qn_areas.append(area_info)
-            elif class_id == YOLO_CLASS_ANS:
+            elif class_id == YOLO_CLASS_ANS and ans_area is None:
                 area_type_str = "answer"
-                area_info = DetectedArea(
+                ans_area = DetectedArea(
                     bbox=(x1, y1, x2, y2),
                     class_id=class_id,
                     area_type=area_type_str,
                     image_obj=cropped_pil_image,
                     original_image_ref=original_image_identifier
                 )
-                ans_areas.append(area_info)
+            
+            if qn_area is not None and ans_area is not None:
+                break
+        if qn_area is not None and ans_area is not None:
+            break
     
-    # y1 좌표 기준으로 정렬 (일반적으로 필요 없을 수 있으나, 순서 보장을 위해)
-    qn_areas.sort(key=lambda area: area['bbox'][1])
-    ans_areas.sort(key=lambda area: area['bbox'][1])
-
-    return qn_areas, ans_areas 
+    return qn_area, ans_area 

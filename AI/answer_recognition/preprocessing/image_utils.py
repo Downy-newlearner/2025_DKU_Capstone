@@ -80,25 +80,54 @@ def preprocess_line_image_for_text_contours(line_pil_image: Image.Image) -> List
     cv_image = np.array(line_pil_image)
     if cv_image.shape[0] < 5 or cv_image.shape[1] < 5: return []
 
+    # split_and_recognize_single_digits.py와 동일한 단순하고 효과적인 방법 사용
     gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
-    blurred = cv2.GaussianBlur(gray, (3, 3), 0)
-    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                    cv2.THRESH_BINARY_INV, 9, 2)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    _, binary = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
     return contours
 
 def merge_contours_and_crop_text_pil(
     line_pil_image: Image.Image, 
     contours: List[np.ndarray],
-    merge_distance_threshold: int = 30,
+    merge_distance_threshold: int = 100,
     padding: int = 5
 ) -> List[Dict[str, Any]]: # [{'image_obj': Image, 'x_in_line': int, 'y_in_line': int}]
     bounding_boxes_initial: List[Dict[str, Any]] = []
     img_width = line_pil_image.width
+    img_height = line_pil_image.height
+    
+    # 빈 박스 필터링을 위한 그레이스케일 배열
+    line_np_array = np.array(line_pil_image.convert('L'))
+    
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        if w > 0.90 * img_width or w < 5 or h < 5:
+        
+        # 만약 w가 원본 이미지의 95% 이상이면 병합 대상에서 제외
+        if w > 0.95 * img_width:
             continue
+
+        # 만약 너무 작은 박스면 병합 대상에서 제외
+        if w < 10 or h < 10:
+            continue
+        
+        # 가로선(표의 일부) 제거 - 가로세로 비율이 너무 큰 것들 제거
+        aspect_ratio = w / h
+        if aspect_ratio > 1.8:  # 가로가 세로의 6배 이상이면 가로선으로 간주
+            continue
+        
+        # 빈 박스나 테두리만 있는 영역 제거 (과감하게 엄격함)
+        roi = line_np_array[y:y+h, x:x+w]
+        if roi.size > 0:
+            # 검은 픽셀 비율 계산
+            dark_pixels = np.sum(roi < 150)  # 180 → 120으로 과감하게 엄격
+            total_pixels = roi.size
+            dark_ratio = dark_pixels / total_pixels
+            
+            # 빈 영역 제외 조건을 과감하게 엄격하게
+            if dark_ratio < 0.04:  # 1.5% → 5%로 과감하게 엄격
+                continue
+        
         bounding_boxes_initial.append({'x':x, 'y':y, 'w':w, 'h':h, 'xc': x + w/2, 'yc': y + h/2, 'merged': False})
 
     if not bounding_boxes_initial:
@@ -158,6 +187,7 @@ def merge_contours_and_crop_text_pil(
         text_crop_pil = line_pil_image.crop((x_p, y_p, r_p, b_p))
         
         target_w, target_h = text_crop_pil.width, text_crop_pil.height
+        
         square_size = max(target_w, target_h)
         
         square_canvas_pil = Image.new('RGB', (square_size, square_size), (255, 255, 255))
