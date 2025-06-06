@@ -562,18 +562,17 @@ def generate_report():
         download_name=f"{secure_filename(subject if subject else 'report')}_report.pdf" # 파일명 보안 처리
     )
 
-@app.route('/get-student-image', methods=['GET'])
+@app.route('/get-student-image', methods=['POST'])
 def get_student_image():
     try:
-        subject_name = request.args.get('subject')
-        student_id_query = request.args.get('student_id')
-        # image_folder_name 파라미터 제거
+        data = request.get_json()
+        subject_name = data.get('subject')
+        student_id_query = data.get('student_id')
 
         if not subject_name:
-            return jsonify({"error": "Missing 'subject' query parameter"}), 400
+            return jsonify({"error": "Missing 'subject' in JSON payload"}), 400
         if not student_id_query:
-            return jsonify({"error": "Missing 'student_id' query parameter"}), 400
-        # image_folder_name 파라미터 검사 제거
+            return jsonify({"error": "Missing 'student_id' in JSON payload"}), 400
 
         app.logger.info(f"[get-student-image] Request for subject: '{subject_name}', student_id: '{student_id_query}'") # 로깅 수정
 
@@ -629,7 +628,20 @@ def get_student_image():
                             break 
             
             if found_image_path:
-                return send_file(found_image_path) # mimetype은 send_file이 자동 감지 시도
+                # 이미지 전송 전 디버깅 로그
+                file_size = os.path.getsize(found_image_path)
+                app.logger.info(f"[get-student-image] Preparing to send image: {found_image_path} (size: {file_size} bytes)")
+                print(f"[DEBUG] Sending image for student_id '{student_id_query}': {found_image_path} ({file_size} bytes)")
+                
+                try:
+                    response = send_file(found_image_path) # mimetype은 send_file이 자동 감지 시도
+                    app.logger.info(f"[get-student-image] Image successfully sent for student_id '{student_id_query}'")
+                    print(f"[DEBUG] Image successfully sent for student_id '{student_id_query}'")
+                    return response
+                except Exception as send_error:
+                    app.logger.error(f"[get-student-image] Error sending image file: {send_error}")
+                    print(f"[DEBUG ERROR] Failed to send image: {send_error}")
+                    return jsonify({"error": f"Failed to send image file: {str(send_error)}"}), 500
             else:
                 app.logger.warning(f"[get-student-image] Image for student_id '{student_id_query}' not found in {base_image_path}")
                 return jsonify({"error": f"Image for student ID '{student_id_query}' not found."}), 404

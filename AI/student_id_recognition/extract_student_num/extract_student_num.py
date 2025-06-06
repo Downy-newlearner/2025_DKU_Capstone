@@ -91,6 +91,24 @@ def extract_student_num(answer_sheet_img_path: str) -> Tuple[Union[int, None], s
         
         cropped_image = image[y1:y2, x1:x2]
         
+        # 디버깅: 크롭된 이미지 저장
+        try:
+            debug_crop_dir = os.path.join(os.path.dirname(__file__), "results", "debug_cropped_images")
+            if not os.path.exists(debug_crop_dir):
+                os.makedirs(debug_crop_dir)
+            
+            original_image_name = Path(answer_sheet_img_path).stem
+            debug_crop_filename = f"debug_crop_{original_image_name}.jpg"
+            debug_crop_path = os.path.join(debug_crop_dir, debug_crop_filename)
+
+            if cropped_image is not None and cropped_image.size > 0:
+                cv2.imwrite(debug_crop_path, cropped_image)
+                print(f"DEBUG: Saved cropped image to {debug_crop_path}")
+            else:
+                print(f"DEBUG: Cropped image for {original_image_name} is empty, not saving.")
+        except Exception as debug_save_e:
+            print(f"DEBUG: Error saving cropped image for {original_image_name}: {str(debug_save_e)}")
+
         # 디버깅: 크롭된 이미지 상태 확인
         if cropped_image is None or cropped_image.size == 0:
             print(f"DEBUG: Cropped image is empty or invalid for {os.path.basename(answer_sheet_img_path)}. Shape: {cropped_image.shape if cropped_image is not None else 'None'}")
@@ -157,7 +175,7 @@ def extract_student_num(answer_sheet_img_path: str) -> Tuple[Union[int, None], s
 
 if __name__ == "__main__":
     # 테스트용 디렉토리 경로
-    test_dir = "/Users/ohyooseok/AI/Student_id_recognition/decompression_parsing/test_answer" # 실제 경로로 수정 필요
+    test_dir = "/home/jdh251425/2025_DKU_Capstone/AI/student_id_recognition/extract_student_num/test_answer" # 실제 경로로 수정 필요
     
     # 결과를 저장할 딕셔너리
     results_summary = {
