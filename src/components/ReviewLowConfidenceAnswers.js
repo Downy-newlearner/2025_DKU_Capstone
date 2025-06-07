@@ -16,7 +16,7 @@ const ReviewLowConfidenceAnswers = () => {
     if (!subject) return;
 
     axios
-      .get(`/images/${subject}/low-confidence-images`, {
+      .get(`/images/${subject}/low-confidence`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

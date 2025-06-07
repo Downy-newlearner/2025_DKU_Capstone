@@ -110,25 +110,29 @@ const Grading = () => {
     };
 
     answers.forEach((answer, mainIndex) => {
-      // 메인 문제 추가
-      payload.questions.push({
-        question_number: mainIndex + 1,
-        sub_question_number: null,
-        question_type: convertType(answer.type),
-        answer: formatAnswer(answer.text, answer.type),
-        point: answer.point,
-      });
+      const hasTails = answer.tailQuestions.length > 0;
 
-      // 꼬리문제 추가
-      answer.tailQuestions.forEach((q, subIdx) => {
+      if (!hasTails) {
+        // 꼬리문제가 없을 때만 메인 문제 추가
         payload.questions.push({
           question_number: mainIndex + 1,
-          sub_question_number: subIdx + 1,
+          sub_question_number: null,
           question_type: convertType(answer.type),
-          answer: formatAnswer(q.text, "단답형"),
-          point: q.point,
+          answer: formatAnswer(answer.text, answer.type),
+          point: answer.point,
         });
-      });
+      } else {
+        // 꼬리문제가 있을 경우, 메인 문제는 빼고 꼬리문제만 추가
+        answer.tailQuestions.forEach((q, subIdx) => {
+          payload.questions.push({
+            question_number: mainIndex + 1,
+            sub_question_number: subIdx + 1,
+            question_type: convertType(answer.type),
+            answer: formatAnswer(q.text, answer.type),
+            point: q.point,
+          });
+        });
+      }
     });
 
     console.log("제출 데이터:", payload);
