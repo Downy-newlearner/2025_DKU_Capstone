@@ -43,23 +43,8 @@ public class PdfController {
 
 
 
-//    @GetMapping("/files/{fileName:.+}")
-//    public ResponseEntity<Resource> serveZipFile(@PathVariable String fileName) throws IOException {
-//        // 경로 설정 (예: 로컬 디렉터리 또는 S3 등)
-//        Path zipFilePath = Paths.get("/your/zip/storage/path").resolve(fileName);
-//
-//        if (!Files.exists(zipFilePath)) {
-//            return ResponseEntity.notFound().build();
-//        }
-//
-//        Resource resource = new UrlResource(zipFilePath.toUri());
-//
-//        return ResponseEntity.ok()
-//                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-//                .body(resource);
-//    }
-//
+
+
 
 
 

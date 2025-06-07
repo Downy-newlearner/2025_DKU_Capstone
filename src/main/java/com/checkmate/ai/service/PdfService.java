@@ -4,7 +4,11 @@ import com.checkmate.ai.dto.StudentResponseDto;
 import com.checkmate.ai.entity.*;
 import com.checkmate.ai.repository.jpa.ExamRepository;
 import com.checkmate.ai.repository.jpa.StudentResponseRepository;
+import com.itextpdf.io.font.FontProgram;
+import com.itextpdf.io.font.FontProgramFactory;
+import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.properties.UnitValue;
@@ -12,8 +16,11 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import com.itextpdf.layout.element.Cell;
@@ -49,6 +56,10 @@ public class PdfService {
 
     @Value("${flask.server.url}")
     private String flaskReportUrl;
+
+    @Autowired
+    @Qualifier("webApplicationContext")
+    private ResourceLoader resourceLoader;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -158,9 +169,25 @@ public class PdfService {
              PdfDocument pdf = new PdfDocument(writer);
              Document document = new Document(pdf)) {
 
-            // 제목에 studentId → student.getName() 또는 student.getId() 사용
-            document.add(new Paragraph(subject + " - " +student.getStudentId()+ " Exam Report")
-                    .setFont(PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD))
+            // 폰트 읽기
+            Resource fontResource = resourceLoader.getResource("classpath:/static/fonts/NanumGothic.ttf");
+
+            byte[] fontBytes;
+            try (InputStream is = fontResource.getInputStream()) {
+                fontBytes = is.readAllBytes();
+            }
+
+            // FontProgram 생성
+            FontProgram fontProgram = FontProgramFactory.createFont(fontBytes);
+
+            // PdfFont 생성 (createFont(FontProgram)만 존재함)
+            PdfFont font = PdfFontFactory.createFont(fontProgram, PdfEncodings.IDENTITY_H);
+
+
+            System.out.println(font);
+            document.setFont(font);
+
+            document.add(new Paragraph(subject + " - " + student.getStudentId() + " 시험 리포트")
                     .setFontSize(16)
                     .setTextAlignment(TextAlignment.CENTER)
                     .setMarginBottom(20));
@@ -177,7 +204,7 @@ public class PdfService {
                     .useAllAvailableWidth();
 
             // 컬럼 헤더 스타일
-            String[] headers = {"Question No.", "Student Answer", "Correct Answer", "Allocated Point"};
+            String[] headers = {"질문 번호.", "학생 응답", "정답", "문항 점수"};
             for (String header : headers) {
                 Cell headerCell = new Cell()
                         .add(new Paragraph(header).setBold())
@@ -211,7 +238,7 @@ public class PdfService {
             }
 
             // 전체 점수 요약
-            document.add(new Paragraph("\nTotal Score: " + response.getTotalScore())
+            document.add(new Paragraph("\n총점: " + response.getTotalScore())
                     .setTextAlignment(TextAlignment.RIGHT)
                     .setFontSize(24)
                     .setBold());
