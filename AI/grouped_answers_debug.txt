@@ -1,0 +1,58 @@
+Question: 1
+  Entry: {'key': '신호및시스템-10_32226704_L1_x183_y882_qn1_ac1', 'img': <PIL.Image.Image image mode=RGB size=78x78 at 0x7D36981A5280>, 'x': 183, 'y': 882}
+  Entry: {'key': '신호및시스템-10_32226704_L0_x736_y810_qn1_ac1', 'img': <PIL.Image.Image image mode=RGB size=151x151 at 0x7D36981A5850>, 'x': 736, 'y': 810}
+
+Question: 2-1
+  Entry: {'key': '신호및시스템-10_32226704_L2_x181_y1002_qn2-1_ac1', 'img': <PIL.Image.Image image mode=RGB size=78x78 at 0x7D36981A5730>, 'x': 181, 'y': 1002}
+
+Question: 2-2
+  Entry: {'key': '신호및시스템-10_32226704_L3_x193_y1113_qn2-2_ac1', 'img': <PIL.Image.Image image mode=RGB size=89x89 at 0x7D36981A5070>, 'x': 193, 'y': 1113}
+
+Question: 2-4
+  Entry: {'key': '신호및시스템-10_32226704_L5_x183_y1347_qn2-4_ac1', 'img': <PIL.Image.Image image mode=RGB size=74x74 at 0x7D36981A5460>, 'x': 183, 'y': 1347}
+
+Question: 2-5
+  Entry: {'key': '신호및시스템-10_32226704_L6_x166_y1467_qn2-5_ac1', 'img': <PIL.Image.Image image mode=RGB size=97x97 at 0x7D36981A5C10>, 'x': 166, 'y': 1467}
+
+Question: 3
+  Entry: {'key': '신호및시스템-10_32226704_L7_x174_y1587_qn3_ac2', 'img': <PIL.Image.Image image mode=RGB size=97x97 at 0x7D36981A5190>, 'x': 174, 'y': 1587}
+
+Question: 4
+  Entry: {'key': '신호및시스템-10_32226704_L8_x158_y1708_qn4_ac2', 'img': <PIL.Image.Image image mode=RGB size=98x98 at 0x7D36981A58E0>, 'x': 158, 'y': 1708}
+
+Question: 5
+  Entry: {'key': '신호및시스템-10_32226704_L9_x149_y1820_qn5_ac3', 'img': <PIL.Image.Image image mode=RGB size=154x154 at 0x7D36981A5A90>, 'x': 149, 'y': 1820}
+
+Question: 6
+  Entry: {'key': '신호및시스템-10_32226704_L10_x159_y2019_qn6_ac1', 'img': <PIL.Image.Image image mode=RGB size=125x125 at 0x7D36981A5AC0>, 'x': 159, 'y': 2019}
+
+Question: 7-1
+  Entry: {'key': '신호및시스템-10_32226704_L11_x171_y2187_qn7-1_ac1', 'img': <PIL.Image.Image image mode=RGB size=63x63 at 0x7D36981A5B50>, 'x': 171, 'y': 2187}
+
+Question: 7-2
+  Entry: {'key': '신호및시스템-10_32226704_L12_x168_y2301_qn7-2_ac1', 'img': <PIL.Image.Image image mode=RGB size=58x58 at 0x7D36981A5400>, 'x': 168, 'y': 2301}
+
+Question: 8-1
+  Entry: {'key': '신호및시스템-10_32226704_L13_x168_y2414_qn8-1_ac1', 'img': <PIL.Image.Image image mode=RGB size=52x52 at 0x7D36981A5910>, 'x': 168, 'y': 2414}
+
+Question: 8-2
+  Entry: {'key': '신호및시스템-10_32226704_L14_x161_y2517_qn8-2_ac1', 'img': <PIL.Image.Image image mode=RGB size=74x74 at 0x7D36981A5610>, 'x': 161, 'y': 2517}
+
+Question: 9
+  Entry: {'key': '신호및시스템-10_32226704_L15_x157_y2623_qn9_ac1', 'img': <PIL.Image.Image image mode=RGB size=88x88 at 0x7D36981A5970>, 'x': 157, 'y': 2623}
+
+Question: 10
+  Entry: {'key': '신호및시스템-10_32226704_L16_x156_y2724_qn10_ac1', 'img': <PIL.Image.Image image mode=RGB size=90x90 at 0x7D36981A57C0>, 'x': 156, 'y': 2724}
+
+Question: 11
+  Entry: {'key': '신호및시스템-10_32226704_L17_x154_y2846_qn11_ac1', 'img': <PIL.Image.Image image mode=RGB size=83x83 at 0x7D36981A5520>, 'x': 154, 'y': 2846}
+
+Question: 12
+  Entry: {'key': '신호및시스템-10_32226704_L18_x165_y2946_qn12_ac1', 'img': <PIL.Image.Image image mode=RGB size=60x60 at 0x7D36981A5820>, 'x': 165, 'y': 2946}
+
+Question: 13
+  Entry: {'key': '신호및시스템-10_32226704_L19_x156_y3049_qn13_ac1', 'img': <PIL.Image.Image image mode=RGB size=66x66 at 0x7D36981A5490>, 'x': 156, 'y': 3049}
+
+Question: 14
+  Entry: {'key': '신호및시스템-10_32226704_L20_x143_y3156_qn14_ac1', 'img': <PIL.Image.Image image mode=RGB size=82x82 at 0x7D36981A54F0>, 'x': 143, 'y': 3156}
+

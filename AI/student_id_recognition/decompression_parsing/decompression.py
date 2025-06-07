@@ -58,6 +58,7 @@ def extract_archive(archive_path: str, extract_path: str = None) -> bool:
             return False
             
         print(f"Successfully extracted {archive_path} to {extract_path}")
+        print(os.getcwd())
         return True
         
     except Exception as e:

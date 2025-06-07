@@ -10,6 +10,7 @@ import uuid # UUID 추가
 import shutil # 백그라운드 작업에서 임시 폴더 삭제용
 import json # KafkaProducer value_serializer에서 사용되므로 필요, Flask jsonify와는 다름
 import unicodedata # 유니코드 정규화 위해 추가
+from datetime import datetime # Kafka 메시지 타임스탬프용
 # import re # 이제 사용 안 함
 
 import threading
@@ -93,6 +94,19 @@ def allowed_file(filename, allowed_extensions):
 @app.route('/health', methods=['GET'])
 def health_check():
     """헬스 체크 엔드포인트"""
+
+    if producer is not None:
+        try:
+            # Kafka 브로커와의 연결 상태를 확인하기 위해 빈 메시지를 전송
+            producer.send('low-confidence-images', value={"status": "check"})
+            app.logger.info("Kafka broker is connected and healthy.")
+            return jsonify({"status": "healthy", "message": "Kafka broker is connected and healthy."}), 200
+        except Exception as e:
+            app.logger.error(f"Kafka broker connection check failed: {e}")
+    else:
+        app.logger.warning("Kafka producer is not initialized. Skipping Kafka health check.")
+
+    
     return jsonify({"status": "healthy", "message": "OCR service is running."}), 200
 
 def background_task(subject_name, zip_path, xlsx_path, extracted_images_path, processing_folder_path, parent_logger):
@@ -258,14 +272,36 @@ def recognize_answer_endpoint():
     """2차 답안 인식 엔드포인트: Spring으로부터 수정된 학번 정보를 받아 파일명 변경을 백그라운드로 시작합니다.
        대상 과목 폴더 내에 단 하나의 압축 해제된 ZIP 폴더가 있다고 가정합니다.
     """
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "Invalid JSON payload"}), 400
 
-        subject_name = data.get('subject')
+    # JSON 파싱
+    request_data = request.get_json()
+    if not request_data:
+        return jsonify({"error": "No JSON payload provided"}), 400
+
+    # studentIdUpdateDto -> data 변수에 할당
+    student_id_update_data = request_data.get('studentIdUpdateDto')
+    if not student_id_update_data:
+        return jsonify({"error": "Missing 'studentIdUpdateDto' in JSON payload"}), 400
+
+    # examDto -> answer_key_data 변수에 할당
+    answer_key_data = request_data.get('examDto')
+    if not answer_key_data:
+        return jsonify({"error": "Missing 'examDto' in JSON payload"}), 400
+
+    # subject_name 추출
+    subject_name = student_id_update_data.get('subject')
+    if not subject_name:
+        return jsonify({"error": "Missing 'subject' in studentIdUpdateDto"}), 400
+
+    app.logger.info(f"파싱 완료 - subject: {subject_name}")
+    app.logger.info(f"student_id_update_data keys: {list(student_id_update_data.keys())}")
+    app.logger.info(f"answer_key_data keys: {list(answer_key_data.keys())}")
+
+    
+    try:
+        subject_name = student_id_update_data.get('subject')
         app.logger.info(f"[recognize_answer] Received subject_name from JSON: '{subject_name}'")
-        student_list = data.get('student_list')
+        student_list = student_id_update_data.get('student_list')
 
         if not subject_name:
             return jsonify({"error": "Missing required field: subject"}), 400
@@ -323,6 +359,11 @@ def recognize_answer_endpoint():
         task_info_id = f"{subject_name_for_path}-{target_zip_folder_name}"
         app.logger.info(f"백그라운드 파일명 변경 스레드 시작됨 ({thread.name}) for {task_info_id}")
 
+        # 스레드 작업 완료 대기
+        app.logger.info("파일명 변경 작업 완료 대기 중...")
+        thread.join()
+        app.logger.info("파일명 변경 작업 완료됨")
+
         # return jsonify({
         #     "status": "processing_started",
         #     "message": "File renaming process started in background.",
@@ -333,21 +374,19 @@ def recognize_answer_endpoint():
         app.logger.error(f"Error in /recognize/answer endpoint (before starting background task): {traceback.format_exc()}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
+
+
     # 정다훈 코드
     try:
         app.logger.info("답안 인식 엔드포인트 시작")
 
-        dir_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/신호및시스템-1/신호및시스템-1'
-        answer_key_json_path = os.path.join(dir_path, '..', 'answer_key.json')
+        dir_path = os.path.join(APP_ROOT, subject_name, subject_name)
         
         if not os.path.exists(dir_path):
             app.logger.error(f"디렉토리를 찾을 수 없습니다: {dir_path}")
             return jsonify({"error": f"Directory not found: {dir_path}"}), 400
 
-        if not os.path.exists(answer_key_json_path):
-            app.logger.error(f"답안 키 JSON 파일을 찾을 수 없습니다: {answer_key_json_path}")
-            return jsonify({"error": f"Answer key JSON not found: {answer_key_json_path}"}), 400
-
+        # 이미지 파일 목록 추출 (파일명 변경 완료 후 다시 가져오기)
         image_extensions = ['.jpg', '.jpeg', '.png']
         image_files = []
         for ext in image_extensions:
@@ -359,21 +398,34 @@ def recognize_answer_endpoint():
 
         app.logger.info(f"발견된 이미지 파일 {len(image_files)}개: {image_files}")
 
-        processing_results = []
         errors = []
 
-        answer_json = {
-            "subject": "math",
-            "studentAnswersList": []
-        }
+
         failure_json = {
-            "subject": "math",
+            "subject": subject_name,
             "images": []
         }
 
-        # answer_key_data는 반복문 밖에서 로드
-        with open(answer_key_json_path, 'r', encoding='utf-8') as f:
-            answer_key_data = json.load(f)
+        import re
+        from collections import defaultdict
+
+        def extract_tail_question_counts(answer_key_data: dict) -> dict:
+            """
+            answer_key_data로부터 각 문제(qn)의 꼬리문제 개수(sub_question_number의 개수)를 계산합니다.
+
+            Returns:
+                tail_question_counts: Dict[str, int]
+                    예: {"1": 28, "2": 1, "3": 1, ...}
+            """
+            tail_question_counts = defaultdict(int)
+
+            for q in answer_key_data.get("questions", []):
+                qn = str(q["question_number"])
+                tail_question_counts[qn] += 1
+
+            return dict(tail_question_counts)
+        
+        tail_question_counts = extract_tail_question_counts(answer_key_data)
 
         for image_file in image_files:
             try:
@@ -382,7 +434,7 @@ def recognize_answer_endpoint():
 
                 # 1. 전처리
                 app.logger.info(f"  단계 1: {image_file} 전처리 시작")
-                processed_crops = preprocess_answer_sheet(image_path, answer_key_json_path)
+                processed_crops = preprocess_answer_sheet(image_path, answer_key_data)
 
                 if not processed_crops:
                     app.logger.warning(f"  전처리 결과가 없음: {image_file}")
@@ -396,24 +448,38 @@ def recognize_answer_endpoint():
 
                 # 2. 인식
                 app.logger.info(f"  단계 2: {image_file} 답안 인식 시작")
-                recognition_result = recognize_answer_sheet_data(processed_crops, answer_key_data)
+                recognition_result = recognize_answer_sheet_data(processed_crops, answer_key_data, tail_question_counts)
 
-                # 결과 통합
-                student_answer_obj = recognition_result.get("answer_json", {})
-                answer_json["studentAnswersList"].append(student_answer_obj)
+                
 
+                # --- answer_json은 매 학생마다 추출하여 Kafka로 전송한다. ---
+                answer_json = recognition_result.get("answer_json", {})
+                # Kafka로 결과 전송
+                if producer:
+                    try:
+                        producer.send('student-responses', answer_json)
+                        producer.flush()  # 메시지 전송 보장
+                        
+                    except Exception as kafka_error:
+                        app.logger.error(f"  Kafka 전송 실패 ({image_file}): {kafka_error}")
+                else:
+                    app.logger.warning(f"  Kafka Producer 사용 불가. 메시지 전송 생략: {image_file}")
+                # --- answer_json 전송 끝 ---
+
+
+
+                # --- failure_json는 매 학생마다 업데이트하여 추후 한 데 모아 Kafka로 전송한다. ---
                 failure_images = recognition_result.get("failure_json", [])
                 failure_json["images"].extend(failure_images)
+                # --- failure_json 업데이트 끝 ---
 
-                # 개별 파일 결과 저장
-                processing_results.append({
-                    "file": image_file,
-                    "processed_crops_count": len(processed_crops),
-                    "answer_json": recognition_result.get("answer_json", {}),
-                    "failure_json": recognition_result.get("failure_json", [])
-                })
 
-                app.logger.info(f"  답안 인식 완료: {image_file}")
+
+                # [디버깅] answer_json 저장
+                answer_json_filename = os.path.join(dir_path, f"{os.path.splitext(image_file)[0]}_answers.json")
+                with open(answer_json_filename, 'w', encoding='utf-8') as f:
+                    json.dump(answer_json, f, ensure_ascii=False, indent=4)
+                app.logger.info(f"answer_json 저장 완료: {answer_json_filename}")
 
             except Exception as e:
                 app.logger.error(f"이미지 처리 중 오류 ({image_file}): {traceback.format_exc()}")
@@ -422,25 +488,42 @@ def recognize_answer_endpoint():
                     "error": str(e)
                 })
 
-        # 최종 결과 반환
-        return jsonify({
-            "status": "completed",
-            "processed_files": len(processing_results),
-            "failed_files": len(errors),
-            "results": processing_results,
-            "answer_json": answer_json,
-            "failure_json": failure_json,
-            "errors": errors
-        }), 200
+        # [디버깅] failure_json 저장
+        failure_json_filename = os.path.join(APP_ROOT, subject_name, "failure.json")
+        with open(failure_json_filename, 'w', encoding='utf-8') as f:
+            json.dump(failure_json, f, ensure_ascii=False, indent=4)
+        app.logger.info(f"failure_json 저장 완료: {failure_json_filename}")
+
+        # Kafka로 결과 전송
+        if producer:
+            try:
+                producer.send('low-confidence-images', failure_json)
+
+                producer.flush()  # 메시지 전송 보장
+                
+            except Exception as kafka_error:
+                app.logger.error(f"  Kafka 전송 실패 ({image_file}): {kafka_error}")
+        else:
+            app.logger.warning(f"  Kafka Producer 사용 불가. 메시지 전송 생략: {image_file}")
+
+        app.logger.info(f"  답안 인식 완료: {image_file}")
 
     except Exception as e:
         app.logger.error(f"recognize_answer_endpoint 예외 발생: {traceback.format_exc()}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
+    return jsonify({
+        "status": "success",
+        "message": "Answer recognition completed successfully",
+        "errors": errors,
+        "failure_json": failure_json
+    }), 200
+
 def background_rename_files_task(subject_name, student_list, base_image_path, parent_logger):
     logger = parent_logger
     task_id = f"rename-{secure_filename(subject_name)}-{uuid.uuid4().hex[:8]}"
     logger.info(f"[BG RENAME TASK - {task_id}] 작업 시작. Target path: {base_image_path}")
+    logger.info(os.getcwd())
 
     results = []
     renamed_count = 0

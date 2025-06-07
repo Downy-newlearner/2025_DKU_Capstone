@@ -136,7 +136,7 @@ def create_question_info_dict(
         # 매칭 시 짧은 쪽 길이를 기준으로 함
         min_len = min(len(target_question_list), len(y_coords_to_use))
         if min_len > 0 :
-            print(f"Info (create_question_info_dict): {match_type} Attempting to map {min_len} QN items.")
+            # print(f"Info (create_question_info_dict): {match_type} Attempting to map {min_len} QN items.")
             for i in range(min_len):
                 y_coordinates_dict[target_question_list[i]] = [y_coords_to_use[i][0], y_coords_to_use[i][1]]
         else:
@@ -208,7 +208,6 @@ def generate_final_key_for_ans_crop(
         sub_qn_val = q_entry.get('sub_question_number', 0)
         sub_qn_str_key = str(sub_qn_val) if sub_qn_val and str(sub_qn_val) != "0" else ""
         current_key_in_answer_data = f"{qn_str_key}-{sub_qn_str_key}" if sub_qn_str_key else qn_str_key
-        print(f"current_key_in_answer_data: {current_key_in_answer_data}, matching_qn_str: {matching_qn_str}, same: {current_key_in_answer_data == matching_qn_str}")
         if current_key_in_answer_data == matching_qn_str:
             answer_count_for_qn = q_entry.get('answer_count', 0)
             break
