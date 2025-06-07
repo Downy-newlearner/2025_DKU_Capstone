@@ -187,25 +187,38 @@ public class StudentResponseService {
     @Transactional
     public void updateStudentResponses(StudentAnswerUpdateDto dto) {
         String subject = dto.getSubject();
+        System.out.println("📘 과목: " + subject);
+
         List<StudentAnswerUpdateDto.StudentAnswers> studentAnswersList = dto.getStudentAnswersList();
+        System.out.println("📥 총 학생 수: " + studentAnswersList.size());
 
         for (StudentAnswerUpdateDto.StudentAnswers studentAnswers : studentAnswersList) {
             String studentId = studentAnswers.getStudent_id();
+            System.out.println("👤 처리 중인 학생 ID: " + studentId + " (" + studentId.getClass().getName() + ")");
+            System.out.println("📝 답변 수: " + studentAnswers.getAnswers().size());
 
             Student student = studentService.findById(studentId)
-                    .orElseThrow(() -> new RuntimeException("해당 학생을 찾을 수 없습니다. id: " + studentId));
+                    .orElseThrow(() -> new RuntimeException("❌ 해당 학생을 찾을 수 없습니다. id: " + studentId));
+
+            System.out.println("✅ 학생 정보 조회 성공: " + student.getStudentId());
 
             StudentResponse response = studentResponseRepository.findByStudentAndSubject(student, subject)
-                    .orElseThrow(() -> new RuntimeException("해당 학생의 응답을 찾을 수 없습니다."));
+                    .orElseThrow(() -> new RuntimeException("❌ 해당 학생의 응답을 찾을 수 없습니다."));
 
             List<ExamResponse> answerList = response.getAnswers();
-            if (answerList == null) continue;
+            if (answerList == null) {
+                System.out.println("⚠️ 해당 학생의 기존 답변 없음");
+                continue;
+            }
 
             float totalScore = response.getTotalScore();
+            System.out.println("📊 기존 총점: " + totalScore);
 
             for (StudentAnswerUpdateDto.StudentAnswers.AnswerDto answerDto : studentAnswers.getAnswers()) {
                 int qNo = answerDto.getQuestion_number();
                 int subQNo = answerDto.getSub_question_number();
+
+                System.out.printf("🔍 Q%d-%d 에 대한 답변 갱신 시도...\n", qNo, subQNo);
 
                 ExamResponse matchedAnswer = answerList.stream()
                         .filter(a -> a.getQuestionNumber() == qNo && a.getSubQuestionNumber() == subQNo)
@@ -213,18 +226,21 @@ public class StudentResponseService {
                         .orElse(null);
 
                 if (matchedAnswer == null) {
-                    System.out.printf("⚠️ 답변 없음: 학생 ID: %d, Q%d-%d\n", studentId, qNo, subQNo);
+                    System.out.printf("⚠️ 기존 답변 없음: 학생 ID: %s, Q%d-%d\n", studentId, qNo, subQNo);
                     continue;
                 }
 
                 float previousScore = matchedAnswer.getScore();
                 String newStudentAnswer = answerDto.getStudent_answer();
+                System.out.println("✏️ 새로운 학생 답변: '" + newStudentAnswer + "' (기존 점수: " + previousScore + ")");
+
                 matchedAnswer.setStudentAnswer(newStudentAnswer);
 
                 // 문제 정보 조회
                 Question question = questionService.findQuestionBySubjectAndNumber(subject, qNo, subQNo);
                 if (question != null) {
                     String correctAnswer = question.getAnswer();
+                    System.out.println("📚 정답: '" + correctAnswer + "', 배점: " + question.getPoint());
 
                     boolean isCorrect = newStudentAnswer != null && correctAnswer != null &&
                             newStudentAnswer.trim().replaceAll("\\s+", "")
@@ -236,18 +252,22 @@ public class StudentResponseService {
                     matchedAnswer.setScore(newScore);
 
                     totalScore += (newScore - previousScore);
+                    System.out.println("✅ 채점 결과: " + (isCorrect ? "정답" : "오답") + ", 새로운 점수: " + newScore + ", 누적 점수: " + totalScore);
                 } else {
                     matchedAnswer.setCorrect(false);
                     matchedAnswer.setScore(0);
                     totalScore -= previousScore;
+                    System.out.println("❌ 문제 정보 없음. 점수 차감: -" + previousScore + ", 누적 점수: " + totalScore);
                 }
             }
 
-            // ✅ StudentResponse 저장 시 ExamResponse도 같이 저장됨
             response.setTotalScore(totalScore);
             studentResponseRepository.save(response);
+            System.out.println("💾 저장 완료 - 학생 ID: " + studentId + ", 최종 점수: " + totalScore);
         }
+        System.out.println("✅ 모든 학생 처리 완료");
     }
+
 
 
 

@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -190,9 +191,12 @@ public class StudentResponseController {
 
 
     @PutMapping("/responses")
-    public ResponseEntity<String> updateStudentResponses(@RequestBody StudentAnswerUpdateDto dto) {
+    public ResponseEntity<Map<String, String>> updateStudentResponses(@RequestBody StudentAnswerUpdateDto dto) {
         studentResponseService.updateStudentResponses(dto);
-        return ResponseEntity.ok("여러 학생의 답변이 성공적으로 업데이트되었습니다.");
+        return ResponseEntity.ok(Map.of(
+                "status", "DONE"
+        ));
+
     }
 
 
