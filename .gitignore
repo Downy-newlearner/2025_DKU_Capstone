@@ -5,6 +5,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+application.yml
 
 # 대용량 파일 무시
 AI/deep-text-recognition-benchmark/
