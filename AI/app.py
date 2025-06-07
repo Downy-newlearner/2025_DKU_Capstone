@@ -843,7 +843,7 @@ def get_student_image():
     except Exception as e:
         app.logger.error(f"[get-student-image] Unexpected error: {traceback.format_exc()}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
-
+    
 @app.route('/hello', methods=['GET'])
 def hello():
     return "Hello, World", 200

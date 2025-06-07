@@ -11,6 +11,7 @@ from typing import Dict, List, Any, Tuple, Optional, TypedDict
 import re # 삭제
 from io import BytesIO
 import base64
+from paddleocr import PaddleOCR
 
 # config.py로부터 import
 from .config import (
@@ -88,18 +89,21 @@ def preprocess_answer_sheet(
     
     print("  단계 2&3 (질문 정보 딕셔너리 생성)...")
     question_info_dict = create_question_info_dict([qn_detected_area], answer_key_data)
+
     # --- question_info_dict 출력 디버그 코드 시작 ---
     # print(f"  [Debug Main] 생성된 question_info_dict (키 개수: {len(question_info_dict)}):")
     # json.dumps를 사용하여 보기 좋게 출력, 한글 깨짐 방지 ensure_ascii=False
     # 너무 길 경우 일부만 출력하거나, 파일로 저장하는 것을 고려할 수 있습니다.
     # 여기서는 전체를 출력합니다.
-    try:
-        print(json.dumps(question_info_dict, indent=2, ensure_ascii=False))
-    except TypeError as e:
-        # PIL Image 객체 등이 직접 포함되어 json.dumps가 실패하는 경우를 대비
-        print(f"    question_info_dict를 JSON으로 변환 중 오류 (직접 출력 시도): {e}")
-        print(question_info_dict) # 이 경우, 일반 print로 출력
+    # try:
+    #     print(json.dumps(question_info_dict, indent=2, ensure_ascii=False))
+    # except TypeError as e:
+    #     # PIL Image 객체 등이 직접 포함되어 json.dumps가 실패하는 경우를 대비
+    #     print(f"    question_info_dict를 JSON으로 변환 중 오류 (직접 출력 시도): {e}")
+    #     print(question_info_dict) # 이 경우, 일반 print로 출력
     # --- question_info_dict 출력 디버그 코드 끝 ---
+
+
     if not question_info_dict: 
         print(f"  질문 정보 딕셔너리 생성 실패 {subject_student_id_base}. 질문 발견 및 답변 키 일치 확인 필요.")
         return {}
@@ -331,8 +335,8 @@ def recognize_answer_sheet_data(
         sorted(grouped_answers_by_qn_and_subqn.items(), key=lambda x: qn_sort_key(x[0]))
     )
 
-    # INSERT_YOUR_CODE
-    debug_filename = os.path.join('/home/jdh251425/2025_DKU_Capstone/AI', "grouped_answers_debug.txt")
+    # grouped_answers_by_qn_and_subqn 형식 확인하기
+    debug_filename = os.path.join(os.getcwd(), "grouped_answers_by_qn_and_subqn_debug.txt")
     with open(debug_filename, 'w', encoding='utf-8') as debug_file:
         for full_qn, entries in grouped_answers_by_qn_and_subqn.items():
             debug_file.write(f"Question: {full_qn}\n")
@@ -365,6 +369,24 @@ def recognize_answer_sheet_data(
     }
 
     failure_json_images = []
+
+    '''
+    [grouped_answers_by_qn_and_subqn]
+
+    Question: 1-1
+    Entry: {'key': '신호및시스템-10_32201959_L1_x423_y897_qn1-1_ac1', 'img': <PIL.Image.Image image mode=RGB size=72x72 at 0x349C300E0>, 'x': 423, 'y': 897}
+
+    Question: 2-1
+    Entry: {'key': '신호및시스템-10_32201959_L2_x414_y1014_qn2-1_ac1', 'img': <PIL.Image.Image image mode=RGB size=85x85 at 0x349C33E60>, 'x': 414, 'y': 1014}
+
+    Question: 2-2
+    Entry: {'key': '신호및시스템-10_32201959_L3_x396_y1143_qn2-2_ac1', 'img': <PIL.Image.Image image mode=RGB size=74x74 at 0x349C324B0>, 'x': 396, 'y': 1143}
+
+    Question: 2-3
+    Entry: {'key': '신호및시스템-10_32201959_L4_x374_y1251_qn2-3_ac1', 'img': <PIL.Image.Image image mode=RGB size=79x79 at 0x349C32EA0>, 'x': 374, 'y': 1251}
+    ...
+
+    '''
 
     # 각 full_qn에 대해 처리
     total_digit_crops_count = 0
@@ -419,85 +441,76 @@ def recognize_answer_sheet_data(
         else:
             split_indices = []
 
-        # 5. split index 기준으로 숫자 그룹핑
+        # 5. split index 기준으로 숫자 그룹핑 - 이미지 대신 인식 결과를 그룹핑
         digits_grouped = []
         temp_group = []
+        
+        # MNIST 모델 파이프라인 가져오기
+        pipe = mnist_recognition_pipeline
+        
+        # 각 digit crop을 먼저 인식하여 숫자로 변환
+        recognized_digits = []
+        digit_confidences = []
         for i, (img, coord) in enumerate(sorted(digit_crops, key=lambda t: t[1][0])):
-            temp_group.append(img)
+            try:
+                # 개별 digit 이미지 인식
+                pred = pipe(img.convert('L'))
+                if pred and len(pred) > 0:
+                    predicted_digit = pred[0]['label']
+                    confidence = pred[0].get('score', 0.0)
+                    digit_confidences.append(confidence)
+                    # 신뢰도가 낮으면 '?'로 표시
+                    if confidence < 0.9:  # 개별 digit의 낮은 임계값
+                        predicted_digit = '?'
+                    recognized_digits.append(predicted_digit)
+                else:
+                    recognized_digits.append('?')
+                    digit_confidences.append(0.0)
+            except Exception as e:
+                recognized_digits.append('?')
+                digit_confidences.append(0.0)
+        
+        # 인식된 숫자들을 split_indices 기준으로 그룹핑
+        for i, digit in enumerate(recognized_digits):
+            temp_group.append(digit)
             if i in split_indices:
                 digits_grouped.append(temp_group)
                 temp_group = []
         if temp_group:
             digits_grouped.append(temp_group)
 
-        # 6. 모델을 통한 숫자 인식 및 문자열 생성
+        # 6. 그룹별로 숫자 문자열 생성
         fail_flag = False
         result_string = ""
-        confidence_threshold = 0.85  # 신뢰도 임계값 설정
-        
-        # MNIST 모델 파이프라인 가져오기
-        pipe = mnist_recognition_pipeline
+        confidence_threshold = 0.85  # 전체 신뢰도 임계값
 
+        # digits_grouped의 예시
+        # digits_grouped를 txt로 저장
+        with open(os.path.join(os.getcwd(), "digits_grouped_output.txt"), "a") as f:
+            for group in digits_grouped:
+                print(f"group: {group}")
+                # 각 그룹의 숫자들을 텍스트로 변환하여 저장
+                group_text = ", ".join([str(digit) for digit in group])
+                f.write(group_text + "\n")
 
+            print("--------------------------------")
 
-
-
-
-
-
-
-
-
-
-
-        # 여기가 문제!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # 그룹별로 숫자 문자열 생성
         for group_idx, group in enumerate(digits_grouped):
-            if not pipe:
+            # '?'가 포함된 그룹은 실패로 처리
+            if '?' in group:
                 fail_flag = True
                 break
                 
-            # 그룹 내 이미지들을 수평으로 연결
-            width = sum([img.width for img in group])
-            height = max([img.height for img in group])
-            new_img = Image.new("L", (width, height), color=255)
-            current_x = 0
-            for img_idx, img in enumerate(group):
-                new_img.paste(img, (current_x, 0))
-                current_x += img.width
-            
-            try:
-                pred = pipe(new_img)
-                if not pred:
-                    fail_flag = True
-                    break
-                
-                predicted_label = pred[0]['label']
-                confidence = pred[0].get('score', 0.0)  # 기본값을 0.0으로 설정
-
-                
-                # 신뢰도 체크
-                if confidence < confidence_threshold:
-                    fail_flag = True
-                    break
-                
-                result_string += predicted_label
-                
-            except Exception as e:
-                fail_flag = True
-                break
-
-
-
-
-
-
-
-
-
-
-
-
-            
+            # 그룹 내 숫자들을 연결하여 문자열 생성
+            group_string = ''.join(group)
+            result_string += group_string
+        
+        # 전체 신뢰도 계산 (평균)
+        if digit_confidences and not fail_flag:
+            avg_confidence = sum(digit_confidences) / len(digit_confidences)
+        else:
+            avg_confidence = 0.0
 
         # 7. 결과 저장: 실패 시 base64 이미지 저장, 성공 시 answer 기록
         if fail_flag or not result_string:
@@ -537,7 +550,7 @@ def recognize_answer_sheet_data(
                 if a["question_number"] == qn and a["sub_question_number"] == sub_qn:
                     original_answer = a["student_answer"]  # 기존 답안 백업
                     a["student_answer"] = result_string
-                    a["confidence"] = float(confidence)  # 명시적으로 float 변환
+                    a["confidence"] = avg_confidence
                     found_answer = True
                     break
             
@@ -558,8 +571,8 @@ if __name__ == "__main__":
     # test_original_image_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data/test_answer/32174515.jpg'
     # test_answer_key_json_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data/test_answer.json'
 
-    # 신호와 시스템 시험지(유석이가 제작 0605)
-    test_original_image_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data_signals/신호및시스템_학생답안지 및 학적정보/final_test_image/32208925.jpg'
+    # 신호와 시스템 시험지(유석이가 제작 0605) - 새로운 테스트 경로로 변경
+    test_original_image_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/신호및시스템-10/신호및시스템-10/신호및시스템-10_32202698.jpg'
     test_answer_key_json_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data_signals/test_answer.json'
 
     print(f"--- Running Preprocessing Test for {test_original_image_path} ---")
@@ -578,7 +591,91 @@ if __name__ == "__main__":
         print("\n--- Test Script Finished ---")
         exit(1)
 
+    # extract_tail_question_counts 함수 정의 추가
+    from collections import defaultdict
+    
+    def extract_tail_question_counts(answer_key_data: dict) -> dict:
+        """
+        answer_key_data로부터 각 문제(qn)의 꼬리문제 개수(sub_question_number의 개수)를 계산합니다.
+
+        Returns:
+            tail_question_counts: Dict[str, int]
+                예: {"1": 28, "2": 1, "3": 1, ...}
+        """
+        tail_question_counts = defaultdict(int)
+
+        for q in answer_key_data.get("questions", []):
+            qn = str(q["question_number"])
+            tail_question_counts[qn] += 1
+
+        return dict(tail_question_counts)
+    
+    # tail_question_counts 생성
+    tail_question_counts = extract_tail_question_counts(test_answer_key_data)
+    print(f"Tail question counts: {tail_question_counts}")
+
     processed_crops = preprocess_answer_sheet(test_original_image_path, test_answer_key_data)
+
+    # 🔍 디버그: processed_crops의 모든 이미지 저장
+    debug_processed_dir = os.path.join(os.getcwd(), "debug_processed_crops")
+    if not os.path.exists(debug_processed_dir):
+        os.makedirs(debug_processed_dir)
+    
+    if processed_crops:
+        print(f"\n--- 디버그: processed_crops 이미지 저장 중 ---")
+        for idx, (key, img_obj) in enumerate(processed_crops.items()):
+            # key에서 특수문자 제거하여 파일명으로 사용 가능하게 변환
+            safe_key = key.replace("/", "_").replace("\\", "_").replace(":", "_").replace("*", "_").replace("?", "_").replace('"', "_").replace("<", "_").replace(">", "_").replace("|", "_")
+            
+            # 이미지 파일명 생성 (순서번호_키정보.png)
+            filename = f"{idx:03d}_{safe_key}.png"
+            filepath = os.path.join(debug_processed_dir, filename)
+            
+            try:
+                # PIL Image 객체인지 확인하고 저장
+                if hasattr(img_obj, 'save'):
+                    img_obj.save(filepath)
+                    print(f"  저장됨: {filename} (크기: {img_obj.size})")
+                else:
+                    print(f"  오류: {filename} - PIL Image 객체가 아님 (타입: {type(img_obj)})")
+            except Exception as e:
+                print(f"  저장 실패: {filename} - {e}")
+        
+        print(f"총 {len(processed_crops)}개의 이미지가 {debug_processed_dir} 폴더에 저장되었습니다.")
+    else:
+        print("processed_crops가 비어있어 저장할 이미지가 없습니다.")
+
+    # 🔍 디버그: Key 분석 정보 텍스트 파일로 저장  
+    key_analysis_file = os.path.join(debug_processed_dir, "key_analysis.txt")
+    with open(key_analysis_file, 'w', encoding='utf-8') as f:
+        f.write("=== PROCESSED CROPS KEY 분석 ===\n\n")
+        f.write(f"총 이미지 개수: {len(processed_crops)}\n\n")
+        
+        for idx, (key, img_obj) in enumerate(processed_crops.items()):
+            f.write(f"{idx:03d}. {key}\n")
+            if hasattr(img_obj, 'size'):
+                f.write(f"     크기: {img_obj.size}\n")
+            
+            # Key 구성 요소 분석
+            parts = key.split('_')
+            f.write(f"     구성요소: {parts}\n")
+            
+            # 정규식으로 주요 정보 추출
+            import re
+            qn_match = re.search(r'_qn([a-zA-Z0-9\-]+)', key)
+            x_match = re.search(r'_x(\d+)', key)
+            y_match = re.search(r'_y(\d+)', key)
+            line_match = re.search(r'_L(\d+)', key)
+            
+            if qn_match:
+                f.write(f"     문제번호: {qn_match.group(1)}\n")
+            if x_match and y_match:
+                f.write(f"     좌표: x={x_match.group(1)}, y={y_match.group(1)}\n")
+            if line_match:
+                f.write(f"     라인: {line_match.group(1)}\n")
+            f.write("\n")
+    
+    print(f"Key 분석 정보가 {key_analysis_file}에 저장되었습니다.")
 
     if not processed_crops:
         print("Preprocessing returned no crops. Test did not generate any output.")
@@ -592,15 +689,17 @@ if __name__ == "__main__":
             else:
                 print(f"  Key: {key}, Image Object Type: {type(img_obj)} (Size not available)")
 
-        # --- recognize_answer_sheet_data 함수 테스트 (1단계까지) ---
-        print("\n--- Running Recognition Test (Step 1) --- ")
+        # --- recognize_answer_sheet_data 함수 테스트 (tail_question_counts 추가) ---
+        print("\n--- Running Recognition Test with tail_question_counts --- ")
         # answer_key_data는 이미 위에서 로드됨
         try:
-            recognition_step1_result = recognize_answer_sheet_data(processed_crops, test_answer_key_data)
-            print("\nRecognition Step 1 Result:")
+            recognition_step1_result = recognize_answer_sheet_data(processed_crops, test_answer_key_data, tail_question_counts)
+            print("\nRecognition Test Result:")
             # 보기 쉽게 json.dumps를 사용하여 출력
             print(json.dumps(recognition_step1_result, indent=2, ensure_ascii=False))
         except Exception as e:
-            print(f"Error during recognition test (Step 1): {e}")
+            print(f"Error during recognition test: {e}")
+            import traceback
+            print(traceback.format_exc())
 
     print("\n--- Test Script Finished ---")
