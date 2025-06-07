@@ -9,12 +9,25 @@ services:
       - "8080:8080"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://root:example@mongodb:27017/capstone?authSource=admin
-    depends_on:
-      - mongodb
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=43.202.183.74:9092
+
     networks:
       - test_net
 
-  # MongoDB 컨테이너
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: capstone
+    ports:
+      - "3306:3306"
+    networks:
+      - test_net
+
   mongodb:
     image: mongo:5.0
     container_name: mongodb
@@ -23,10 +36,31 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
-      MONGO_INITDB_DATABASE: test
     networks:
       - test_net
+
+  # Redis 컨테이너
+  redis:
+    image: redis:7.2
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - test_net
+
 
 networks:
   test_net:
     driver: bridge
+
+
+
+
+
+
+
+
+
+
+
+

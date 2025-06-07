@@ -267,11 +267,15 @@ def recognize_student_id_endpoint():
         app.logger.info(f"오류 발생. 생성된 과목 폴더 ({subject_data_path if 'subject_data_path' in locals() else 'N/A'})는 유지됩니다.")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
-def send_spring_notification(action, subject_name, additional_data=None):
-    """Spring 서버에 알림을 보내는 함수"""
+def send_spring_notification(action, subject_name, additional_data=None, request_origin=None):
+    """Spring 서버에 알림을 보내는 함수 - 요청을 보낸 곳으로 callback"""
     try:
-        # TODO: 실제 Spring 서버 URL로 변경 필요
-        spring_url = "http://your-spring-server:8080/api/ocr-status"  
+        if not request_origin:
+            app.logger.info(f"[Spring 알림] callback할 origin이 없어 알림을 건너뜁니다. Action: {action}, Subject: {subject_name}")
+            return
+        
+        # Origin에서 callback URL 구성
+        callback_url = f"{request_origin}/api/ocr-status"
         
         payload = {
             "action": action,  # "pending" 또는 "done"
@@ -282,23 +286,20 @@ def send_spring_notification(action, subject_name, additional_data=None):
         if additional_data:
             payload.update(additional_data)
         
-        # 실제 HTTP 요청 (여기서는 로그만 출력)
-        app.logger.info(f"[Spring 알림] {action} 신호 전송: {payload}")
-        # requests.post(spring_url, json=payload, timeout=10)
+        app.logger.info(f"[Spring 알림] {action} 신호를 요청 origin으로 전송: {callback_url}")
         
-        # 실제 Spring 서버가 준비되면 주석 해제:
         try:
-            response = requests.post(spring_url, json=payload, timeout=10)
+            response = requests.post(callback_url, json=payload, timeout=10)
             app.logger.info(f"[Spring 알림] 응답 상태: {response.status_code}")
         except requests.exceptions.RequestException as req_error:
-            app.logger.warning(f"[Spring 알림] HTTP 요청 실패 (서버 미준비 가능성): {req_error}")
+            app.logger.warning(f"[Spring 알림] HTTP 요청 실패: {req_error}")
         except Exception as general_error:
             app.logger.error(f"[Spring 알림] 일반 오류: {general_error}")
         
     except Exception as e:
         app.logger.error(f"Spring 알림 전송 실패 ({action}): {e}")
 
-def background_answer_recognition_task(subject_name, student_id_update_data, answer_key_data, parent_logger):
+def background_answer_recognition_task(subject_name, student_id_update_data, answer_key_data, parent_logger, request_origin):
     """백그라운드에서 답안 인식을 수행하는 함수"""
     logger = parent_logger
     task_id = f"answer-recognition-{subject_name}-{uuid.uuid4().hex[:8]}"
@@ -307,7 +308,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
         logger.info(f"[BG ANSWER TASK - {task_id}] 작업 시작")
         
         # Spring에 처리 시작 알림
-        send_spring_notification("pending", subject_name, {"task_id": task_id})
+        send_spring_notification("pending", subject_name, {"task_id": task_id}, request_origin)
         
         # 기존 답안 인식 로직 수행
         student_list = student_id_update_data.get('student_list')
@@ -320,7 +321,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
                 "task_id": task_id, 
                 "status": "error", 
                 "message": "Subject directory not found"
-            })
+            }, request_origin)
             return
 
         # 하위 디렉토리 찾기
@@ -332,7 +333,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
                 "task_id": task_id,
                 "status": "error", 
                 "message": f"Invalid subdirectory count: {len(subdirectories)}"
-            })
+            }, request_origin)
             return
 
         target_zip_folder_name = subdirectories[0]
@@ -355,7 +356,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
                 "task_id": task_id,
                 "status": "error",
                 "message": f"Directory not found: {dir_path}"
-            })
+            }, request_origin)
             return
 
         # 이미지 파일 목록 추출
@@ -370,7 +371,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
                 "task_id": task_id,
                 "status": "error",
                 "message": "No image files found"
-            })
+            }, request_origin)
             return
 
         logger.info(f"발견된 이미지 파일 {len(image_files)}개")
@@ -454,7 +455,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
             "processed_files": processed_count,
             "total_files": len(image_files),
             "errors": len(errors)
-        })
+        }, request_origin)
 
         logger.info(f"[BG ANSWER TASK - {task_id}] 작업 완료. 처리: {processed_count}/{len(image_files)}, 오류: {len(errors)}")
 
@@ -464,7 +465,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
             "task_id": task_id,
             "status": "error",
             "message": str(e)
-        })
+        }, request_origin)
 
 @app.route('/recognize/answer', methods=['POST'])
 def recognize_answer_endpoint():
@@ -492,13 +493,17 @@ def recognize_answer_endpoint():
         if not student_list:
             return jsonify({"error": "Missing 'student_list' in studentIdUpdateDto"}), 400
 
+        # 요청 origin 추출
+        request_origin = request.headers.get('Origin') or f"http://{request.headers.get('Host', 'localhost')}"
+        app.logger.info(f"[recognize_answer] 요청 origin: {request_origin}")
+
         app.logger.info(f"[recognize_answer] 비동기 처리 시작 - subject: {subject_name}")
 
         # 백그라운드 스레드 시작
         task_id = f"answer-{subject_name}-{uuid.uuid4().hex[:8]}"
         thread = threading.Thread(
             target=background_answer_recognition_task,
-            args=(subject_name, student_id_update_data, answer_key_data, app.logger),
+            args=(subject_name, student_id_update_data, answer_key_data, app.logger, request_origin),
             name=f"AnswerRecognition-{task_id}"
         )
         thread.start()

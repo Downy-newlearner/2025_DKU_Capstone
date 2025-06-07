@@ -7,10 +7,10 @@ import lombok.Setter;
 import java.util.List;
 @Getter
 @Setter
-
-public class StudentResponse {
+public class StudentResponseDto {
     private String student_id;
-    private List<ExamResponse> answers;
-
+    private String subject;
+    private List<ExamResponseDto> answers;
+    private int total_score;
     // Getters, Setters, Constructors
 }
