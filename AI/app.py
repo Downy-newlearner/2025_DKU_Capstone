@@ -11,6 +11,7 @@ import shutil # 백그라운드 작업에서 임시 폴더 삭제용
 import json # KafkaProducer value_serializer에서 사용되므로 필요, Flask jsonify와는 다름
 import unicodedata # 유니코드 정규화 위해 추가
 from datetime import datetime # Kafka 메시지 타임스탬프용
+import requests # Spring 서버 통신용
 # import re # 이제 사용 안 함
 
 import threading
@@ -266,396 +267,255 @@ def recognize_student_id_endpoint():
         app.logger.info(f"오류 발생. 생성된 과목 폴더 ({subject_data_path if 'subject_data_path' in locals() else 'N/A'})는 유지됩니다.")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
-# --- 2차 답안 인식 엔드포인트 (Kafka 기반 아키텍처와 호환성 재검토 필요) ---
-@app.route('/recognize/answer', methods=['POST'])
-def recognize_answer_endpoint():
-    """2차 답안 인식 엔드포인트: Spring으로부터 수정된 학번 정보를 받아 파일명 변경을 백그라운드로 시작합니다.
-       대상 과목 폴더 내에 단 하나의 압축 해제된 ZIP 폴더가 있다고 가정합니다.
-    """
+def send_spring_notification(action, subject_name, additional_data=None):
+    """Spring 서버에 알림을 보내는 함수"""
+    try:
+        # TODO: 실제 Spring 서버 URL로 변경 필요
+        spring_url = "http://your-spring-server:8080/api/ocr-status"  
+        
+        payload = {
+            "action": action,  # "pending" 또는 "done"
+            "subject": subject_name,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        if additional_data:
+            payload.update(additional_data)
+        
+        # 실제 HTTP 요청 (여기서는 로그만 출력)
+        app.logger.info(f"[Spring 알림] {action} 신호 전송: {payload}")
+        # requests.post(spring_url, json=payload, timeout=10)
+        
+        # 실제 Spring 서버가 준비되면 주석 해제:
+        try:
+            response = requests.post(spring_url, json=payload, timeout=10)
+            app.logger.info(f"[Spring 알림] 응답 상태: {response.status_code}")
+        except requests.exceptions.RequestException as req_error:
+            app.logger.warning(f"[Spring 알림] HTTP 요청 실패 (서버 미준비 가능성): {req_error}")
+        except Exception as general_error:
+            app.logger.error(f"[Spring 알림] 일반 오류: {general_error}")
+        
+    except Exception as e:
+        app.logger.error(f"Spring 알림 전송 실패 ({action}): {e}")
 
-    # JSON 파싱
-    request_data = request.get_json()
-    if not request_data:
-        return jsonify({"error": "No JSON payload provided"}), 400
-
-    # studentIdUpdateDto -> data 변수에 할당
-    student_id_update_data = request_data.get('studentIdUpdateDto')
-    if not student_id_update_data:
-        return jsonify({"error": "Missing 'studentIdUpdateDto' in JSON payload"}), 400
-
-    # examDto -> answer_key_data 변수에 할당
-    answer_key_data = request_data.get('examDto')
-    if not answer_key_data:
-        return jsonify({"error": "Missing 'examDto' in JSON payload"}), 400
-
-    # subject_name 추출
-    subject_name = student_id_update_data.get('subject')
-    if not subject_name:
-        return jsonify({"error": "Missing 'subject' in studentIdUpdateDto"}), 400
-
-    app.logger.info(f"파싱 완료 - subject: {subject_name}")
-    app.logger.info(f"student_id_update_data keys: {list(student_id_update_data.keys())}")
-    app.logger.info(f"answer_key_data keys: {list(answer_key_data.keys())}")
-
+def background_answer_recognition_task(subject_name, student_id_update_data, answer_key_data, parent_logger):
+    """백그라운드에서 답안 인식을 수행하는 함수"""
+    logger = parent_logger
+    task_id = f"answer-recognition-{subject_name}-{uuid.uuid4().hex[:8]}"
     
     try:
-        subject_name = student_id_update_data.get('subject')
-        app.logger.info(f"[recognize_answer] Received subject_name from JSON: '{subject_name}'")
+        logger.info(f"[BG ANSWER TASK - {task_id}] 작업 시작")
+        
+        # Spring에 처리 시작 알림
+        send_spring_notification("pending", subject_name, {"task_id": task_id})
+        
+        # 기존 답안 인식 로직 수행
         student_list = student_id_update_data.get('student_list')
-
-        if not subject_name:
-            return jsonify({"error": "Missing required field: subject"}), 400
-        if not student_list:
-            return jsonify({"error": "Missing required field: student_list"}), 400
-
-        if not isinstance(subject_name, str) or not isinstance(student_list, list):
-            return jsonify({"error": "Invalid data type for subject or student_list."}), 400
-
-        subject_name_for_path = subject_name if subject_name else uuid.uuid4().hex # 원본 subject_name 또는 UUID 사용
-        app.logger.info(f"[recognize_answer] subject_name_for_path: '{subject_name_for_path}'")
+        subject_name_for_path = subject_name if subject_name else uuid.uuid4().hex
         subject_path = os.path.join(APP_ROOT, subject_name_for_path)
 
         if not os.path.isdir(subject_path):
-            app.logger.error(f"Subject path not found: {subject_path}")
-            return jsonify({"error": f"Directory for subject '{subject_name_for_path}' not found."}), 404
+            logger.error(f"Subject path not found: {subject_path}")
+            send_spring_notification("done", subject_name, {
+                "task_id": task_id, 
+                "status": "error", 
+                "message": "Subject directory not found"
+            })
+            return
 
-        # 과목 폴더 내의 하위 디렉토리(ZIP 폴더) 찾기
-        try:
-            subdirectories = [d for d in os.listdir(subject_path) if os.path.isdir(os.path.join(subject_path, d))]
-        except OSError as e:
-            app.logger.error(f"Error listing subdirectories in {subject_path}: {e}")
-            return jsonify({"error": f"Could not read subject directory contents for '{subject_name_for_path}'."}), 500
-
-        if len(subdirectories) == 0:
-            app.logger.error(f"No subdirectories (zip folders) found in {subject_path} for subject '{subject_name_for_path}'.")
-            return jsonify({"error": f"No processed zip folder found for subject '{subject_name_for_path}'. Please upload files first via /recognize/student_id."}), 404
-        elif len(subdirectories) > 1:
-            app.logger.error(f"Multiple subdirectories found in {subject_path} for subject '{subject_name_for_path}': {subdirectories}. Cannot determine target.")
-            return jsonify({"error": f"Multiple processed zip folders found for subject '{subject_name_for_path}'. Please ensure only one target exists or specify the target."}), 409 # 409 Conflict
+        # 하위 디렉토리 찾기
+        subdirectories = [d for d in os.listdir(subject_path) if os.path.isdir(os.path.join(subject_path, d))]
         
-        target_zip_folder_name = subdirectories[0] # 유일한 하위 디렉토리 (recognize_student_id에서 원본 기준으로 생성된 이름)
-        app.logger.info(f"Found single target zip folder: '{target_zip_folder_name}' in {subject_path}")
+        if len(subdirectories) != 1:
+            logger.error(f"Expected 1 subdirectory, found {len(subdirectories)}")
+            send_spring_notification("done", subject_name, {
+                "task_id": task_id,
+                "status": "error", 
+                "message": f"Invalid subdirectory count: {len(subdirectories)}"
+            })
+            return
 
+        target_zip_folder_name = subdirectories[0]
         base_image_path = os.path.join(subject_path, target_zip_folder_name)
-        app.logger.info(f"Target base image path for rename: {base_image_path}")
+        logger.info(f"Target base image path: {base_image_path}")
 
-        if not os.path.isdir(base_image_path):
-            app.logger.error(f"Determined base image path is not a directory: {base_image_path}")
-            return jsonify({"error": f"Internal error: Target path '{target_zip_folder_name}' for subject '{subject_name_for_path}' is not a valid directory."}), 500
+        # 파일명 변경 작업 (동기적으로 수행)
+        logger.info(f"[BG ANSWER TASK - {task_id}] 파일명 변경 시작")
+        background_rename_files_task(subject_name, student_list, base_image_path, logger)
+        logger.info(f"[BG ANSWER TASK - {task_id}] 파일명 변경 완료")
 
-        # 백그라운드 스레드 생성 및 시작
-        thread = threading.Thread(
-            target=background_rename_files_task,
-            args=(
-                subject_name, # background_rename_files_task는 원본 subject_name을 아직 사용할 수 있음 (로깅 등)
-                student_list, 
-                base_image_path, 
-                app.logger, 
-            ),
-            name=f"BGRenameTask-{subject_name_for_path}-{target_zip_folder_name}"
-        )
-        thread.start()
-
-        task_info_id = f"{subject_name_for_path}-{target_zip_folder_name}"
-        app.logger.info(f"백그라운드 파일명 변경 스레드 시작됨 ({thread.name}) for {task_info_id}")
-
-        # 스레드 작업 완료 대기
-        app.logger.info("파일명 변경 작업 완료 대기 중...")
-        thread.join()
-        app.logger.info("파일명 변경 작업 완료됨")
-
-        # return jsonify({
-        #     "status": "processing_started",
-        #     "message": "File renaming process started in background.",
-        #     "task_reference_id": task_info_id 
-        # }), 202
-
-    except Exception as e:
-        app.logger.error(f"Error in /recognize/answer endpoint (before starting background task): {traceback.format_exc()}")
-        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
-
-
-
-    # 정다훈 코드
-    try:
-        app.logger.info("답안 인식 엔드포인트 시작")
-
+        # 답안 인식 로직 수행
+        logger.info(f"[BG ANSWER TASK - {task_id}] 답안 인식 시작")
+        
         dir_path = os.path.join(APP_ROOT, subject_name, subject_name)
         
         if not os.path.exists(dir_path):
-            app.logger.error(f"디렉토리를 찾을 수 없습니다: {dir_path}")
-            return jsonify({"error": f"Directory not found: {dir_path}"}), 400
+            logger.error(f"디렉토리를 찾을 수 없습니다: {dir_path}")
+            send_spring_notification("done", subject_name, {
+                "task_id": task_id,
+                "status": "error",
+                "message": f"Directory not found: {dir_path}"
+            })
+            return
 
-        # 이미지 파일 목록 추출 (파일명 변경 완료 후 다시 가져오기)
+        # 이미지 파일 목록 추출
         image_extensions = ['.jpg', '.jpeg', '.png']
         image_files = []
         for ext in image_extensions:
             image_files.extend([f for f in os.listdir(dir_path) if f.lower().endswith(ext)])
 
         if not image_files:
-            app.logger.warning(f"이미지 파일을 찾을 수 없습니다: {dir_path}")
-            return jsonify({"error": "No image files found in directory"}), 400
+            logger.warning(f"이미지 파일을 찾을 수 없습니다: {dir_path}")
+            send_spring_notification("done", subject_name, {
+                "task_id": task_id,
+                "status": "error",
+                "message": "No image files found"
+            })
+            return
 
-        app.logger.info(f"발견된 이미지 파일 {len(image_files)}개: {image_files}")
+        logger.info(f"발견된 이미지 파일 {len(image_files)}개")
 
+        # 답안 인식 수행
         errors = []
-
-
         failure_json = {
             "subject": subject_name,
             "images": []
         }
 
-        import re
+        # tail_question_counts 계산
         from collections import defaultdict
-
         def extract_tail_question_counts(answer_key_data: dict) -> dict:
-            """
-            answer_key_data로부터 각 문제(qn)의 꼬리문제 개수(sub_question_number의 개수)를 계산합니다.
-
-            Returns:
-                tail_question_counts: Dict[str, int]
-                    예: {"1": 28, "2": 1, "3": 1, ...}
-            """
             tail_question_counts = defaultdict(int)
-
             for q in answer_key_data.get("questions", []):
                 qn = str(q["question_number"])
                 tail_question_counts[qn] += 1
-
             return dict(tail_question_counts)
         
         tail_question_counts = extract_tail_question_counts(answer_key_data)
 
+        # 각 이미지 처리
+        processed_count = 0
         for image_file in image_files:
             try:
                 image_path = os.path.join(dir_path, image_file)
-                app.logger.info(f"처리 중: {image_file}")
+                logger.info(f"처리 중: {image_file}")
 
                 # 1. 전처리
-                app.logger.info(f"  단계 1: {image_file} 전처리 시작")
                 processed_crops = preprocess_answer_sheet(image_path, answer_key_data)
-
                 if not processed_crops:
-                    app.logger.warning(f"  전처리 결과가 없음: {image_file}")
-                    errors.append({
-                        "file": image_file,
-                        "error": "No crops from preprocessing"
-                    })
+                    logger.warning(f"전처리 결과가 없음: {image_file}")
+                    errors.append({"file": image_file, "error": "No crops from preprocessing"})
                     continue
 
-                app.logger.info(f"  전처리 완료: {len(processed_crops)}개 텍스트 조각 생성")
-
                 # 2. 인식
-                app.logger.info(f"  단계 2: {image_file} 답안 인식 시작")
                 recognition_result = recognize_answer_sheet_data(processed_crops, answer_key_data, tail_question_counts)
 
-                
-
-                # --- answer_json은 매 학생마다 추출하여 Kafka로 전송한다. ---
-                answer_json = recognition_result.get("answer_json", {})
                 # Kafka로 결과 전송
+                answer_json = recognition_result.get("answer_json", {})
                 if producer:
                     try:
                         producer.send('student-responses', answer_json)
-                        producer.flush()  # 메시지 전송 보장
-                        
+                        producer.flush()
                     except Exception as kafka_error:
-                        app.logger.error(f"  Kafka 전송 실패 ({image_file}): {kafka_error}")
-                else:
-                    app.logger.warning(f"  Kafka Producer 사용 불가. 메시지 전송 생략: {image_file}")
-                # --- answer_json 전송 끝 ---
+                        logger.error(f"Kafka 전송 실패 ({image_file}): {kafka_error}")
 
-
-
-                # --- failure_json는 매 학생마다 업데이트하여 추후 한 데 모아 Kafka로 전송한다. ---
+                # failure_json 업데이트
                 failure_images = recognition_result.get("failure_json", [])
                 failure_json["images"].extend(failure_images)
-                # --- failure_json 업데이트 끝 ---
 
-
-
-                # [디버깅] answer_json 저장
+                # 결과 저장
                 answer_json_filename = os.path.join(dir_path, f"{os.path.splitext(image_file)[0]}_answers.json")
                 with open(answer_json_filename, 'w', encoding='utf-8') as f:
                     json.dump(answer_json, f, ensure_ascii=False, indent=4)
-                app.logger.info(f"answer_json 저장 완료: {answer_json_filename}")
+
+                processed_count += 1
+                logger.info(f"처리 완료: {image_file} ({processed_count}/{len(image_files)})")
 
             except Exception as e:
-                app.logger.error(f"이미지 처리 중 오류 ({image_file}): {traceback.format_exc()}")
-                errors.append({
-                    "file": image_file,
-                    "error": str(e)
-                })
+                logger.error(f"이미지 처리 중 오류 ({image_file}): {traceback.format_exc()}")
+                errors.append({"file": image_file, "error": str(e)})
 
-        # [디버깅] failure_json 저장
+        # failure_json 저장 및 Kafka 전송
         failure_json_filename = os.path.join(APP_ROOT, subject_name, "failure.json")
         with open(failure_json_filename, 'w', encoding='utf-8') as f:
             json.dump(failure_json, f, ensure_ascii=False, indent=4)
-        app.logger.info(f"failure_json 저장 완료: {failure_json_filename}")
 
-        # Kafka로 결과 전송
         if producer:
             try:
                 producer.send('low-confidence-images', failure_json)
-
-                producer.flush()  # 메시지 전송 보장
-                
+                producer.flush()
             except Exception as kafka_error:
-                app.logger.error(f"  Kafka 전송 실패 ({image_file}): {kafka_error}")
-        else:
-            app.logger.warning(f"  Kafka Producer 사용 불가. 메시지 전송 생략: {image_file}")
+                logger.error(f"Failure JSON Kafka 전송 실패: {kafka_error}")
 
-        app.logger.info(f"  답안 인식 완료: {image_file}")
+        # Spring에 완료 알림
+        send_spring_notification("done", subject_name, {
+            "task_id": task_id,
+            "status": "success",
+            "processed_files": processed_count,
+            "total_files": len(image_files),
+            "errors": len(errors)
+        })
+
+        logger.info(f"[BG ANSWER TASK - {task_id}] 작업 완료. 처리: {processed_count}/{len(image_files)}, 오류: {len(errors)}")
+
+    except Exception as e:
+        logger.error(f"[BG ANSWER TASK - {task_id}] 백그라운드 작업 중 예외 발생: {traceback.format_exc()}")
+        send_spring_notification("done", subject_name, {
+            "task_id": task_id,
+            "status": "error",
+            "message": str(e)
+        })
+
+@app.route('/recognize/answer', methods=['POST'])
+def recognize_answer_endpoint():
+    """2차 답안 인식 엔드포인트: 비동기 처리로 즉시 응답 반환"""
+    
+    try:
+        # JSON 파싱
+        request_data = request.get_json()
+        if not request_data:
+            return jsonify({"error": "No JSON payload provided"}), 400
+
+        student_id_update_data = request_data.get('studentIdUpdateDto')
+        if not student_id_update_data:
+            return jsonify({"error": "Missing 'studentIdUpdateDto' in JSON payload"}), 400
+
+        answer_key_data = request_data.get('examDto')
+        if not answer_key_data:
+            return jsonify({"error": "Missing 'examDto' in JSON payload"}), 400
+
+        subject_name = student_id_update_data.get('subject')
+        if not subject_name:
+            return jsonify({"error": "Missing 'subject' in studentIdUpdateDto"}), 400
+
+        student_list = student_id_update_data.get('student_list')
+        if not student_list:
+            return jsonify({"error": "Missing 'student_list' in studentIdUpdateDto"}), 400
+
+        app.logger.info(f"[recognize_answer] 비동기 처리 시작 - subject: {subject_name}")
+
+        # 백그라운드 스레드 시작
+        task_id = f"answer-{subject_name}-{uuid.uuid4().hex[:8]}"
+        thread = threading.Thread(
+            target=background_answer_recognition_task,
+            args=(subject_name, student_id_update_data, answer_key_data, app.logger),
+            name=f"AnswerRecognition-{task_id}"
+        )
+        thread.start()
+
+        app.logger.info(f"백그라운드 답안 인식 스레드 시작됨: {thread.name}")
+
+        # 즉시 응답 반환
+        return jsonify({
+            "status": "processing_started",
+            "message": "Answer recognition process started in background",
+            "task_id": task_id,
+            "subject": subject_name
+        }), 202
 
     except Exception as e:
         app.logger.error(f"recognize_answer_endpoint 예외 발생: {traceback.format_exc()}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
-
-    return jsonify({
-        "status": "success",
-        "message": "Answer recognition completed successfully",
-        "errors": errors,
-        "failure_json": failure_json
-    }), 200
-
-def background_rename_files_task(subject_name, student_list, base_image_path, parent_logger):
-    logger = parent_logger
-    task_id = f"rename-{secure_filename(subject_name)}-{uuid.uuid4().hex[:8]}"
-    logger.info(f"[BG RENAME TASK - {task_id}] 작업 시작. Target path: {base_image_path}")
-    logger.info(os.getcwd())
-
-    results = []
-    renamed_count = 0
-    error_count = 0
-    skipped_count = 0
-    known_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
-
-    try:
-        logger.info(f"[BG RENAME TASK - {task_id}] Attempting to list files in: {base_image_path}")
-        # normalized_to_raw_map: NFC 정규화된 파일명을 key로, 원본(raw) 파일명을 value로 저장
-        normalized_to_raw_map = {}
-        try:
-            for f_raw in os.listdir(base_image_path):
-                if os.path.isfile(os.path.join(base_image_path, f_raw)):
-                    f_normalized_nfc = unicodedata.normalize('NFC', f_raw)
-                    if f_normalized_nfc in normalized_to_raw_map:
-                        # 만약 NFC 정규화 후 이름이 충돌하면 로그 남기고 둘 다 처리하지 않거나,
-                        # 혹은 리스트로 관리하여 더 복잡한 로직을 수행해야 할 수 있음.
-                        # 여기서는 일단 마지막에 발견된 raw 파일명으로 덮어쓰지만, 가능성은 낮음.
-                        logger.warning(f"[BG RENAME TASK - {task_id}] Duplicate NFC name '{f_normalized_nfc}' for raw names '{normalized_to_raw_map[f_normalized_nfc]}' and '{f_raw}'. Using last one.")
-                    normalized_to_raw_map[f_normalized_nfc] = f_raw
-            logger.info(f"[BG RENAME TASK - {task_id}] Raw files mapped. NFC keys: {list(normalized_to_raw_map.keys())}")
-            if not normalized_to_raw_map:
-                 logger.warning(f"[BG RENAME TASK - {task_id}] No files found in {base_image_path}")
-        except OSError as e:
-            logger.error(f"[BG RENAME TASK - {task_id}] Critical Error: Error listing files in {base_image_path}: {e}")
-            results.append({"original_spec": "N/A", "status": "error", "message": f"Failed to list files. Error: {str(e)}"})
-            error_count = len(student_list) # 모든 파일 처리 실패 간주
-            logger.error(f"[BG RENAME TASK - {task_id}] 작업 중단. 파일 목록 읽기 실패.")
-            return # 파일 목록 읽기 실패시 더 이상 진행 불가
-
-        for item in student_list:
-            if not isinstance(item, dict) or 'file_name' not in item:
-                results.append({"original_spec": str(item), "status": "error", "message": "Invalid item format"})
-                error_count += 1
-                continue
-
-            full_corrected_name_spec = unicodedata.normalize('NFC', item['file_name'])
-            parts = full_corrected_name_spec.split('_', 1)
-            if len(parts) < 2:
-                results.append({"original_name_spec": full_corrected_name_spec, "status": "error", "message": "Spec does not contain '_' separator."})
-                error_count += 1
-                continue
-
-            original_file_search_key_raw = parts[0]
-            # 새 파일명도 일관되게 NFC 정규화
-            new_full_filename_nfc = unicodedata.normalize('NFC', parts[1])
-            
-            original_file_search_key_base = original_file_search_key_raw
-            for ext in known_extensions:
-                if original_file_search_key_base.lower().endswith(ext.lower()):
-                    original_file_search_key_base = original_file_search_key_base[:-len(ext)]
-                    break
-            original_file_search_key_base = unicodedata.normalize('NFC', original_file_search_key_base.strip())
-
-            logger.info(f"[BG RENAME TASK - {task_id}] Processing: raw_key_from_spec='{original_file_search_key_raw}', final_search_key_base_nfc='{original_file_search_key_base}', new_name_nfc='{new_full_filename_nfc}'")
-
-            found_files_details = []
-            # 검색은 NFC 정규화된 파일명 목록 (normalized_to_raw_map의 key들)을 대상으로 수행
-            for nfc_filename_from_dir in normalized_to_raw_map.keys():
-                # 비교 대상인 디렉토리 파일의 베이스네임도 NFC 정규화된 상태에서 추출
-                base_nfc_from_dir, _ = os.path.splitext(nfc_filename_from_dir)
-                base_nfc_from_dir = base_nfc_from_dir.strip() # 이미 NFC 상태이므로 추가 정규화 불필요
-
-                logger.debug(f"[BG RENAME TASK - {task_id}] Comparing DIR_base_nfc: '{base_nfc_from_dir}' (contains?) search_key_base_nfc: '{original_file_search_key_base}'")
-                if original_file_search_key_base in base_nfc_from_dir:
-                    raw_filename_matched = normalized_to_raw_map[nfc_filename_from_dir] # 실제 os.rename에 사용할 원본(raw) 파일명
-                    found_files_details.append({
-                        "nfc_name": nfc_filename_from_dir, 
-                        "raw_name": raw_filename_matched, 
-                        "base_nfc": base_nfc_from_dir
-                    })
-            
-            logger.info(f"[BG RENAME TASK - {task_id}] For search_key_base_nfc '{original_file_search_key_base}', matched_raw_filenames: {[f['raw_name'] for f in found_files_details]}")
-            
-            if len(found_files_details) == 0:
-                results.append({"search_key": original_file_search_key_base, "new_name": new_full_filename_nfc, "status": "error", "message": "Original file not found containing this key in its base name."})
-                logger.warning(f"[BG RENAME TASK - {task_id}] Original file containing key '{original_file_search_key_base}' in its base name not found in {base_image_path}")
-                error_count += 1
-                continue
-            elif len(found_files_details) > 1:
-                ambiguous_files_log = [{'raw': f['raw_name'], 'nfc': f['nfc_name']} for f in found_files_details]
-                results.append({"search_key": original_file_search_key_base, "new_name": new_full_filename_nfc, "status": "error", "message": f"Multiple files found: {ambiguous_files_log}. Ambiguous."})
-                logger.warning(f"[BG RENAME TASK - {task_id}] Multiple files found for key '{original_file_search_key_base}': {ambiguous_files_log}. Ambiguous, skipping.")
-                error_count += 1
-                continue
-            
-            # 정확히 하나의 파일이 매칭됨
-            # os.rename에는 ★원본(raw) 파일명★을 사용
-            old_filename_raw_matched = found_files_details[0]['raw_name']
-            old_file_path_raw = os.path.join(base_image_path, old_filename_raw_matched)
-            
-            # 새 파일 경로는 NFC 정규화된 이름 사용 (파일 시스템에 새로 기록되므로 일관된 형식 유지)
-            new_file_path_nfc = os.path.join(base_image_path, new_full_filename_nfc)
-
-            logger.info(f"[BG RENAME TASK - {task_id}] Attempting to rename RAW path: '{old_file_path_raw}' to NFC path: '{new_file_path_nfc}'")
-
-            # rename 시도 전에 실제 원본(raw) 경로 존재 여부 확인
-            if not os.path.exists(old_file_path_raw):
-                logger.error(f"[BG RENAME TASK - {task_id}] CRITICAL: File '{old_file_path_raw}' (raw path for matched NFC name '{found_files_details[0]['nfc_name']}') not found on filesystem right before rename! Skipping.")
-                results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "error", "message": "File disappeared or raw path mismatch."})
-                error_count += 1
-                continue
-
-            # 자기 자신으로 이름 변경하는 경우 방지 (원본 raw 파일명과 NFC 새 파일명 비교)
-            # 주의: old_filename_raw_matched는 raw, new_full_filename_nfc는 NFC 상태.
-            # 비교를 위해서는 둘 다 NFC로 통일해서 비교해야 함.
-            if unicodedata.normalize('NFC', old_filename_raw_matched) == new_full_filename_nfc:
-                results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "skipped", "message": "New name is same as old name (after NFC normalization)."})
-                logger.info(f"[BG RENAME TASK - {task_id}] Skipped renaming '{old_filename_raw_matched}' as new name '{new_full_filename_nfc}' is effectively identical.")
-                skipped_count += 1
-                continue
-
-            try:
-                os.rename(old_file_path_raw, new_file_path_nfc)
-                results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "renamed"})
-                logger.info(f"[BG RENAME TASK - {task_id}] Successfully renamed: '{old_file_path_raw}' -> '{new_file_path_nfc}'")
-                renamed_count +=1
-            except OSError as e:
-                results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "error", "message": f"OS error during rename: {str(e)}"})
-                # 에러 로그에 NFC 매칭 정보도 추가
-                logger.error(f"[BG RENAME TASK - {task_id}] Error renaming RAW_PATH:'{old_file_path_raw}' to NFC_PATH:'{new_file_path_nfc}': {e}. Matched via NFC name: '{found_files_details[0]['nfc_name']}'")
-                error_count += 1
-        
-        logger.info(f"[BG RENAME TASK - {task_id}] 파일명 변경 처리 완료. 성공: {renamed_count}, 실패: {error_count}, 스킵: {skipped_count}")
-
-    except Exception as e:
-        logger.error(f"[BG RENAME TASK - {task_id}] 백그라운드 작업 중 전역 예외 발생: {traceback.format_exc()}")
-        # 부분 성공/실패 결과가 있다면 results에 기록되었을 것이고, Kafka 등으로 보낼 수 있음
-
-
-
 
 @app.route('/generate-report', methods=['POST'])
 def generate_report():
@@ -847,6 +707,124 @@ def get_student_image():
 @app.route('/hello', methods=['GET'])
 def hello():
     return "Hello, World", 200
+
+def background_rename_files_task(subject_name, student_list, base_image_path, parent_logger):
+    logger = parent_logger
+    task_id = f"rename-{secure_filename(subject_name)}-{uuid.uuid4().hex[:8]}"
+    logger.info(f"[BG RENAME TASK - {task_id}] 작업 시작. Target path: {base_image_path}")
+
+    results = []
+    renamed_count = 0
+    error_count = 0
+    skipped_count = 0
+    known_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+
+    try:
+        logger.info(f"[BG RENAME TASK - {task_id}] Attempting to list files in: {base_image_path}")
+        # normalized_to_raw_map: NFC 정규화된 파일명을 key로, 원본(raw) 파일명을 value로 저장
+        normalized_to_raw_map = {}
+        try:
+            for f_raw in os.listdir(base_image_path):
+                if os.path.isfile(os.path.join(base_image_path, f_raw)):
+                    f_normalized_nfc = unicodedata.normalize('NFC', f_raw)
+                    if f_normalized_nfc in normalized_to_raw_map:
+                        logger.warning(f"[BG RENAME TASK - {task_id}] Duplicate NFC name '{f_normalized_nfc}' for raw names '{normalized_to_raw_map[f_normalized_nfc]}' and '{f_raw}'. Using last one.")
+                    normalized_to_raw_map[f_normalized_nfc] = f_raw
+            logger.info(f"[BG RENAME TASK - {task_id}] Raw files mapped. NFC keys: {list(normalized_to_raw_map.keys())}")
+            if not normalized_to_raw_map:
+                 logger.warning(f"[BG RENAME TASK - {task_id}] No files found in {base_image_path}")
+        except OSError as e:
+            logger.error(f"[BG RENAME TASK - {task_id}] Critical Error: Error listing files in {base_image_path}: {e}")
+            results.append({"original_spec": "N/A", "status": "error", "message": f"Failed to list files. Error: {str(e)}"})
+            error_count = len(student_list)
+            logger.error(f"[BG RENAME TASK - {task_id}] 작업 중단. 파일 목록 읽기 실패.")
+            return
+
+        for item in student_list:
+            if not isinstance(item, dict) or 'file_name' not in item:
+                results.append({"original_spec": str(item), "status": "error", "message": "Invalid item format"})
+                error_count += 1
+                continue
+
+            full_corrected_name_spec = unicodedata.normalize('NFC', item['file_name'])
+            parts = full_corrected_name_spec.split('_', 1)
+            if len(parts) < 2:
+                results.append({"original_name_spec": full_corrected_name_spec, "status": "error", "message": "Spec does not contain '_' separator."})
+                error_count += 1
+                continue
+
+            original_file_search_key_raw = parts[0]
+            new_full_filename_nfc = unicodedata.normalize('NFC', parts[1])
+            
+            original_file_search_key_base = original_file_search_key_raw
+            for ext in known_extensions:
+                if original_file_search_key_base.lower().endswith(ext.lower()):
+                    original_file_search_key_base = original_file_search_key_base[:-len(ext)]
+                    break
+            original_file_search_key_base = unicodedata.normalize('NFC', original_file_search_key_base.strip())
+
+            logger.info(f"[BG RENAME TASK - {task_id}] Processing: raw_key_from_spec='{original_file_search_key_raw}', final_search_key_base_nfc='{original_file_search_key_base}', new_name_nfc='{new_full_filename_nfc}'")
+
+            found_files_details = []
+            for nfc_filename_from_dir in normalized_to_raw_map.keys():
+                base_nfc_from_dir, _ = os.path.splitext(nfc_filename_from_dir)
+                base_nfc_from_dir = base_nfc_from_dir.strip()
+
+                logger.debug(f"[BG RENAME TASK - {task_id}] Comparing DIR_base_nfc: '{base_nfc_from_dir}' (contains?) search_key_base_nfc: '{original_file_search_key_base}'")
+                if original_file_search_key_base in base_nfc_from_dir:
+                    raw_filename_matched = normalized_to_raw_map[nfc_filename_from_dir]
+                    found_files_details.append({
+                        "nfc_name": nfc_filename_from_dir, 
+                        "raw_name": raw_filename_matched, 
+                        "base_nfc": base_nfc_from_dir
+                    })
+            
+            logger.info(f"[BG RENAME TASK - {task_id}] For search_key_base_nfc '{original_file_search_key_base}', matched_raw_filenames: {[f['raw_name'] for f in found_files_details]}")
+            
+            if len(found_files_details) == 0:
+                results.append({"search_key": original_file_search_key_base, "new_name": new_full_filename_nfc, "status": "error", "message": "Original file not found containing this key in its base name."})
+                logger.warning(f"[BG RENAME TASK - {task_id}] Original file containing key '{original_file_search_key_base}' in its base name not found in {base_image_path}")
+                error_count += 1
+                continue
+            elif len(found_files_details) > 1:
+                ambiguous_files_log = [{'raw': f['raw_name'], 'nfc': f['nfc_name']} for f in found_files_details]
+                results.append({"search_key": original_file_search_key_base, "new_name": new_full_filename_nfc, "status": "error", "message": f"Multiple files found: {ambiguous_files_log}. Ambiguous."})
+                logger.warning(f"[BG RENAME TASK - {task_id}] Multiple files found for key '{original_file_search_key_base}': {ambiguous_files_log}. Ambiguous, skipping.")
+                error_count += 1
+                continue
+            
+            old_filename_raw_matched = found_files_details[0]['raw_name']
+            old_file_path_raw = os.path.join(base_image_path, old_filename_raw_matched)
+            new_file_path_nfc = os.path.join(base_image_path, new_full_filename_nfc)
+
+            logger.info(f"[BG RENAME TASK - {task_id}] Attempting to rename RAW path: '{old_file_path_raw}' to NFC path: '{new_file_path_nfc}'")
+
+            if not os.path.exists(old_file_path_raw):
+                logger.error(f"[BG RENAME TASK - {task_id}] CRITICAL: File '{old_file_path_raw}' not found on filesystem right before rename! Skipping.")
+                results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "error", "message": "File disappeared or raw path mismatch."})
+                error_count += 1
+                continue
+
+            if unicodedata.normalize('NFC', old_filename_raw_matched) == new_full_filename_nfc:
+                results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "skipped", "message": "New name is same as old name (after NFC normalization)."})
+                logger.info(f"[BG RENAME TASK - {task_id}] Skipped renaming '{old_filename_raw_matched}' as new name '{new_full_filename_nfc}' is effectively identical.")
+                skipped_count += 1
+                continue
+
+            try:
+                os.rename(old_file_path_raw, new_file_path_nfc)
+                results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "renamed"})
+                logger.info(f"[BG RENAME TASK - {task_id}] Successfully renamed: '{old_file_path_raw}' -> '{new_file_path_nfc}'")
+                renamed_count +=1
+            except OSError as e:
+                results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "error", "message": f"OS error during rename: {str(e)}"})
+                logger.error(f"[BG RENAME TASK - {task_id}] Error renaming RAW_PATH:'{old_file_path_raw}' to NFC_PATH:'{new_file_path_nfc}': {e}. Matched via NFC name: '{found_files_details[0]['nfc_name']}'")
+                error_count += 1
+        
+        logger.info(f"[BG RENAME TASK - {task_id}] 파일명 변경 처리 완료. 성공: {renamed_count}, 실패: {error_count}, 스킵: {skipped_count}")
+
+    except Exception as e:
+        logger.error(f"[BG RENAME TASK - {task_id}] 백그라운드 작업 중 전역 예외 발생: {traceback.format_exc()}")
 
 if __name__ == '__main__':
     # Spring과의 통신을 위해 0.0.0.0으로 호스트를 설정하고, 지정된 포트(예: 8080)를 사용합니다.
