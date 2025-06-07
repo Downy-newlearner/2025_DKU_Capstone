@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,12 +27,14 @@ public class UserController {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate redisTemplate;
     private final TokenService tokenService;
+    private final RestTemplate restTemplate;
 
     @GetMapping("/test")
     public String test() {
-        return "test";
+        // Flask 서버의 IP 주소나 도커 환경에 따라 조정
+        String flaskUrl = "http://220.149.231.136:9054/hello";
+        return restTemplate.getForObject(flaskUrl, String.class);
     }
-
     @PostMapping("/sign-up")
     public ResponseEntity<String> userSignup(@RequestBody SignUpDto signUpDto) {
         String result = userService.userSignup(signUpDto);

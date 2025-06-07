@@ -43,7 +43,10 @@ public class KafkaStudentResponseMapper {
         entity.setAnswers(examResponses);
 
         // total_score 설정 (예시로 전체 점수는 각 ExamResponse의 점수를 합산하여 계산)
-        int totalScore = examResponses.stream().mapToInt(ExamResponse::getScore).sum();
+        float totalScore = examResponses.stream()
+                .map(ExamResponse::getScore)
+                .reduce(0f, Float::sum);
+
         entity.setTotalScore(totalScore);
 
         return entity;

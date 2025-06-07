@@ -2,6 +2,7 @@ package com.checkmate.ai.dto;
 
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -12,6 +13,7 @@ public class StudentIdUpdateDto {
     private List<student_list> student_list;
 
     @Getter
+    @Setter
     @Data
     public static class student_list {
         private String student_id; // 학생 ID

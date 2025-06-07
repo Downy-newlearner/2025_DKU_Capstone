@@ -1,5 +1,6 @@
 package com.checkmate.ai.service;
 
+import com.checkmate.ai.dto.StudentResponseDto;
 import com.checkmate.ai.entity.*;
 import com.checkmate.ai.repository.jpa.ExamRepository;
 import com.checkmate.ai.repository.jpa.StudentResponseRepository;
@@ -33,8 +34,10 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -71,19 +74,35 @@ public class PdfService {
 
 
 
-    public List<byte[]> fetchImagesFromFlask(String subject, String studentId) {
+    public List<byte[]> fetchImagesFromFlask(String studentId, String subject) {
         RestTemplate restTemplate = new RestTemplate();
 
-        String url = "http://flask-server/image/" + subject + "/" + studentId;  // Flask 쪽에서 이미지들을 zip 또는 list로 반환한다고 가정
+        String url = flaskReportUrl+ "/get-student-image";
 
-        ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> body = new HashMap<>();
+        body.put("student_id", studentId);
+        body.put("subject", subject);
+
+
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                byte[].class
+        );
 
         if (response.getStatusCode() == HttpStatus.OK) {
-            return List.of(response.getBody());  // Flask가 zip으로 줬다면 List 하나로
+            return List.of(response.getBody());
         } else {
             throw new RuntimeException("이미지를 불러오지 못했습니다");
         }
     }
+
 
     public byte[] createZipWithPdfAndImages(String subject, Student student, byte[] pdfBytes, List<byte[]> imageBytesList) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -140,7 +159,7 @@ public class PdfService {
              Document document = new Document(pdf)) {
 
             // 제목에 studentId → student.getName() 또는 student.getId() 사용
-            document.add(new Paragraph(subject + " - " + student.getStudentName()+"("+student.getStudentId()+")" + " Exam Report")
+            document.add(new Paragraph(subject + " - " +student.getStudentId()+ " Exam Report")
                     .setFont(PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD))
                     .setFontSize(16)
                     .setTextAlignment(TextAlignment.CENTER)
@@ -207,16 +226,25 @@ public class PdfService {
     }
 
 
-    public ResponseEntity<ByteArrayResource> downloadSubjectReportPdf(String subject) {
-        String reportUrl = flaskReportUrl + "/" + subject;
+    public ResponseEntity<ByteArrayResource> downloadSubjectReportPdf(String subject, List<StudentResponse> responses) {
+
+
+        // 3. Flask로 POST 요청 보낼 JSON 구성
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("subject", subject);
+        requestBody.put("responses", responses);
 
         HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("application/json; charset=UTF-8"));  // 인코딩 명시
+        headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_PDF));
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        // 4. POST 요청 전송
         ResponseEntity<byte[]> response = restTemplate.exchange(
-                reportUrl,
-                HttpMethod.GET,
+                flaskReportUrl+"/generate-report",  // 예: http://flask-server:5000/generate-report
+                HttpMethod.POST,
                 requestEntity,
                 byte[].class
         );
@@ -225,6 +253,7 @@ public class PdfService {
             ByteArrayResource resource = new ByteArrayResource(response.getBody());
 
             HttpHeaders responseHeaders = new HttpHeaders();
+
             responseHeaders.setContentType(MediaType.APPLICATION_PDF);
             responseHeaders.setContentDisposition(ContentDisposition
                     .attachment()

@@ -92,6 +92,9 @@ public class ExamService {
         return exam.get().getQuestions();
     }
 
+    public Optional<Exam> findBySubject(String subject) {
+        return examRepository.findBySubject(subject);
+    }
 }
 
 

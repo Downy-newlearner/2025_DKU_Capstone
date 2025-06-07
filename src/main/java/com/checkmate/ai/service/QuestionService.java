@@ -23,42 +23,25 @@ public class QuestionService {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    @Autowired
-    private ExamRepository examRepository;
-
-    @Autowired
-    private RedisTemplate<String, String> redisTemplate;
 
     @Autowired
     private ExamService examService;
 
+    @Autowired
+    private QuestionRepository questionRepository;
 
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
 
-
-    private static final long CACHE_TTL = 1800; // 30분 TTL
-
-
-
+    private static final long CACHE_TTL = 1800; // 30분
 
     public Question findQuestionBySubjectAndNumber(String subject, int questionNumber, int subQuestionNumber) {
-
-        Exam exam = examRepository.findBySubject(subject)
-                .orElseThrow(() -> new RuntimeException("해당 과목 시험 정보가 없습니다."));
-
-        return exam.getQuestions().stream()
-                .filter(q -> q.getQuestionNumber() == questionNumber && q.getSubQuestionNumber() == subQuestionNumber)
-                .findFirst()
-                .orElse(null);
-    }
-
-    Question findQuestionByNumber(List<Question> questions, int questionNumber, int subQuestionNumber) {
+        List<Question> questions = getQuestionsFromCache(subject);
         return questions.stream()
                 .filter(q -> q.getQuestionNumber() == questionNumber && q.getSubQuestionNumber() == subQuestionNumber)
                 .findFirst()
                 .orElse(null);
     }
-
-
 
     public List<Question> getQuestionsFromCache(String subject) {
         ValueOperations<String, String> ops = redisTemplate.opsForValue();
@@ -80,12 +63,10 @@ public class QuestionService {
         }
     }
 
-
-
     public void evictQuestionsCache(String subject) {
         redisTemplate.delete("questions:" + subject);
     }
-
 }
+
 
 

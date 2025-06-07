@@ -33,7 +33,7 @@ public class StudentResponse {
     @JoinColumn(name = "student_response_id")
     private List<ExamResponse> answers = new ArrayList<>();
 
-    private int totalScore;
+    private float totalScore;
 
     // 생성/수정일 자동 처리 (JPA Auditing 활성화 필요)
     @CreatedDate

@@ -28,8 +28,8 @@ public class LowConfidenceImageMapper {
                     img.setBase64Data(dtoImage.getBase64_data());
                     img.setStudentId(dtoImage.getStudent_id());
 
-                    img.setQuestionNumber(parseQuestionNumber(dtoImage.getFile_name()));
-                    img.setSubQuestionNumber(parseAnswerCount(dtoImage.getFile_name()));
+                    img.setQuestionNumber(dtoImage.getQuestion_number());
+                    img.setSubQuestionNumber(dtoImage.getSub_question_number());
 
                     return img;
                 })
@@ -41,22 +41,6 @@ public class LowConfidenceImageMapper {
     }
 
 
-
-    private static int parseQuestionNumber(String filename) {
-        Matcher matcher = QN_PATTERN.matcher(filename);
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group(1));
-        }
-        return 0;
-    }
-
-    private static int parseAnswerCount(String filename) {
-        Matcher matcher = AC_PATTERN.matcher(filename);
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group(1));
-        }
-        return 0;
-    }
 
     public static LowConfidenceImageDto toDto(LowConfidenceImage entity) {
         if (entity == null) return null;

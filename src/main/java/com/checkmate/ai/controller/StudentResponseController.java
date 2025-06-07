@@ -5,6 +5,7 @@ import com.checkmate.ai.entity.Question;
 import com.checkmate.ai.entity.Student;
 import com.checkmate.ai.entity.StudentResponse;
 import com.checkmate.ai.service.ExamService;
+import com.checkmate.ai.service.PdfService;
 import com.checkmate.ai.service.StudentResponseService;
 import com.checkmate.ai.service.StudentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,16 +20,19 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriUtils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/responses")
+
 public class StudentResponseController {
 
     @Value("${flask.server.url}")
@@ -41,6 +45,9 @@ public class StudentResponseController {
     private StudentService studentService;
 
     @Autowired
+    private PdfService pdfService;
+
+    @Autowired
     private StudentResponseService studentResponseService;
 
     @Autowired
@@ -51,13 +58,13 @@ public class StudentResponseController {
 
 
 
-    @PostMapping("/upload-answer")
+    @PostMapping("/responses/upload-answer")
     public ResponseEntity<?> uploadAnswer(
             @RequestParam("subject") String subject,
             @RequestParam("answerSheetZip") MultipartFile answerSheetZip,
             @RequestParam("attendanceSheet") MultipartFile attendanceSheet
     ) {
-        String requestUrl = flaskServerUrl+"/upload-answer";
+        String requestUrl = flaskServerUrl+"/recognize/student_id";
 
         try {
 
@@ -81,7 +88,7 @@ public class StudentResponseController {
             ByteArrayResource answerSheetResource = new ByteArrayResource(answerSheetZip.getBytes()) {
                 @Override
                 public String getFilename() {
-                    return subject + finalAnswerZipExt;  // ex: math.zip
+                    return subject+ finalAnswerZipExt;  // ex: math.zip
                 }
             };
             body.add("answerSheetZip", answerSheetResource);
@@ -120,25 +127,58 @@ public class StudentResponseController {
     }
 
 
-    @GetMapping("/files/{fileName}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName) throws IOException {
-        Path filePath = Paths.get("/your/path/to/files").resolve(fileName).normalize();
-
-        Resource resource = new UrlResource(filePath.toUri());
-        if (!resource.exists()) {
-            throw new FileNotFoundException("File not found: " + fileName);
+    @GetMapping("/file/{fileName:.+}")
+    public ResponseEntity<byte[]> downloadZipFile(@PathVariable String fileName) throws IOException {
+        // 1. fileName 파싱
+        String encodedFileName = UriUtils.encode(fileName, StandardCharsets.UTF_8);
+        System.out.println(fileName);
+        if (!fileName.endsWith(".zip") || !fileName.contains("_")) {
+            throw new IllegalArgumentException("파일 이름 형식이 올바르지 않습니다. (예: subject_studentId.zip)");
         }
 
+        String[] parts = fileName.replace(".zip", "").split("_");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("파일 이름에서 과목과 학번을 파싱할 수 없습니다.");
+        }
+
+        String subject = parts[0];
+        String studentId = parts[1];
+
+        Student student = studentService.getStudentById(studentId);
+
+
+        List<byte[]> imagesBytes = pdfService.fetchImagesFromFlask(studentId, subject);
+        byte[] pdfBytes = pdfService.generatePdf(subject, student);
+
+
+        byte[] zipBytes = pdfService.createZipWithPdfAndImages(subject, student, pdfBytes,imagesBytes);
+
+
+// ✅ 2. 서버 루트 디렉토리 하위에 ZIP 저장
+        Path projectRoot = Paths.get(System.getProperty("user.dir")); // 현재 실행 중인 프로젝트의 루트 디렉토리
+        Path saveDir = projectRoot.resolve("zips"); // 루트/zips 경로
+
+        if (!Files.exists(saveDir)) {
+            Files.createDirectories(saveDir);
+        }
+
+        Path zipPath = saveDir.resolve(fileName); // 루트/zips/fileName.zip
+        Files.write(zipPath, zipBytes); // ZIP 파일 저장
+
+
+        // 4. 클라이언트로 응답
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName)
+                .body(zipBytes);
     }
 
 
 
-    @GetMapping("/{subject}")
+
+    @GetMapping("/responses/{subject}")
     public ResponseEntity<List<ZipListDto>> getStudentResponses(@PathVariable String subject) {
+
         List<ZipListDto> responses = studentResponseService.getStudentResponseZiplist(subject);
 
         if (responses.isEmpty()) {
@@ -149,42 +189,13 @@ public class StudentResponseController {
     }
 
 
-    @PutMapping
+    @PutMapping("/responses")
     public ResponseEntity<String> updateStudentResponses(@RequestBody StudentAnswerUpdateDto dto) {
         studentResponseService.updateStudentResponses(dto);
         return ResponseEntity.ok("여러 학생의 답변이 성공적으로 업데이트되었습니다.");
     }
 
-    @PostMapping("/simulate")
-    public ResponseEntity<String> simulateKafkaMessage(@RequestBody KafkaStudentResponseDto dto) {
-        try {
-            // 1. 학생 정보 조회 또는 등록
-            Student student = studentService.findById(dto.getStudent_id())
-                    .orElseGet(() -> {
-                        Student newStudent = new Student();
-                        newStudent.setStudentId(dto.getStudent_id());
-                        newStudent.setStudentName(dto.getStudent_name());
-                        return studentService.save(newStudent);
-                    });
 
-            // 2. 과목에 대한 문제 목록 조회
-            List<Question> questions = examService.getQuestionsBySubject(dto.getSubject());
-
-            // 3. 채점 수행
-            int totalScore = studentResponseService.safeGradeWithAnswerChecking(dto, questions, student);
-
-            if (totalScore >= 0) {
-                return ResponseEntity.ok("✅ 채점 완료 - 총점: " + totalScore);
-            } else {
-                return ResponseEntity.ok("⏳ 채점 지연 - 락 획득 실패");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("❌ 처리 중 오류 발생: " + e.getMessage());
-        }
-    }
 
 
 

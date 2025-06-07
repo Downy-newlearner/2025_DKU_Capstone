@@ -3,13 +3,19 @@ file:
 
 flask:
   server:
-    url: http://localhost:5000
+    url: http://220.149.231.136:9054
 
 custom:
   file:
-    base-url: http://localhost:8080/files/
+    base-url: http://13.209.197.61:8080/files/
 
 spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-request-size: 600MB
+      max-file-size: 300MB
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://3.35.142.68:3306/capstone?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -94,3 +100,7 @@ redisson:
 
 jwt:
   secret: "fhuiahfhaf98ahf89dshf8ahs9f8df89ahf89dshafffdfaf8as9fh89ashf98dashf9as8hfa89fhas89fhaf98dashfsa89fhdsa89fahf8d9sahfsa9f8hf8"
+server:
+  servlet:
+    encoding:
+      charset: UTF-8

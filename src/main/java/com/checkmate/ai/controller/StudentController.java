@@ -1,12 +1,14 @@
 package com.checkmate.ai.controller;
 
-import com.checkmate.ai.dto.LowConfidenceImageDto;
-import com.checkmate.ai.dto.StudentIdUpdateDto;
-import com.checkmate.ai.dto.StudentIdUpdateGetImageDto;
+import com.checkmate.ai.dto.*;
+import com.checkmate.ai.entity.Exam;
 import com.checkmate.ai.entity.LowConfidenceImage;
+import com.checkmate.ai.mapper.ExamMapper;
+import com.checkmate.ai.service.ExamService;
 import com.checkmate.ai.service.LowConfidenceService;
 
 import com.checkmate.ai.service.StudentService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/student")
 public class StudentController {
@@ -47,8 +50,8 @@ public class StudentController {
 
     @Autowired
     private RedisTemplate<String, StudentIdUpdateGetImageDto> redisTemplate;
-
-
+    @Autowired
+    private ExamService examService;
 
 
     @GetMapping("/{subject}/images")
@@ -68,37 +71,49 @@ public class StudentController {
     @PostMapping("/update-id")
     public ResponseEntity<?> appendAndSendToFlask(@RequestBody StudentIdUpdateDto dto) {
         try {
-            studentService.renameFilesWithStudentId(dto); // 파일명 변경 로직 호출
+            // 파일명 변경
+            studentService.renameFilesWithStudentId(dto);
 
-            String requestUrl = flaskServerUrl+"/upload-image";
-            String subject = dto.getSubject();
+            // ✅ subject로 exam 조회
+            Exam exam = examService.findBySubject(dto.getSubject())
+                    .orElseThrow(() -> new RuntimeException("해당 과목의 시험 정보를 찾을 수 없습니다."));
 
-            for (StudentIdUpdateDto.student_list student : dto.getStudent_list()) {
-                String studentId = student.getStudent_id();
-                String fileName = student.getFile_name();
-//                String base64 = student.getBase64_data();  // ✅ 단일 Base64
+            // ✅ exam -> dto 변환
+            ExamDto examDto = ExamMapper.toDto(exam);
 
-                Path studentDir = Paths.get(imageDirPath, subject);
-                String newFileName = fileName + "_" + studentId + ".jpg";
-                Path newFilePath = studentDir.resolve(newFileName);
+            // ✅ Flask 전송을 위한 통합 DTO 구성
+            StudentIdUpdateRequest request = new StudentIdUpdateRequest();
+            request.setStudentIdUpdateDto(dto);
+            request.setExamDto(examDto);
 
-                // Flask로 이미지 전송
-                studentService.postImageToFlaskServer(newFilePath, requestUrl);
-            }
+            // ✅ Flask로 전송
+            String requestUrl = flaskServerUrl + "/recognize/answer";
 
-            return ResponseEntity.ok("이미지 저장 및 Flask 전송 완료");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<StudentIdUpdateRequest> requestEntity = new HttpEntity<>(request, headers);
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.postForEntity(requestUrl, requestEntity, String.class);
+
+            return ResponseEntity.ok("DTO 전송 완료: " + response.getBody());
         } catch (Exception e) {
+            log.error("❌ DTO 전송 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("오류 발생");
+                    .body("오류 발생: " + e.getMessage());
         }
     }
 
-
-
-
-
-
-
-
-
 }
+
+
+
+
+
+
+
+
+
+
+
+

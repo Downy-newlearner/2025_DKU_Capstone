@@ -13,8 +13,8 @@ public class ExamResponseDto {
     private String student_answer;
     private int sub_question_number;
     private int answer_count;
-    private int confidence;
+    private float confidence;
     @JsonProperty("is_correct")
     private boolean is_correct;
-    private int score;
+    private float score;
 }

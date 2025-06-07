@@ -8,6 +8,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 public class KafkaStudentResponseDto {
+    @JsonProperty("student_id")
     private String student_id;
     private String student_name;
     private String subject;
@@ -20,11 +21,11 @@ public class KafkaStudentResponseDto {
         private int sub_question_number;
         private String student_answer;
         private int answer_count;
-        private int confidence;
+        private float confidence;
         @JsonProperty("is_correct")
         private boolean is_correct;
-        private int score;
-        private int point;  // 각 문제의 배점
+        private float score;
+        private float point;  // 각 문제의 배점
 
 
     }

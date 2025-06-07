@@ -20,9 +20,9 @@ public class ExamResponse {
     private int subQuestionNumber;
     private String studentAnswer;
     private int answerCount;
-    private int confidence;
+    private float confidence;
     private boolean isCorrect;
-    private int score;
+    private float score;
 
 
 

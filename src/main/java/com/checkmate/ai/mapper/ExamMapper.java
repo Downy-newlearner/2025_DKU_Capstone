@@ -26,6 +26,18 @@ public class ExamMapper {
             qdto.setSub_question_number(q.getSubQuestionNumber());
             qdto.setAnswer(q.getAnswer());
             qdto.setPoint(q.getPoint());
+
+            // ⬇️ answer_count: answer 기준으로 쉼표로 구분하여 계산
+            if (q.getAnswer() != null && !q.getAnswer().isBlank()) {
+                int count = (int) Arrays.stream(q.getAnswer().split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isBlank())
+                        .count();
+                qdto.setAnswer_count(count);
+            } else {
+                qdto.setAnswer_count(0);
+            }
+
             return qdto;
         }).collect(Collectors.toList());
 
@@ -50,7 +62,7 @@ public class ExamMapper {
             q.setAnswer(qdto.getAnswer());
             q.setPoint(qdto.getPoint());
 
-            // answer_count 계산
+            // ⬇️ answerCount: answer 기준으로 쉼표로 구분하여 계산
             if (qdto.getAnswer() != null && !qdto.getAnswer().isBlank()) {
                 int count = (int) Arrays.stream(qdto.getAnswer().split(","))
                         .map(String::trim)
@@ -61,14 +73,11 @@ public class ExamMapper {
                 q.setAnswerCount(0);
             }
 
-            q.setExam(exam);  // 이 부분 추가!
-
+            q.setExam(exam);  // 양방향 연관관계 설정
             return q;
         }).collect(Collectors.toList());
 
         exam.setQuestions(questions);
         return exam;
     }
-
-
 }

@@ -61,11 +61,10 @@ public class KafkaStudentResponseListener {
                         return studentService.save(newStudent);
                     });
 
-            // 2. 문제 정보 조회
-            List<Question> questions = questionService.getQuestionsFromCache(dto.getSubject());
+
 
             // 3. 안전한 자동 채점 수행 (Student 엔티티 전달 가능하도록 수정)
-            int totalScore = studentResponseService.safeGradeWithAnswerChecking(dto, questions, student);
+            float totalScore = studentResponseService.safeGradeWithAnswerChecking(dto, student);
 
             if (totalScore >= 0) {
                 System.out.println("✅ 채점 완료 - 학생 ID: " + dto.getStudent_id() + ", 총점: " + totalScore);
@@ -87,12 +86,12 @@ public class KafkaStudentResponseListener {
         try {
             LowConfidenceImageDto imageDto = objectMapper.readValue(message, LowConfidenceImageDto.class);
 
-            log.info("🖼️ 이미지 수신 - 과목: {}", imageDto.getSubject());
+            System.out.println(("🖼️ 이미지 수신 - 과목: {}"+ imageDto.getSubject()));
 
 
             lowConfidenceService.saveImages(imageDto); // 내부에서 totalExpected 비교
 
-            log.info("✅ 이미지 저장 완료 - 과목: {}", imageDto.getSubject());
+            System.out.println("✅ 이미지 저장 완료 - 과목: {}"+ imageDto.getSubject());
 
         } catch (Exception e) {
             log.error("❌ Kafka 이미지 메시지 처리 중 오류", e);
