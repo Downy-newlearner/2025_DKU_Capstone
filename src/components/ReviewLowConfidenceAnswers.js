@@ -4,11 +4,12 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 
+
 const ReviewLowConfidenceAnswers = () => {
   const navigate = useNavigate();
   const { state } = useLocation(); // state.subject 를 전달받았다고 가정
-  const subject = state?.subject || "123";
-  const examDate = state?.examDate || "알 수 없음";
+  const subject = state?.subject || "알 수 없음";
+  const [examDate, setExamDate] = useState("알 수 없음");
 
   const [images, setImages] = useState([]);
 
@@ -22,47 +23,71 @@ const ReviewLowConfidenceAnswers = () => {
         },
       })
       .then((res) => {
-        // 초기 answer 필드 추가
-        const dataWithAnswer = res.data.map((item) => ({
-          ...item,
-          answer: "",
-        }));
+        console.log("불러온 이미지 목록:", res.data);
+        setExamDate(res.data.exam_date);
+
+        const dataWithAnswer = res.data.images.map((item, i) => {
+          console.log(`[${i}] 받은 item:`, item); 
+          const rawQ = item.question_number;
+          const rawSubQ = item.sub_question_number;
+
+          const parsedQ = Number(rawQ);
+          const parsedSubQ = Number(rawSubQ || 0);
+
+          return {
+            ...item,
+            base64Data: item.base64_data,
+            answer: "",
+            student_id: String(item.student_id),
+            questionNumber: isNaN(parsedQ) ? undefined : parsedQ,
+            subQuestionNumber: isNaN(parsedSubQ) ? 0 : parsedSubQ,
+          };
+        });
         setImages(dataWithAnswer);
+        console.log("student_id 값:", dataWithAnswer[0].student_id);
+        console.log("student_id 타입:", typeof dataWithAnswer[0].student_id);
       })
       .catch((err) => console.error("이미지 로드 오류:", err));
   }, [subject]);
-
-  const handleInputChange = (filename, value) => {
+      
+  const handleInputChange = (index, value) => {
     setImages((prev) =>
-      prev.map((img) =>
-        img.filename === filename ? { ...img, answer: value } : img
+      prev.map((img, i) =>
+        i === index ? { ...img, answer: value } : img
       )
     );
   };
+  console.log("제출 직전 images 배열:", images);
 
   const handleSubmit = () => {
   const payload = {
     subject,
-    studentAnswersList: images.map((img) => ({
-      student_id: img.studentId,
-      answers: [
-        {
-          question_number: img.questionNumber,
-          sub_question_number: img.subQuestionNumber || 0, // 없으면 0으로
-          student_answer: img.answer,
-        },
-      ],
-    })),
+    studentAnswersList: images
+      .filter((img) => {
+        const qNum = Number(img.questionNumber);
+        const hasAnswer = img.answer && img.answer.trim() !== "";
+        return !isNaN(qNum) && hasAnswer;
+      })
+      .map((img) => ({
+        student_id: String(img.student_id),
+        answers: [
+          {
+            question_number: Number(img.questionNumber),
+            sub_question_number: img.subQuestionNumber != null ? Number(img.subQuestionNumber) : null,
+            student_answer: img.answer.trim(),
+          },
+        ],
+      })),
   };
-
+  console.log("백엔드로 전송하는 payload (JSON):\n", JSON.stringify(payload, null, 2));
   axios
-    .put("/responses/reviewed-answers", payload, {
+    .put("/responses", payload, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     })
     .then(() => {
-      navigate("/grading-second-pending", { state: { subject } });
+      navigate("/past-results", { state: { subject } });
     })
     .catch((err) => console.error("제출 오류:", err));
 };
@@ -138,7 +163,7 @@ const ReviewLowConfidenceAnswers = () => {
                 <input
                   type="text"
                   value={img.answer}
-                  onChange={(e) => handleInputChange(img.filename, e.target.value)}
+                  onChange={(e) => handleInputChange(index, e.target.value)}
                   placeholder="이미지에 쓰여 있는 답을 입력해주세요"
                   className="w-full border rounded px-3 py-2"
                 />
@@ -158,4 +183,5 @@ const ReviewLowConfidenceAnswers = () => {
 };
 
 export default ReviewLowConfidenceAnswers;
+
 

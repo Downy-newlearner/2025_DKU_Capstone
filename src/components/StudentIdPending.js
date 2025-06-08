@@ -7,6 +7,7 @@ const StudentIdPending = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const subject = state?.subject;
+  const examDate = state?.examDate;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -17,17 +18,17 @@ const StudentIdPending = () => {
           },
         })
         .then((res) => {
-          const { status, lowConfidenceImages } = res.data;
+          const { status, exam_date: examDate, lowConfidenceImages } = res.data;
 
           if (status === "DONE") {
             clearInterval(interval);
 
             if (lowConfidenceImages && lowConfidenceImages.length > 0) {
               navigate("/review-low-confidence-ids", {
-                state: { subject, lowConfidenceImages },
+                state: { subject, examDate, lowConfidenceImages },
               });
             } else {
-              navigate("/grading-pending", { state: { subject } });
+              navigate("/grading-pending", { state: { subject, examDate } });
             }
           }
         })
@@ -37,7 +38,7 @@ const StudentIdPending = () => {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [subject, navigate]);
+  }, [subject, examDate, navigate]);
 
   return (
     <div className="flex items-center justify-center h-screen bg-white">

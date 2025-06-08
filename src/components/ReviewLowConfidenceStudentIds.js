@@ -9,6 +9,9 @@ const ReviewLowConfidenceStudentIds = () => {
   const navigate = useNavigate();
   const subject = state?.subject;
   const [entries, setEntries] = useState([]);
+  const examDate = state?.examDate || null;
+  
+  
 
   useEffect(() => {
     if (!subject) return;
@@ -31,7 +34,7 @@ const ReviewLowConfidenceStudentIds = () => {
       .catch((err) => {
         console.error("신뢰도 낮은 학번 이미지 불러오기 실패", err);
       });
-  }, [subject]);
+  }, [navigate, subject, examDate]);
 
   const handleChange = (fileName, value) => {
     setEntries((prev) =>

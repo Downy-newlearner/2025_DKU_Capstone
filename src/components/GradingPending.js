@@ -7,32 +7,29 @@ const GradingPending = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const subject = state?.subject;
+  const examDate = state?.examDate;
 
   useEffect(() => {
     const interval = setInterval(() => {
       axios
-        .get(`/exams/check-status?subject=${encodeURIComponent(subject)}`, {
+        .get(`/images/check-status/${encodeURIComponent(subject)}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         })
         .then((res) => {
+          console.log("응답 데이터:", res.data);
           const { status, images } = res.data;
 
           if (status === "DONE") {
             clearInterval(interval);
 
-            if (images && images.length > 0) {
-              navigate("/review-answers", {
-                state: {
-                  images,         // 백에서 받은 이미지 리스트
-                  subject,
-                  examDate: state.examDate,
-                },
-              });
-            } else {
-              navigate("/result1", { state: { subject } });
-            }
+            navigate("/review-answers", {
+              state: {
+                subject,
+                examDate: state.examDate,
+              },
+            });
           }
         })
         .catch((err) => {
