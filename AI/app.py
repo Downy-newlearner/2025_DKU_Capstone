@@ -271,14 +271,14 @@ def send_spring_notification(action, subject_name, additional_data=None, request
     """Spring 서버에 알림을 보내는 함수 - 요청을 보낸 곳으로 callback"""
     try:
         if not request_origin:
-            app.logger.info(f"[Spring 알림] callback할 origin이 없어 알림을 건너뜁니다. Action: {action}, Subject: {subject_name}")
+            app.logger.info(f"[Spring 알림] callback할 origin이 없어 알림을 건너뜁니다. Status: {action}, Subject: {subject_name}")
             return
         
-        # Origin에서 callback URL 구성
-        callback_url = f"{request_origin}/api/ocr-status"
+        # Origin에서 callback URL 구성 - Spring Boot 표준 API 경로로 수정
+        callback_url = f"{request_origin}/api/ocr/callback"  # 더 명확한 엔드포인트명
         
         payload = {
-            "action": action,  # "pending" 또는 "done"
+            "status": action,  # "pending" 또는 "DONE"
             "subject": subject_name,
             "timestamp": datetime.now().isoformat()
         }
@@ -287,10 +287,22 @@ def send_spring_notification(action, subject_name, additional_data=None, request
             payload.update(additional_data)
         
         app.logger.info(f"[Spring 알림] {action} 신호를 요청 origin으로 전송: {callback_url}")
+        app.logger.debug(f"[Spring 알림] Payload: {payload}")  # 디버깅용 로그 추가
         
         try:
             response = requests.post(callback_url, json=payload, timeout=10)
             app.logger.info(f"[Spring 알림] 응답 상태: {response.status_code}")
+            
+            # 응답 내용도 로깅 (디버깅 시 유용)
+            if response.status_code != 200:
+                app.logger.warning(f"[Spring 알림] 비정상 응답: {response.text}")
+            else:
+                app.logger.info(f"[Spring 알림] 성공적으로 전송됨")
+                
+        except requests.exceptions.Timeout:
+            app.logger.warning(f"[Spring 알림] 타임아웃 발생 (10초): {callback_url}")
+        except requests.exceptions.ConnectionError:
+            app.logger.warning(f"[Spring 알림] 연결 실패: {callback_url}")
         except requests.exceptions.RequestException as req_error:
             app.logger.warning(f"[Spring 알림] HTTP 요청 실패: {req_error}")
         except Exception as general_error:
@@ -298,6 +310,7 @@ def send_spring_notification(action, subject_name, additional_data=None, request
         
     except Exception as e:
         app.logger.error(f"Spring 알림 전송 실패 ({action}): {e}")
+        app.logger.error(f"Spring 알림 전송 실패 상세: {traceback.format_exc()}")
 
 def background_answer_recognition_task(subject_name, student_id_update_data, answer_key_data, parent_logger, request_origin):
     """백그라운드에서 답안 인식을 수행하는 함수"""
@@ -306,6 +319,9 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
     
     try:
         logger.info(f"[BG ANSWER TASK - {task_id}] 작업 시작")
+        
+        # 작업 상태 등록
+        current_tasks[subject_name] = {"status": "pending", "task_id": task_id}
         
         # Spring에 처리 시작 알림
         send_spring_notification("pending", subject_name, {"task_id": task_id}, request_origin)
@@ -317,7 +333,8 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
 
         if not os.path.isdir(subject_path):
             logger.error(f"Subject path not found: {subject_path}")
-            send_spring_notification("done", subject_name, {
+            current_tasks[subject_name] = {"status": "DONE", "task_id": task_id, "message": "Subject directory not found"}
+            send_spring_notification("DONE", subject_name, {
                 "task_id": task_id, 
                 "status": "error", 
                 "message": "Subject directory not found"
@@ -329,7 +346,8 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
         
         if len(subdirectories) != 1:
             logger.error(f"Expected 1 subdirectory, found {len(subdirectories)}")
-            send_spring_notification("done", subject_name, {
+            current_tasks[subject_name] = {"status": "DONE", "task_id": task_id, "message": f"Invalid subdirectory count: {len(subdirectories)}"}
+            send_spring_notification("DONE", subject_name, {
                 "task_id": task_id,
                 "status": "error", 
                 "message": f"Invalid subdirectory count: {len(subdirectories)}"
@@ -342,17 +360,20 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
 
         # 파일명 변경 작업 (동기적으로 수행)
         logger.info(f"[BG ANSWER TASK - {task_id}] 파일명 변경 시작")
+        current_tasks[subject_name] = {"status": "processing", "task_id": task_id, "message": "파일명 변경 중"}
         background_rename_files_task(subject_name, student_list, base_image_path, logger)
         logger.info(f"[BG ANSWER TASK - {task_id}] 파일명 변경 완료")
 
         # 답안 인식 로직 수행
         logger.info(f"[BG ANSWER TASK - {task_id}] 답안 인식 시작")
+        current_tasks[subject_name] = {"status": "processing", "task_id": task_id, "message": "답안 인식 중"}
         
         dir_path = os.path.join(APP_ROOT, subject_name, subject_name)
         
         if not os.path.exists(dir_path):
             logger.error(f"디렉토리를 찾을 수 없습니다: {dir_path}")
-            send_spring_notification("done", subject_name, {
+            current_tasks[subject_name] = {"status": "DONE", "task_id": task_id, "message": f"Directory not found: {dir_path}"}
+            send_spring_notification("DONE", subject_name, {
                 "task_id": task_id,
                 "status": "error",
                 "message": f"Directory not found: {dir_path}"
@@ -367,7 +388,8 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
 
         if not image_files:
             logger.warning(f"이미지 파일을 찾을 수 없습니다: {dir_path}")
-            send_spring_notification("done", subject_name, {
+            current_tasks[subject_name] = {"status": "DONE", "task_id": task_id, "message": "No image files found"}
+            send_spring_notification("DONE", subject_name, {
                 "task_id": task_id,
                 "status": "error",
                 "message": "No image files found"
@@ -400,6 +422,9 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
             try:
                 image_path = os.path.join(dir_path, image_file)
                 logger.info(f"처리 중: {image_file}")
+                
+                # 진행 상황 업데이트
+                current_tasks[subject_name] = {"status": "processing", "task_id": task_id, "message": f"처리 중: {processed_count+1}/{len(image_files)}"}
 
                 # 1. 전처리
                 processed_crops = preprocess_answer_sheet(image_path, answer_key_data)
@@ -448,8 +473,11 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
             except Exception as kafka_error:
                 logger.error(f"Failure JSON Kafka 전송 실패: {kafka_error}")
 
+        # 작업 완료 상태 업데이트
+        current_tasks[subject_name] = {"status": "DONE", "task_id": task_id, "message": f"완료: {processed_count}/{len(image_files)} 처리됨"}
+
         # Spring에 완료 알림
-        send_spring_notification("done", subject_name, {
+        send_spring_notification("DONE", subject_name, {
             "task_id": task_id,
             "status": "success",
             "processed_files": processed_count,
@@ -461,7 +489,8 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
 
     except Exception as e:
         logger.error(f"[BG ANSWER TASK - {task_id}] 백그라운드 작업 중 예외 발생: {traceback.format_exc()}")
-        send_spring_notification("done", subject_name, {
+        current_tasks[subject_name] = {"status": "DONE", "task_id": task_id, "message": f"오류 발생: {str(e)}"}
+        send_spring_notification("DONE", subject_name, {
             "task_id": task_id,
             "status": "error",
             "message": str(e)
@@ -493,8 +522,17 @@ def recognize_answer_endpoint():
         if not student_list:
             return jsonify({"error": "Missing 'student_list' in studentIdUpdateDto"}), 400
 
-        # 요청 origin 추출
-        request_origin = request.headers.get('Origin') or f"http://{request.headers.get('Host', 'localhost')}"
+        # 요청 origin 추출 - 개선된 버전
+        # Spring 서버에서 callback을 받을 주소를 명시적으로 추출
+        request_origin = request.headers.get('X-Forwarded-For') or request.headers.get('Origin')
+        if not request_origin:
+            # Host 헤더에서 추출하되, 프로토콜 자동 감지
+            host = request.headers.get('Host', 'localhost:8080')
+            # HTTPS 여부 확인 (X-Forwarded-Proto 또는 기본값)
+            is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
+            protocol = 'https' if is_https else 'http'
+            request_origin = f"{protocol}://{host}"
+
         app.logger.info(f"[recognize_answer] 요청 origin: {request_origin}")
 
         app.logger.info(f"[recognize_answer] 비동기 처리 시작 - subject: {subject_name}")
@@ -536,75 +574,74 @@ def generate_report():
     mean_score = np.mean(scores) if scores else 0
     std_dev = np.std(scores) if scores else 0
 
-    # 3. 히스토그램 생성 (세로축: 인원 수, 가로축: 점수)
+    # --- Matplotlib 설정 ---
+    font_path = os.path.join(APP_ROOT, 'font', 'NanumGothic.ttf')
+    font_prop = None
+    try:
+        from matplotlib import font_manager
+        if not os.path.exists(font_path):
+            raise FileNotFoundError(f"Font file not found at {font_path}")
+        
+        font_prop = font_manager.FontProperties(fname=font_path)
+        plt.rcParams['axes.unicode_minus'] = False
+        app.logger.info(f"Matplotlib font properties loaded from {font_path}")
+    except Exception as e:
+        app.logger.warning(f"Failed to load Matplotlib font: {e}. Using default font.")
+
+    # 3. 히스토그램 생성
     plt.figure(figsize=(10, 6))
-    # scores가 비어있거나 모든 점수가 동일한 경우 hist가 에러를 발생시킬 수 있음
     if not scores or len(set(scores)) == 1:
-        # 단일 값 또는 빈 값에 대한 처리: bins를 1로 설정하거나, hist 대신 다른 시각화
-        if scores: # 모든 점수가 같은 경우
+        if scores:
              plt.hist(scores, bins=1, color='skyblue', edgecolor='black')
-        else: # scores가 빈 경우
-            plt.hist([], bins=10, color='skyblue', edgecolor='black') # 빈 히스토그램
+        else:
+            plt.hist([], bins=10, color='skyblue', edgecolor='black')
     else:
         plt.hist(scores, bins=10, color='skyblue', edgecolor='black')
 
-    plt.xlabel('Score')
-    plt.ylabel('Number of Students')
-    plt.title(f'Score Distribution - {subject if subject else "Unknown Subject"}')
+    # 폰트 적용하여 라벨 설정
+    plt.xlabel('점수', fontproperties=font_prop)
+    plt.ylabel('학생 수', fontproperties=font_prop)
+    plt.title(f'점수 분포 - {subject if subject else "과목 없음"}', fontproperties=font_prop)
     plt.grid(True)
-
     plt.gca().yaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-
-    # 평균, 표준편차 텍스트
-    stat_text = f"Mean: {mean_score:.2f}, Std Dev: {std_dev:.2f}"
+    
+    stat_text = f"평균: {mean_score:.2f}, 표준편차: {std_dev:.2f}"
     plt.text(0.95, 0.95, stat_text, transform=plt.gca().transAxes,
              fontsize=10, verticalalignment='top', horizontalalignment='right',
-             bbox=dict(boxstyle="round,pad=0.3", edgecolor='gray', facecolor='white'))
-
+             bbox=dict(boxstyle="round,pad=0.3", edgecolor='gray', facecolor='white'),
+             fontproperties=font_prop)
     plt.tight_layout()
 
     # 4. 그래프를 이미지로 저장
     img_buf = io.BytesIO()
     plt.savefig(img_buf, format='png')
     img_buf.seek(0)
-    plt.close() # 그래프 생성 후 리소스 해제
+    plt.close()
 
-    # 5. PDF 생성
+    # --- PDF 생성 (ReportLab) ---
     pdf_buf = io.BytesIO()
-    # reportlab에서 한글 사용을 위해 폰트 설정 (필요한 경우)
-    # from reportlab.pdfbase import pdfmetrics
-    # from reportlab.pdfbase.ttfonts import TTFont
-    # NanumGothic.ttf 와 같은 한글 폰트 파일이 필요합니다.
-    # 실제 경로에 맞게 수정해야 합니다.
-    # try:
-    #     pdfmetrics.registerFont(TTFont('NanumGothic', '/usr/share/fonts/truetype/nanum/NanumGothic.ttf')) # 예시 경로
-    #     font_name = 'NanumGothic'
-    # except: # 폰트 로드 실패 시 기본 폰트 사용
-    #     app.logger.warning("NanumGothic font not found. Using default font for PDF.")
-    #     font_name = 'Helvetica'
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     
-    # 임시로 기본 폰트 사용
-    font_name = 'Helvetica'
+    font_name_pdf = 'Helvetica' # 기본 폰트
+    try:
+        if not os.path.exists(font_path):
+             raise FileNotFoundError(f"Font file not found at {font_path}")
+        pdfmetrics.registerFont(TTFont('NanumGothic', font_path))
+        font_name_pdf = 'NanumGothic'
+        app.logger.info("ReportLab font set to 'NanumGothic'")
+    except Exception as e:
+        app.logger.warning(f"Failed to set ReportLab font: {e}. Using default font.")
 
     c = canvas.Canvas(pdf_buf, pagesize=letter)
-    
-    # 제목 폰트 설정 및 그리기
-    c.setFont(font_name, 16)
-    subject_text = f"Subject: {subject if subject else 'Unknown Subject'}"
-    c.drawString(100, 750, subject_text)
+    c.setFont(font_name_pdf, 16)
+    c.drawString(100, 750, f"과목: {subject if subject else '과목 없음'}")
+    c.setFont(font_name_pdf, 12)
+    c.drawString(100, 720, f"평균: {mean_score:.2f}, 표준편차: {std_dev:.2f}")
 
-    # 통계 정보 폰트 설정 및 그리기
-    c.setFont(font_name, 12)
-    stats_string = f"Mean: {mean_score:.2f}, Standard Deviation: {std_dev:.2f}"
-    c.drawString(100, 720, stats_string)
-
-    # 이미지 삽입 (임시 파일 생성 없이 BytesIO 직접 사용 가능성 확인)
-    # ReportLab은 BytesIO에서 직접 이미지를 로드할 수 있습니다.
-    img_buf.seek(0) # BytesIO 포인터를 다시 처음으로
-    # ReportLab의 ImageReader는 BytesIO 객체를 직접 받을 수 있습니다.
     from reportlab.lib.utils import ImageReader
     img_reader = ImageReader(img_buf)
-    c.drawImage(img_reader, 100, 350, width=400, height=300) # x, y, width, height
+    c.drawImage(img_reader, 100, 350, width=400, height=300)
 
     c.showPage()
     c.save()
@@ -614,7 +651,7 @@ def generate_report():
         pdf_buf,
         mimetype='application/pdf',
         as_attachment=True,
-        download_name=f"{secure_filename(subject if subject else 'report')}_report.pdf" # 파일명 보안 처리
+        download_name=f"{secure_filename(subject if subject else 'report')}_report.pdf"
     )
 
 @app.route('/get-student-image', methods=['POST'])
@@ -708,6 +745,42 @@ def get_student_image():
     except Exception as e:
         app.logger.error(f"[get-student-image] Unexpected error: {traceback.format_exc()}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+    
+@app.route('/test-spring-notification', methods=['POST'])
+def test_spring_notification():
+    """Spring 알림 테스트용 엔드포인트"""
+    try:
+        data = request.get_json()
+        status = data.get('status', 'pending')  # action 대신 status 사용
+        subject_name = data.get('subject', 'test-subject')
+        
+        # 요청 origin 추출 (동일한 로직 사용)
+        request_origin = request.headers.get('X-Forwarded-For') or request.headers.get('Origin')
+        if not request_origin:
+            host = request.headers.get('Host', 'localhost:8080')
+            is_https = request.headers.get('X-Forwarded-Proto') == 'https' or request.is_secure
+            protocol = 'https' if is_https else 'http'
+            request_origin = f"{protocol}://{host}"
+        
+        app.logger.info(f"[테스트] Spring 알림 테스트 - Origin: {request_origin}, Status: {status}")
+        
+        # 테스트 알림 전송
+        send_spring_notification(status, subject_name, {
+            "test": True,
+            "task_id": "test-task-123"
+        }, request_origin)
+        
+        return jsonify({
+            "status": "success",
+            "message": "Spring 알림 테스트 전송 완료",
+            "target_origin": request_origin,
+            "sent_status": status,
+            "subject": subject_name
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"Spring 알림 테스트 실패: {traceback.format_exc()}")
+        return jsonify({"error": f"테스트 실패: {str(e)}"}), 500
     
 @app.route('/hello', methods=['GET'])
 def hello():
@@ -820,7 +893,7 @@ def background_rename_files_task(subject_name, student_list, base_image_path, pa
                 os.rename(old_file_path_raw, new_file_path_nfc)
                 results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "renamed"})
                 logger.info(f"[BG RENAME TASK - {task_id}] Successfully renamed: '{old_file_path_raw}' -> '{new_file_path_nfc}'")
-                renamed_count +=1
+                renamed_count+=1
             except OSError as e:
                 results.append({"original_name_raw": old_filename_raw_matched, "new_name": new_full_filename_nfc, "status": "error", "message": f"OS error during rename: {str(e)}"})
                 logger.error(f"[BG RENAME TASK - {task_id}] Error renaming RAW_PATH:'{old_file_path_raw}' to NFC_PATH:'{new_file_path_nfc}': {e}. Matched via NFC name: '{found_files_details[0]['nfc_name']}'")
@@ -830,6 +903,38 @@ def background_rename_files_task(subject_name, student_list, base_image_path, pa
 
     except Exception as e:
         logger.error(f"[BG RENAME TASK - {task_id}] 백그라운드 작업 중 전역 예외 발생: {traceback.format_exc()}")
+
+# 간단한 작업 상태 추적
+current_tasks = {}  # {"subject": {"status": "pending|processing|DONE", "task_id": "xxx"}}
+
+@app.route('/get-status', methods=['POST'])
+def get_status():
+    """Spring에서 작업 상태를 조회하는 엔드포인트"""
+    try:
+        data = request.get_json()
+        subject = data.get('subject')
+        
+        if not subject:
+            return jsonify({"error": "subject가 필요합니다"}), 400
+        
+        # 해당 과목의 현재 작업 상태 확인
+        if subject in current_tasks:
+            task_info = current_tasks[subject]
+            return jsonify({
+                "subject": subject,
+                "status": task_info["status"],  # "pending" 또는 "processing" 또는 "DONE"
+                "task_id": task_info.get("task_id"),
+                "message": task_info.get("message", "")
+            }), 200
+        else:
+            return jsonify({
+                "subject": subject,
+                "status": "not_found",
+                "message": "해당 과목의 작업이 없습니다"
+            }), 404
+            
+    except Exception as e:
+        return jsonify({"error": f"상태 조회 실패: {str(e)}"}), 500
 
 if __name__ == '__main__':
     # Spring과의 통신을 위해 0.0.0.0으로 호스트를 설정하고, 지정된 포트(예: 8080)를 사용합니다.

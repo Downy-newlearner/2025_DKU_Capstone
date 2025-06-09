@@ -52,6 +52,127 @@ if not hasattr(cv2, 'INTER_LINEAR'):
 
 # --- Helper Functions ---
 
+def merge_contours_and_crop_text_pil_relaxed(
+    line_pil_image: Image.Image, 
+    contours: List[np.ndarray],
+    merge_distance_threshold: int = 100,
+    padding: int = 5
+) -> List[Dict[str, Any]]:
+    """20번째 라인처럼 특별한 경우를 위한 완화된 필터링 조건을 가진 함수"""
+    
+    bounding_boxes_initial: List[Dict[str, Any]] = []
+    img_width = line_pil_image.width
+    img_height = line_pil_image.height
+    
+    # 빈 박스 필터링을 위한 그레이스케일 배열
+    line_np_array = np.array(line_pil_image.convert('L'))
+    
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        
+        # 원본 이미지의 95% 이상인 경우만 제외 (기존과 동일)
+        if w > 0.95 * img_width:
+            continue
+
+        # 크기 조건을 완화 (기존: w < 10 or h < 10 → 새로운: w < 5 or h < 1)
+        if w < 5:  # 너비만 체크, 높이는 1픽셀도 허용
+            continue
+        
+        # 가로세로 비율 조건을 완화 (기존: > 1.8 → 새로운: > 50)
+        aspect_ratio = w / h if h > 0 else float('inf')
+        if aspect_ratio > 50:  # 매우 극단적인 가로선만 제외
+            continue
+        
+        # 빈 박스 조건을 완화 (기존: < 0.04 → 새로운: < 0.01)
+        roi = line_np_array[y:y+h, x:x+w]
+        if roi.size > 0:
+            dark_pixels = np.sum(roi < 150)
+            total_pixels = roi.size
+            dark_ratio = dark_pixels / total_pixels
+            
+            if dark_ratio < 0.01:  # 거의 완전히 비어있는 경우만 제외
+                continue
+        
+        bounding_boxes_initial.append({'x':x, 'y':y, 'w':w, 'h':h, 'xc': x + w/2, 'yc': y + h/2, 'merged': False})
+
+    if not bounding_boxes_initial:
+        return []
+
+    # 나머지 병합 및 크롭 로직은 기존과 동일
+    bounding_boxes_initial.sort(key=lambda b: b['x'])
+    
+    merged_boxes_final: List[Dict[str, Any]] = []
+    current_merged_box = None
+
+    for i, box_info in enumerate(bounding_boxes_initial):
+        if not current_merged_box:
+            current_merged_box = box_info.copy()
+            current_merged_box['merged_count'] = 1
+            continue
+
+        prev_xc, prev_yc = current_merged_box['xc'], current_merged_box['yc']
+        curr_xc, curr_yc = box_info['xc'], box_info['yc']
+        
+        dist_x_centers = abs(curr_xc - prev_xc)
+        y_overlap = max(current_merged_box['y'], box_info['y']) < min(current_merged_box['y'] + current_merged_box['h'], box_info['y'] + box_info['h'])
+
+        if dist_x_centers < merge_distance_threshold and y_overlap:
+            new_x = min(current_merged_box['x'], box_info['x'])
+            new_y = min(current_merged_box['y'], box_info['y'])
+            new_x_plus_w = max(current_merged_box['x'] + current_merged_box['w'], box_info['x'] + box_info['w'])
+            new_y_plus_h = max(current_merged_box['y'] + current_merged_box['h'], box_info['y'] + box_info['h'])
+            
+            current_merged_box['x'] = new_x
+            current_merged_box['y'] = new_y
+            current_merged_box['w'] = new_x_plus_w - new_x
+            current_merged_box['h'] = new_y_plus_h - new_y
+            current_merged_box['xc'] = current_merged_box['x'] + current_merged_box['w'] / 2
+            current_merged_box['yc'] = current_merged_box['y'] + current_merged_box['h'] / 2
+            current_merged_box['merged_count'] +=1
+        else:
+            merged_boxes_final.append(current_merged_box)
+            current_merged_box = box_info.copy()
+            current_merged_box['merged_count'] = 1
+            
+    if current_merged_box:
+        merged_boxes_final.append(current_merged_box)
+
+    final_text_crop_outputs: List[Dict[str, Any]] = []
+    for box_data in merged_boxes_final:
+        x, y, w, h = box_data['x'], box_data['y'], box_data['w'], box_data['h']
+        original_w = w
+        original_h = h
+        
+        x_p = max(0, x - padding)
+        y_p = max(0, y - padding)
+        r_p = min(line_pil_image.width, x + w + padding)
+        b_p = min(line_pil_image.height, y + h + padding)
+
+        if r_p <= x_p or b_p <= y_p: continue
+
+        text_crop_pil = line_pil_image.crop((x_p, y_p, r_p, b_p))
+        
+        target_w, target_h = text_crop_pil.width, text_crop_pil.height
+        
+        # 디버그를 위해 1:1 정사각형 패딩 부분을 주석처리
+        # square_size = max(target_w, target_h)
+        # 
+        # square_canvas_pil = Image.new('RGB', (square_size, square_size), (255, 255, 255))
+        # paste_x = (square_size - target_w) // 2
+        # paste_y = (square_size - target_h) // 2
+        # square_canvas_pil.paste(text_crop_pil, (paste_x, paste_y))
+        
+        final_text_crop_outputs.append({
+            'image_obj': text_crop_pil,  # square_canvas_pil 대신 원본 text_crop_pil 사용
+            'x_in_line': x,
+            'y_in_line': y,
+            'original_w': original_w,
+            'original_h': original_h
+        })
+        
+    final_text_crop_outputs.sort(key=lambda item: item['x_in_line'])
+    return final_text_crop_outputs
+
 # --- Main Preprocessing Function ---
 def preprocess_answer_sheet(
     original_image_path: str,
@@ -108,6 +229,8 @@ def preprocess_answer_sheet(
         print(f"  질문 정보 딕셔너리 생성 실패 {subject_student_id_base}. 질문 발견 및 답변 키 일치 확인 필요.")
         return {}
 
+
+    # 여기가 문제!!!!!!!!! 텍스트 크롭이 너무 구림!!
     print("  단계 4 & 5 (답변 영역 처리 및 키 생성)...") # DEBUG KOR
     ans_area_idx = 0  # 단일 객체이므로 인덱스를 0으로 고정
     
@@ -121,11 +244,49 @@ def preprocess_answer_sheet(
     line_cropped_ans_list = crop_between_lines(ans_area_pil, line_contours)
         # ans_area_pil (답변 영역 이미지)과 line_contours (찾아낸 수평선 정보)가 crop_between_lines 함수의 인자로 전달됩니다.
         # 이 함수의 반환 값 (잘린 각 라인 이미지와 해당 라인의 y좌표 정보를 담은 딕셔너리들의 리스트)이 line_cropped_ans_list에 할당됩니다.
+        # line_cropped_ans_list: [{'image_obj': Image, 'y_top_in_area': int, 'y_bottom_in_area': int}]
+
+
+
+
+
+
+
+
+    # 수평 크롭 결과 이미지 저장!!!!!!!!!!!!!!!!: plzzzzz_line_image 폴더에 저장됨
+    if not os.path.exists('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_line_image'):
+        os.makedirs('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_line_image')
+    for idx, line_crop_data in enumerate(line_cropped_ans_list):
+        line_image = line_crop_data['image_obj']
+        line_y_top = line_crop_data['y_top_in_area']
+        line_y_bottom = line_crop_data['y_bottom_in_area']
+        
+        # 파일명 생성
+        line_image_filename = f"{subject_student_id_base}_line_{idx}_y{line_y_top}-{line_y_bottom}.png"
+        
+        # 이미지 저장
+        line_image.save(os.path.join('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_line_image', line_image_filename))
+
+
+
+
+
+
+
+
 
     # 이 루프는 line_cropped_ans_list에 있는 각 라인 조각에 대해 반복됩니다. 
     # line_idx는 현재 라인의 인덱스, line_crop_data는 현재 라인 이미지와 y정보를 담은 딕셔너리입니다.
-    for line_idx, line_crop_data in enumerate(line_cropped_ans_list):
+    for line_idx, line_crop_data in enumerate(line_cropped_ans_list): # line_cropped_ans_list: [{'image_obj': Image, 'y_top_in_area': int, 'y_bottom_in_area': int}]
         line_ans_pil = line_crop_data['image_obj']
+
+        if line_idx == 20:
+                print("20번에 오긴 왔어!!!!!!!!!!")
+                # 20번째 라인 이미지 저장해서 확인
+                line_ans_pil.save(f'/home/jdh251425/2025_DKU_Capstone/AI/debug_line_20.png')
+
+
+
 
         line_y_top_in_ans_area = line_crop_data['y_top_in_area']
         current_line_id = f"{line_idx}" # 실제 current_line_id는 여기서 할당됨 (키 생성 등에 사용)
@@ -133,8 +294,49 @@ def preprocess_answer_sheet(
         # 라인 내 텍스트 컨투어(윤곽선) 검출
         text_contours_cv = preprocess_line_image_for_text_contours(line_ans_pil)
         # 텍스트 컨투어 병합 및 개별 텍스트 이미지 추출
+        # if line_idx == 20:
+        #     # 20번째 라인은 더 관대한 조건으로 처리
+        #     final_ans_text_crops_in_line = merge_contours_and_crop_text_pil(
+        #         line_ans_pil, text_contours_cv, 
+        #         merge_distance_threshold=100, 
+        #         padding=5
+        #     )
+        #     print(f"20번 라인 - 관대한 조건으로 재처리한 결과: {len(final_ans_text_crops_in_line)}개")
+        # else:
         final_ans_text_crops_in_line = merge_contours_and_crop_text_pil(line_ans_pil, text_contours_cv) # horizontally_crop_image -> text_crop images
-        
+
+        # if line_idx == 20:
+        #     print(f"20번 라인 디버깅:")
+        #     print(f"  - 검출된 텍스트 윤곽선 개수: {len(text_contours_cv)}")
+        #     print(f"  - 생성된 텍스트 크롭 개수: {len(final_ans_text_crops_in_line)}")
+        #     if len(text_contours_cv) > 0:
+        #         print(f"  - 첫 번째 윤곽선: {text_contours_cv[0] if text_contours_cv else 'None'}")
+        #     if len(final_ans_text_crops_in_line) > 0:
+        #         print(f"  - 첫 번째 텍스트 크롭 정보: {final_ans_text_crops_in_line[0].keys() if final_ans_text_crops_in_line else 'None'}")
+            
+        #     # 각 윤곽선의 바운딩 박스 정보 출력
+        #     print(f"  - 윤곽선 바운딩 박스들:")
+        #     for i, contour in enumerate(text_contours_cv):
+        #         x, y, w, h = cv2.boundingRect(contour)
+        #         aspect_ratio = w / h if h > 0 else float('inf')
+        #         print(f"    [{i}] x={x}, y={y}, w={w}, h={h}, aspect_ratio={aspect_ratio:.2f}")
+        #         if i >= 5:  # 처음 5개만 출력
+        #             print(f"    ... (총 {len(text_contours_cv)}개)")
+        #             break
+
+
+
+        # 텍스트 크롭 결과 이미지 저장!!!!!!!!!!!!!!!!: plzzzzz_text_crop_image 폴더에 저장됨
+        for idx, text_crop_data_in_line in enumerate(final_ans_text_crops_in_line):
+            
+            text_crop_image = text_crop_data_in_line['image_obj']
+            line_dir_path = os.path.join('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_text_crop_image', f"{line_idx}")
+            if not os.path.exists(line_dir_path):
+                os.makedirs(line_dir_path)
+            text_crop_image.save(os.path.join('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_text_crop_image',f"{line_idx}", f"{subject_student_id_base}_line_{line_idx}_text_crop_{idx}.png"))
+
+
+
         # 개별 텍스트 조각(text crop) 처리 루프
         for text_idx, text_crop_data_in_line in enumerate(final_ans_text_crops_in_line):
             ans_text_crop_pil = text_crop_data_in_line['image_obj']
@@ -415,10 +617,23 @@ def recognize_answer_sheet_data(
             _, thresh = cv2.threshold(np_img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+            # 먼저 모든 contour의 높이를 확인해서 최대 높이를 구함
+            max_height = 0
+            for cnt in contours:
+                x, y, w, h = cv2.boundingRect(cnt)
+                if h >= 5 and w >= 5:  # 기본 크기 조건을 만족하는 것만 고려
+                    max_height = max(max_height, h)
+            
+            # 최대 높이의 60% 임계값 계산
+            height_threshold = max_height * 0.6
+
             entry_digit_count = 0
             for cnt in contours:
                 x, y, w, h = cv2.boundingRect(cnt)
                 if h < 5 or w < 5:
+                    continue
+                # 높이가 최대 높이의 60% 미만이면 제외
+                if h < height_threshold:
                     continue
                 crop = pil_img.crop((x, y, x + w, y + h))
                 xc, yc = x + w // 2, y + h // 2
@@ -460,7 +675,7 @@ def recognize_answer_sheet_data(
                     confidence = pred[0].get('score', 0.0)
                     digit_confidences.append(confidence)
                     # 신뢰도가 낮으면 '?'로 표시
-                    if confidence < 0.9:  # 개별 digit의 낮은 임계값
+                    if confidence < 0.7:  # 개별 digit의 낮은 임계값
                         predicted_digit = '?'
                     recognized_digits.append(predicted_digit)
                 else:
@@ -488,6 +703,7 @@ def recognize_answer_sheet_data(
         # digits_grouped를 txt로 저장
         with open(os.path.join(os.getcwd(), "digits_grouped_output.txt"), "a") as f:
             for group in digits_grouped:
+                # 사용자가 원하는 형태로 출력: group: ['숫자', '?', ...]
                 print(f"group: {group}")
                 # 각 그룹의 숫자들을 텍스트로 변환하여 저장
                 group_text = ", ".join([str(digit) for digit in group])
@@ -571,135 +787,13 @@ if __name__ == "__main__":
     # test_original_image_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data/test_answer/32174515.jpg'
     # test_answer_key_json_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data/test_answer.json'
 
-    # 신호와 시스템 시험지(유석이가 제작 0605) - 새로운 테스트 경로로 변경
-    test_original_image_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/신호및시스템-10/신호및시스템-10/신호및시스템-10_32202698.jpg'
-    test_answer_key_json_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data_signals/test_answer.json'
+    # 신호와 시스템 시험지(최종 테스트용) - 신호및시스템-14로 변경
+    print("데이터:")
+    test_original_image_path = '/home/jdh251425/2025_DKU_Capstone/AI/신호및시스템-14/신호및시스템-14/신호및시스템-14_32219384.jpg'
+    test_answer_key_json_path = '/home/jdh251425/2025_DKU_Capstone/AI/test_data_signals/test_answer.json'
 
-    print(f"--- Running Preprocessing Test for {test_original_image_path} ---")
-    
-    # PIL 이미지를 다루기 위해 Image import (이미 상단에 있을 수 있지만, 명시적으로 확인)
-    # from PIL import Image # 이미 파일 상단에 import 되어 있으므로 여기서는 주석 처리
-    # json 모듈 import (이미 상단에 있을 수 있지만, 명시적으로 확인)
-    # import json # 이미 파일 상단에 import 되어 있으므로 여기서는 주석 처리
+    # JSON 파일을 딕셔너리로 로드
+    with open(test_answer_key_json_path, 'r', encoding='utf-8') as f:
+        answer_key_data = json.load(f)
 
-    # answer_key_data 미리 로드
-    try:
-        with open(test_answer_key_json_path, 'r', encoding='utf-8') as f:
-            test_answer_key_data = json.load(f)
-    except Exception as e:
-        print(f"Error loading answer key JSON: {e}")
-        print("\n--- Test Script Finished ---")
-        exit(1)
-
-    # extract_tail_question_counts 함수 정의 추가
-    from collections import defaultdict
-    
-    def extract_tail_question_counts(answer_key_data: dict) -> dict:
-        """
-        answer_key_data로부터 각 문제(qn)의 꼬리문제 개수(sub_question_number의 개수)를 계산합니다.
-
-        Returns:
-            tail_question_counts: Dict[str, int]
-                예: {"1": 28, "2": 1, "3": 1, ...}
-        """
-        tail_question_counts = defaultdict(int)
-
-        for q in answer_key_data.get("questions", []):
-            qn = str(q["question_number"])
-            tail_question_counts[qn] += 1
-
-        return dict(tail_question_counts)
-    
-    # tail_question_counts 생성
-    tail_question_counts = extract_tail_question_counts(test_answer_key_data)
-    print(f"Tail question counts: {tail_question_counts}")
-
-    processed_crops = preprocess_answer_sheet(test_original_image_path, test_answer_key_data)
-
-    # 🔍 디버그: processed_crops의 모든 이미지 저장
-    debug_processed_dir = os.path.join(os.getcwd(), "debug_processed_crops")
-    if not os.path.exists(debug_processed_dir):
-        os.makedirs(debug_processed_dir)
-    
-    if processed_crops:
-        print(f"\n--- 디버그: processed_crops 이미지 저장 중 ---")
-        for idx, (key, img_obj) in enumerate(processed_crops.items()):
-            # key에서 특수문자 제거하여 파일명으로 사용 가능하게 변환
-            safe_key = key.replace("/", "_").replace("\\", "_").replace(":", "_").replace("*", "_").replace("?", "_").replace('"', "_").replace("<", "_").replace(">", "_").replace("|", "_")
-            
-            # 이미지 파일명 생성 (순서번호_키정보.png)
-            filename = f"{idx:03d}_{safe_key}.png"
-            filepath = os.path.join(debug_processed_dir, filename)
-            
-            try:
-                # PIL Image 객체인지 확인하고 저장
-                if hasattr(img_obj, 'save'):
-                    img_obj.save(filepath)
-                    print(f"  저장됨: {filename} (크기: {img_obj.size})")
-                else:
-                    print(f"  오류: {filename} - PIL Image 객체가 아님 (타입: {type(img_obj)})")
-            except Exception as e:
-                print(f"  저장 실패: {filename} - {e}")
-        
-        print(f"총 {len(processed_crops)}개의 이미지가 {debug_processed_dir} 폴더에 저장되었습니다.")
-    else:
-        print("processed_crops가 비어있어 저장할 이미지가 없습니다.")
-
-    # 🔍 디버그: Key 분석 정보 텍스트 파일로 저장  
-    key_analysis_file = os.path.join(debug_processed_dir, "key_analysis.txt")
-    with open(key_analysis_file, 'w', encoding='utf-8') as f:
-        f.write("=== PROCESSED CROPS KEY 분석 ===\n\n")
-        f.write(f"총 이미지 개수: {len(processed_crops)}\n\n")
-        
-        for idx, (key, img_obj) in enumerate(processed_crops.items()):
-            f.write(f"{idx:03d}. {key}\n")
-            if hasattr(img_obj, 'size'):
-                f.write(f"     크기: {img_obj.size}\n")
-            
-            # Key 구성 요소 분석
-            parts = key.split('_')
-            f.write(f"     구성요소: {parts}\n")
-            
-            # 정규식으로 주요 정보 추출
-            import re
-            qn_match = re.search(r'_qn([a-zA-Z0-9\-]+)', key)
-            x_match = re.search(r'_x(\d+)', key)
-            y_match = re.search(r'_y(\d+)', key)
-            line_match = re.search(r'_L(\d+)', key)
-            
-            if qn_match:
-                f.write(f"     문제번호: {qn_match.group(1)}\n")
-            if x_match and y_match:
-                f.write(f"     좌표: x={x_match.group(1)}, y={y_match.group(1)}\n")
-            if line_match:
-                f.write(f"     라인: {line_match.group(1)}\n")
-            f.write("\n")
-    
-    print(f"Key 분석 정보가 {key_analysis_file}에 저장되었습니다.")
-
-    if not processed_crops:
-        print("Preprocessing returned no crops. Test did not generate any output.")
-    else:
-        print(f"\nPreprocessing finished. Number of cropped answer regions: {len(processed_crops)}")
-        print("Details of processed crops (Key and Image Size):")
-        for key, img_obj in processed_crops.items():
-            # img_obj가 PIL Image 객체인지 확인 후 size 속성 접근
-            if hasattr(img_obj, 'size'):
-                print(f"  Key: {key}, Image Size: {img_obj.size}")
-            else:
-                print(f"  Key: {key}, Image Object Type: {type(img_obj)} (Size not available)")
-
-        # --- recognize_answer_sheet_data 함수 테스트 (tail_question_counts 추가) ---
-        print("\n--- Running Recognition Test with tail_question_counts --- ")
-        # answer_key_data는 이미 위에서 로드됨
-        try:
-            recognition_step1_result = recognize_answer_sheet_data(processed_crops, test_answer_key_data, tail_question_counts)
-            print("\nRecognition Test Result:")
-            # 보기 쉽게 json.dumps를 사용하여 출력
-            print(json.dumps(recognition_step1_result, indent=2, ensure_ascii=False))
-        except Exception as e:
-            print(f"Error during recognition test: {e}")
-            import traceback
-            print(traceback.format_exc())
-
-    print("\n--- Test Script Finished ---")
+    final_ans_text_crop_dict = preprocess_answer_sheet(test_original_image_path, answer_key_data)
