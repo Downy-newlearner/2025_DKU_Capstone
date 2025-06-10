@@ -18,6 +18,9 @@ public class Image {
     private Long imageId;
 
     private String fileName;
+
+    @Lob
+    @Column(name = "base64_data", columnDefinition = "LONGTEXT")
     private String base64Data;
     private String studentId;
     private int questionNumber;

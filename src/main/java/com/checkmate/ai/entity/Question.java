@@ -22,7 +22,7 @@ public class Question {
 
     private String answer;
     private int answerCount;
-    private int point;
+    private float point;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exam_id")

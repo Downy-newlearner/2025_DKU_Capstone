@@ -11,6 +11,6 @@ public class StudentResponseDto {
     private String student_id;
     private String subject;
     private List<ExamResponseDto> answers;
-    private int total_score;
+    private float total_score;
     // Getters, Setters, Constructors
 }

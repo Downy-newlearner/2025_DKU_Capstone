@@ -42,6 +42,7 @@ public class KafkaStudentIdUpdateListener {
         try {
             StudentIdUpdateGetImageDto requestDto = objectMapper.readValue(message, StudentIdUpdateGetImageDto.class);
 
+
             // Redis 저장
             String redisKey = "studentIdImages:" + requestDto.getSubject();
             redisTemplate.opsForValue().set(redisKey, requestDto);
@@ -53,8 +54,8 @@ public class KafkaStudentIdUpdateListener {
             Path saveDir = Paths.get(imageDirPath, subject, "studentId");
             Files.createDirectories(saveDir);
 
-            List<StudentIdUpdateGetImageDto.Image> images = requestDto.getImages();
-            for (StudentIdUpdateGetImageDto.Image image : images) {
+            List<StudentIdUpdateGetImageDto.LowConfidenceImages> images = requestDto.getLowConfidenceImages();
+            for (StudentIdUpdateGetImageDto.LowConfidenceImages image : images) {
                 String baseFileName = image.getFile_name();
                 if (baseFileName == null || baseFileName.isEmpty()) {
                     baseFileName = "_";
@@ -66,7 +67,7 @@ public class KafkaStudentIdUpdateListener {
                         String[] parts = base64.split(",");
                         byte[] imageBytes = Base64.getDecoder().decode(parts.length > 1 ? parts[1] : parts[0]);
 
-                        String fileName = baseFileName + ".jpg";
+                        String fileName = baseFileName;
                         Path filePath = saveDir.resolve(fileName);
 
                         Files.write(filePath, imageBytes);

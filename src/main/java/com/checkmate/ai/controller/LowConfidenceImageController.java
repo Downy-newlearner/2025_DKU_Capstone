@@ -78,9 +78,32 @@ public class LowConfidenceImageController {
     }
 
 
+    @GetMapping("/images/check-status/{subject}")
+    public ResponseEntity<?> getLowConfidenceStatus(@PathVariable String subject) {
+        try {
+            // Flask로 보낼 데이터 구성
+            Map<String, String> requestBody = Map.of("subject", subject);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+            // Flask로 POST 요청
+            String requestUrl = flaskServerUrl + "/get-status";
+            ResponseEntity<String> flaskResponse =
+                    restTemplate.postForEntity(requestUrl, requestEntity, String.class);
+
+            return ResponseEntity.ok(flaskResponse.getBody());  // React에 그대로 전달
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Flask 요청 실패: " + e.getMessage());
+        }
+    }
+
+
     @GetMapping("/images/{subject}/low-confidence")
     public ResponseEntity<?> getBase64Images(@PathVariable String subject) {
-        Optional<LowConfidenceImage> optionalImage = lowConfidenceService.getLowConfidenceImages(subject);
+        Optional<LowConfidenceImageDto> optionalImage = lowConfidenceService.getLowConfidenceImages(subject);
 
         if (optionalImage.isPresent()) {
             return ResponseEntity.ok(optionalImage.get());

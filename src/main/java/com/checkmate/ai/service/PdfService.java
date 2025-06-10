@@ -1,9 +1,14 @@
 package com.checkmate.ai.service;
 
+import com.checkmate.ai.dto.StudentResponseDto;
 import com.checkmate.ai.entity.*;
 import com.checkmate.ai.repository.jpa.ExamRepository;
 import com.checkmate.ai.repository.jpa.StudentResponseRepository;
+import com.itextpdf.io.font.FontProgram;
+import com.itextpdf.io.font.FontProgramFactory;
+import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.properties.UnitValue;
@@ -11,8 +16,11 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import com.itextpdf.layout.element.Cell;
@@ -33,8 +41,10 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -46,6 +56,10 @@ public class PdfService {
 
     @Value("${flask.server.url}")
     private String flaskReportUrl;
+
+    @Autowired
+    @Qualifier("webApplicationContext")
+    private ResourceLoader resourceLoader;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -71,19 +85,35 @@ public class PdfService {
 
 
 
-    public List<byte[]> fetchImagesFromFlask(String subject, String studentId) {
+    public List<byte[]> fetchImagesFromFlask(String studentId, String subject) {
         RestTemplate restTemplate = new RestTemplate();
 
-        String url = "http://flask-server/image/" + subject + "/" + studentId;  // Flask 쪽에서 이미지들을 zip 또는 list로 반환한다고 가정
+        String url = flaskReportUrl+ "/get-student-image";
 
-        ResponseEntity<byte[]> response = restTemplate.getForEntity(url, byte[].class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> body = new HashMap<>();
+        body.put("student_id", studentId);
+        body.put("subject", subject);
+
+
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                byte[].class
+        );
 
         if (response.getStatusCode() == HttpStatus.OK) {
-            return List.of(response.getBody());  // Flask가 zip으로 줬다면 List 하나로
+            return List.of(response.getBody());
         } else {
             throw new RuntimeException("이미지를 불러오지 못했습니다");
         }
     }
+
 
     public byte[] createZipWithPdfAndImages(String subject, Student student, byte[] pdfBytes, List<byte[]> imageBytesList) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -139,9 +169,25 @@ public class PdfService {
              PdfDocument pdf = new PdfDocument(writer);
              Document document = new Document(pdf)) {
 
-            // 제목에 studentId → student.getName() 또는 student.getId() 사용
-            document.add(new Paragraph(subject + " - " + student.getStudentName()+"("+student.getStudentId()+")" + " Exam Report")
-                    .setFont(PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD))
+            // 폰트 읽기
+            Resource fontResource = resourceLoader.getResource("classpath:/static/fonts/NanumGothic.ttf");
+
+            byte[] fontBytes;
+            try (InputStream is = fontResource.getInputStream()) {
+                fontBytes = is.readAllBytes();
+            }
+
+            // FontProgram 생성
+            FontProgram fontProgram = FontProgramFactory.createFont(fontBytes);
+
+            // PdfFont 생성 (createFont(FontProgram)만 존재함)
+            PdfFont font = PdfFontFactory.createFont(fontProgram, PdfEncodings.IDENTITY_H);
+
+
+            System.out.println(font);
+            document.setFont(font);
+
+            document.add(new Paragraph(subject + " - " + student.getStudentId() + " 시험 리포트")
                     .setFontSize(16)
                     .setTextAlignment(TextAlignment.CENTER)
                     .setMarginBottom(20));
@@ -158,7 +204,7 @@ public class PdfService {
                     .useAllAvailableWidth();
 
             // 컬럼 헤더 스타일
-            String[] headers = {"Question No.", "Student Answer", "Correct Answer", "Allocated Point"};
+            String[] headers = {"질문 번호.", "학생 응답", "정답", "문항 점수"};
             for (String header : headers) {
                 Cell headerCell = new Cell()
                         .add(new Paragraph(header).setBold())
@@ -192,7 +238,7 @@ public class PdfService {
             }
 
             // 전체 점수 요약
-            document.add(new Paragraph("\nTotal Score: " + response.getTotalScore())
+            document.add(new Paragraph("\n총점: " + response.getTotalScore())
                     .setTextAlignment(TextAlignment.RIGHT)
                     .setFontSize(24)
                     .setBold());
@@ -207,16 +253,25 @@ public class PdfService {
     }
 
 
-    public ResponseEntity<ByteArrayResource> downloadSubjectReportPdf(String subject) {
-        String reportUrl = flaskReportUrl + "/" + subject;
+    public ResponseEntity<ByteArrayResource> downloadSubjectReportPdf(String subject, List<StudentResponse> responses) {
+
+
+        // 3. Flask로 POST 요청 보낼 JSON 구성
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("subject", subject);
+        requestBody.put("responses", responses);
 
         HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("application/json; charset=UTF-8"));  // 인코딩 명시
+        headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_PDF));
-        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+        // 4. POST 요청 전송
         ResponseEntity<byte[]> response = restTemplate.exchange(
-                reportUrl,
-                HttpMethod.GET,
+                flaskReportUrl+"/generate-report",  // 예: http://flask-server:5000/generate-report
+                HttpMethod.POST,
                 requestEntity,
                 byte[].class
         );
@@ -225,6 +280,7 @@ public class PdfService {
             ByteArrayResource resource = new ByteArrayResource(response.getBody());
 
             HttpHeaders responseHeaders = new HttpHeaders();
+
             responseHeaders.setContentType(MediaType.APPLICATION_PDF);
             responseHeaders.setContentDisposition(ContentDisposition
                     .attachment()

@@ -16,20 +16,32 @@ public class LowConfidenceImageMapper {
     private static final Pattern AC_PATTERN = Pattern.compile("ac_(\\d+)");
 
 
-    // Mapper 내 toEntity 수정
     public static LowConfidenceImage toEntity(LowConfidenceImageDto dto) {
+        System.out.println("Converting LowConfidenceImageDto to Entity...");
+        System.out.println("Subject: " + dto.getSubject());
+        System.out.println("Image count: " + dto.getImages().size());
+
         LowConfidenceImage entity = new LowConfidenceImage();
         entity.setSubject(dto.getSubject());
 
         List<Image> images = dto.getImages().stream()
                 .map(dtoImage -> {
+                    System.out.println("Mapping Image:");
+                    System.out.println(" - Student ID: " + dtoImage.getStudent_id());
+                    System.out.println(" - File Name : " + dtoImage.getFile_name());
+                    System.out.println(" - Base64 len: " + (dtoImage.getBase64_data() != null ? dtoImage.getBase64_data().length() : "null"));
+                    System.out.println(" - Question #: " + dtoImage.getQuestion_number());
+                    System.out.println(" - Sub Ques #: " + (dtoImage.getSub_question_number()-1));
+
                     Image img = new Image();
                     img.setFileName(dtoImage.getFile_name());
                     img.setBase64Data(dtoImage.getBase64_data());
                     img.setStudentId(dtoImage.getStudent_id());
+                    img.setLowConfidenceImage(entity);
 
-                    img.setQuestionNumber(parseQuestionNumber(dtoImage.getFile_name()));
-                    img.setSubQuestionNumber(parseAnswerCount(dtoImage.getFile_name()));
+                    img.setQuestionNumber(dtoImage.getQuestion_number());
+                    img.setSubQuestionNumber(dtoImage.getSub_question_number());
+
 
                     return img;
                 })
@@ -37,26 +49,12 @@ public class LowConfidenceImageMapper {
 
         entity.setImages(images);
 
+        System.out.println("Entity conversion complete. Total images mapped: " + images.size());
         return entity;
     }
 
 
 
-    private static int parseQuestionNumber(String filename) {
-        Matcher matcher = QN_PATTERN.matcher(filename);
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group(1));
-        }
-        return 0;
-    }
-
-    private static int parseAnswerCount(String filename) {
-        Matcher matcher = AC_PATTERN.matcher(filename);
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group(1));
-        }
-        return 0;
-    }
 
     public static LowConfidenceImageDto toDto(LowConfidenceImage entity) {
         if (entity == null) return null;

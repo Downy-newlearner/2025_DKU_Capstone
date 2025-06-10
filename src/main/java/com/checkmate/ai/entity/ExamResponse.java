@@ -20,9 +20,15 @@ public class ExamResponse {
     private int subQuestionNumber;
     private String studentAnswer;
     private int answerCount;
-    private int confidence;
+    private float confidence;
     private boolean isCorrect;
-    private int score;
+    private float score;
+
+//
+//    // ✅ 외래 키 설정
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "student_response_id")  // 이 컬럼이 foreign key가 됨
+//    private StudentResponse studentResponse;
 
 
 
