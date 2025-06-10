@@ -113,7 +113,7 @@ pip install -r reqirements.txt # AI 서버 구동을 위한 라이브러리 설�
 python app.py</code></pre>
   </li>
       <li>Docker 실행
-    <pre><code>cd AI
+    <pre><code>
 docker compose up</code></pre>
   </li>
 </ol>
