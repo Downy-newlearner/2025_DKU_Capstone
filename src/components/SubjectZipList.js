@@ -36,6 +36,7 @@ const SubjectZipList = () => {
       .then((res) => {
         const blob = new Blob([res.data], {
           type: res.headers["content-type"] || "application/zip",
+          // type: "application/pdf;charset=utf-8",
         });
         const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
