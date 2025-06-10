@@ -26,7 +26,7 @@ public class LowConfidenceImageDto {
         private String file_name;
         private String base64_data;
         private int question_number;
-        private Integer sub_question_number;
+        private int sub_question_number;
     }
 }
 

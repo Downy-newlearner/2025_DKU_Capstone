@@ -31,7 +31,7 @@ public class LowConfidenceImageMapper {
                     System.out.println(" - File Name : " + dtoImage.getFile_name());
                     System.out.println(" - Base64 len: " + (dtoImage.getBase64_data() != null ? dtoImage.getBase64_data().length() : "null"));
                     System.out.println(" - Question #: " + dtoImage.getQuestion_number());
-                    System.out.println(" - Sub Ques #: " + dtoImage.getSub_question_number());
+                    System.out.println(" - Sub Ques #: " + (dtoImage.getSub_question_number()-1));
 
                     Image img = new Image();
                     img.setFileName(dtoImage.getFile_name());
@@ -40,9 +40,8 @@ public class LowConfidenceImageMapper {
                     img.setLowConfidenceImage(entity);
 
                     img.setQuestionNumber(dtoImage.getQuestion_number());
-                    img.setSubQuestionNumber(
-                            dtoImage.getSub_question_number() != null ? dtoImage.getSub_question_number() : 0
-                    );
+                    img.setSubQuestionNumber(dtoImage.getSub_question_number());
+
 
                     return img;
                 })

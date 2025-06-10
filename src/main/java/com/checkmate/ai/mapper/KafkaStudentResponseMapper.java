@@ -57,6 +57,7 @@ public class KafkaStudentResponseMapper {
         ExamResponse examResponse = new ExamResponse();
 
         examResponse.setQuestionNumber(answer.getQuestion_number());
+        examResponse.setSubQuestionNumber(answer.getSub_question_number());
         examResponse.setStudentAnswer(answer.getStudent_answer());
         examResponse.setAnswerCount(answer.getAnswer_count());
         examResponse.setConfidence(answer.getConfidence());

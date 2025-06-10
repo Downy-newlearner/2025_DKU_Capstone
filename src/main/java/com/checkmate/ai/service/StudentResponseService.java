@@ -80,7 +80,8 @@ public class StudentResponseService {
                     answer.setScore(correct ? question.getPoint() : 0);
                     totalScore += answer.getScore();
                 } else {
-                    answer.setScore(-1);
+                    answer.setScore(0);
+                    answer.setStudent_answer("ERROR!");
                 }
 
                 saveStudentResponse(student, dto.getSubject(), answer);
@@ -115,7 +116,18 @@ public class StudentResponseService {
         ExamResponse examResponse = new ExamResponse();
         examResponse.setQuestionNumber(answer.getQuestion_number());
         examResponse.setSubQuestionNumber(answer.getSub_question_number());
-        examResponse.setStudentAnswer(answer.getStudent_answer());
+
+        String student_answer = answer.getStudent_answer();
+        // ✅ TF 문제일 경우 학생 응답 변환
+        if ("TF".equalsIgnoreCase(answer.getQuestion_type())) {
+            if ("1".equals(student_answer)) {
+                student_answer = "T";
+            } else if ("0".equals(student_answer)) {
+                student_answer = "F";
+            }
+        }
+
+        examResponse.setStudentAnswer(student_answer);
         examResponse.setAnswerCount(answer.getAnswer_count());
         examResponse.setConfidence(answer.getConfidence());
         examResponse.setCorrect(answer.is_correct());
@@ -136,6 +148,7 @@ public class StudentResponseService {
 
 
 
+
     private boolean isAnswerCorrect(KafkaStudentResponseDto.ExamResponseDto answerDto, Question question) {
         String correctAnswer = question.getAnswer();
         String studentAnswer = answerDto.getStudent_answer();
@@ -149,6 +162,7 @@ public class StudentResponseService {
         String lockKey = "grading-lock:" + dto.getStudent_id() + ":" + dto.getSubject();
         RLock lock = redissonClient.getLock(lockKey);
         boolean locked = false;
+        System.out.println("SAFE 채점 내부!!");
 
         try {
             locked = lock.tryLock(5, 60, TimeUnit.SECONDS);
@@ -232,14 +246,25 @@ public class StudentResponseService {
 
                 float previousScore = matchedAnswer.getScore();
                 String newStudentAnswer = answerDto.getStudent_answer();
-                System.out.println("✏️ 새로운 학생 답변: '" + newStudentAnswer + "' (기존 점수: " + previousScore + ")");
-
-                matchedAnswer.setStudentAnswer(newStudentAnswer);
 
                 // 문제 정보 조회
                 Question question = questionService.findQuestionBySubjectAndNumber(subject, qNo, subQNo);
                 if (question != null) {
+                    String questionType = question.getQuestionType();
                     String correctAnswer = question.getAnswer();
+
+                    // ✅ TF 문제일 경우 학생 응답 변환
+                    if ("TF".equalsIgnoreCase(questionType)) {
+                        if ("1".equals(newStudentAnswer)) {
+                            newStudentAnswer = "T";
+                        } else if ("0".equals(newStudentAnswer)) {
+                            newStudentAnswer = "F";
+                        }
+                    }
+
+                    System.out.println("✏️ 새로운 학생 답변: '" + newStudentAnswer + "' (기존 점수: " + previousScore + ")");
+                    matchedAnswer.setStudentAnswer(newStudentAnswer);
+
                     System.out.println("📚 정답: '" + correctAnswer + "', 배점: " + question.getPoint());
 
                     boolean isCorrect = newStudentAnswer != null && correctAnswer != null &&
@@ -254,6 +279,7 @@ public class StudentResponseService {
                     totalScore += (newScore - previousScore);
                     System.out.println("✅ 채점 결과: " + (isCorrect ? "정답" : "오답") + ", 새로운 점수: " + newScore + ", 누적 점수: " + totalScore);
                 } else {
+                    matchedAnswer.setStudentAnswer(newStudentAnswer);
                     matchedAnswer.setCorrect(false);
                     matchedAnswer.setScore(0);
                     totalScore -= previousScore;
@@ -265,8 +291,10 @@ public class StudentResponseService {
             studentResponseRepository.save(response);
             System.out.println("💾 저장 완료 - 학생 ID: " + studentId + ", 최종 점수: " + totalScore);
         }
+
         System.out.println("✅ 모든 학생 처리 완료");
     }
+
 
 
 
