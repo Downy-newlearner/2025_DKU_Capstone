@@ -61,7 +61,7 @@
     <tbody>
       <tr>
         <td style="width: 15%; text-align: center;"><strong>AI</strong></td>
-        <td><img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white">  <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white"  <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=Tensorflow&logoColor=black"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"></td>
+        <td><img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white">  <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white"  <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=Tensorflow&logoColor=black"> <img src="https://img.shields.io/badge/Tensorflow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"> <img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white"></td>
       </tr>
       <tr>
         <td style="text-align: center;"><strong>Backend</strong></td>
@@ -99,8 +99,7 @@
     <pre><code>cd backend
 ./gradlew build
 cd build/libs
-java -jar ai-0.0.1-SNAPSHOT.jar
-    </code></pre>
+java -jar ai-0.0.1-SNAPSHOT.jar</code></pre>
   </li>
   <li>프론트엔드 앱 실행
     <pre><code>cd FRONT
@@ -113,8 +112,7 @@ pip install -r reqirements.txt # AI 서버 구동을 위한 라이브러리 설�
 python app.py</code></pre>
   </li>
       <li>Docker 실행
-    <pre><code>
-docker compose up</code></pre>
+    <pre><code>docker compose up</code></pre>
   </li>
 </ol>
 
