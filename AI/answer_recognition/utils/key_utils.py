@@ -155,7 +155,7 @@ def create_question_info_dict(
 def generate_final_key_for_ans_crop(
     subject_student_id_base: str, # "과목명_학번"
     ans_text_crop_full_info: Dict[str, Any], 
-    question_info_dict: Dict[str, List[int]],
+    question_info_dict: Dict[str, List[int]], 
     answer_key_data: Dict[str, Any]
 ) -> str:
     # 디버그: 현재 처리중인 텍스트 조각 정보
