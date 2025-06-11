@@ -96,18 +96,18 @@
 <h2>🚀 실행 방법</h2>
 <ol>
   <li>백엔드 서버 실행
-    <pre><code>cd backend
+    <pre><code>cd checkmate/backend
 ./gradlew build
 cd build/libs
 java -jar ai-0.0.1-SNAPSHOT.jar</code></pre>
   </li>
   <li>프론트엔드 앱 실행
-    <pre><code>cd FRONT
+    <pre><code>cd checkmate/FRONT
 npm install
 npm startd</code></pre>
   </li>
     <li>AI 앱 실행
-    <pre><code>cd AI
+    <pre><code>cd checkmate/AI
 pip install -r reqirements.txt # AI 서버 구동을 위한 라이브러리 설치
 python app.py</code></pre>
   </li>
