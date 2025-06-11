@@ -52,6 +52,7 @@ if not hasattr(cv2, 'INTER_LINEAR'):
 
 # --- Helper Functions ---
 
+
 # --- Main Preprocessing Function ---
 def preprocess_answer_sheet(
     original_image_path: str,
@@ -108,6 +109,8 @@ def preprocess_answer_sheet(
         print(f"  질문 정보 딕셔너리 생성 실패 {subject_student_id_base}. 질문 발견 및 답변 키 일치 확인 필요.")
         return {}
 
+
+    # 여기가 문제!!!!!!!!! 텍스트 크롭이 너무 구림!!
     print("  단계 4 & 5 (답변 영역 처리 및 키 생성)...") # DEBUG KOR
     ans_area_idx = 0  # 단일 객체이므로 인덱스를 0으로 고정
     
@@ -121,10 +124,40 @@ def preprocess_answer_sheet(
     line_cropped_ans_list = crop_between_lines(ans_area_pil, line_contours)
         # ans_area_pil (답변 영역 이미지)과 line_contours (찾아낸 수평선 정보)가 crop_between_lines 함수의 인자로 전달됩니다.
         # 이 함수의 반환 값 (잘린 각 라인 이미지와 해당 라인의 y좌표 정보를 담은 딕셔너리들의 리스트)이 line_cropped_ans_list에 할당됩니다.
+        # line_cropped_ans_list: [{'image_obj': Image, 'y_top_in_area': int, 'y_bottom_in_area': int}]
+
+
+
+
+
+
+
+
+    # 수평 크롭 결과 이미지 저장!!!!!!!!!!!!!!!!: plzzzzz_line_image 폴더에 저장됨
+    # if not os.path.exists('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_line_image'):
+    #     os.makedirs('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_line_image')
+    # for idx, line_crop_data in enumerate(line_cropped_ans_list):
+    #     line_image = line_crop_data['image_obj']
+    #     line_y_top = line_crop_data['y_top_in_area']
+    #     line_y_bottom = line_crop_data['y_bottom_in_area']
+        
+    #     # 파일명 생성
+    #     line_image_filename = f"{subject_student_id_base}_line_{idx}_y{line_y_top}-{line_y_bottom}.png"
+        
+    #     # 이미지 저장
+    #     line_image.save(os.path.join('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_line_image', line_image_filename))
+
+
+
+
+
+
+
+
 
     # 이 루프는 line_cropped_ans_list에 있는 각 라인 조각에 대해 반복됩니다. 
     # line_idx는 현재 라인의 인덱스, line_crop_data는 현재 라인 이미지와 y정보를 담은 딕셔너리입니다.
-    for line_idx, line_crop_data in enumerate(line_cropped_ans_list):
+    for line_idx, line_crop_data in enumerate(line_cropped_ans_list): # line_cropped_ans_list: [{'image_obj': Image, 'y_top_in_area': int, 'y_bottom_in_area': int}]
         line_ans_pil = line_crop_data['image_obj']
 
         line_y_top_in_ans_area = line_crop_data['y_top_in_area']
@@ -134,7 +167,25 @@ def preprocess_answer_sheet(
         text_contours_cv = preprocess_line_image_for_text_contours(line_ans_pil)
         # 텍스트 컨투어 병합 및 개별 텍스트 이미지 추출
         final_ans_text_crops_in_line = merge_contours_and_crop_text_pil(line_ans_pil, text_contours_cv) # horizontally_crop_image -> text_crop images
-        
+
+
+
+
+
+
+
+
+        # 텍스트 크롭 결과 이미지 저장!!!!!!!!!!!!!!!!: plzzzzz_text_crop_image 폴더에 저장됨
+        # for idx, text_crop_data_in_line in enumerate(final_ans_text_crops_in_line):
+            
+        #     text_crop_image = text_crop_data_in_line['image_obj']
+        #     line_dir_path = os.path.join('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_text_crop_image', f"{line_idx}")
+        #     if not os.path.exists(line_dir_path):
+        #         os.makedirs(line_dir_path)
+        #     text_crop_image.save(os.path.join('/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_text_crop_image',f"{line_idx}", f"{subject_student_id_base}_line_{line_idx}_text_crop_{idx}.png"))
+
+
+
         # 개별 텍스트 조각(text crop) 처리 루프
         for text_idx, text_crop_data_in_line in enumerate(final_ans_text_crops_in_line):
             ans_text_crop_pil = text_crop_data_in_line['image_obj']
@@ -166,6 +217,7 @@ def preprocess_answer_sheet(
 
     
     print(f"  전처리 완료: {subject_student_id_base}. 총 {len(final_ans_text_crop_dict)}개의 잘린 답변 텍스트 이미지 생성됨.") # DEBUG KOR
+    print("final_ans_text_crop_dict:", final_ans_text_crop_dict)
     return final_ans_text_crop_dict
 
 
@@ -399,7 +451,7 @@ def recognize_answer_sheet_data(
             qn, sub_qn = map(int, full_qn.split('-'))
         else:
             qn = int(full_qn)
-            sub_qn = 1
+            sub_qn = 0
 
         ac_match = re.search(r'_ac(\d+)', entries_sorted[0]['key'])
         ac = int(ac_match.group(1)) if ac_match else 1
@@ -415,10 +467,23 @@ def recognize_answer_sheet_data(
             _, thresh = cv2.threshold(np_img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+            # 먼저 모든 contour의 높이를 확인해서 최대 높이를 구함
+            max_height = 0
+            for cnt in contours:
+                x, y, w, h = cv2.boundingRect(cnt)
+                if h >= 5 and w >= 5:  # 기본 크기 조건을 만족하는 것만 고려
+                    max_height = max(max_height, h)
+            
+            # 최대 높이의 60% 임계값 계산
+            height_threshold = max_height * 0.6
+
             entry_digit_count = 0
             for cnt in contours:
                 x, y, w, h = cv2.boundingRect(cnt)
                 if h < 5 or w < 5:
+                    continue
+                # 높이가 최대 높이의 60% 미만이면 제외
+                if h < height_threshold:
                     continue
                 crop = pil_img.crop((x, y, x + w, y + h))
                 xc, yc = x + w // 2, y + h // 2
@@ -460,7 +525,7 @@ def recognize_answer_sheet_data(
                     confidence = pred[0].get('score', 0.0)
                     digit_confidences.append(confidence)
                     # 신뢰도가 낮으면 '?'로 표시
-                    if confidence < 0.9:  # 개별 digit의 낮은 임계값
+                    if confidence < 0.85:  # 개별 digit의 낮은 임계값
                         predicted_digit = '?'
                     recognized_digits.append(predicted_digit)
                 else:
@@ -488,6 +553,7 @@ def recognize_answer_sheet_data(
         # digits_grouped를 txt로 저장
         with open(os.path.join(os.getcwd(), "digits_grouped_output.txt"), "a") as f:
             for group in digits_grouped:
+                # 사용자가 원하는 형태로 출력: group: ['숫자', '?', ...]
                 print(f"group: {group}")
                 # 각 그룹의 숫자들을 텍스트로 변환하여 저장
                 group_text = ", ".join([str(digit) for digit in group])
@@ -571,135 +637,27 @@ if __name__ == "__main__":
     # test_original_image_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data/test_answer/32174515.jpg'
     # test_answer_key_json_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data/test_answer.json'
 
-    # 신호와 시스템 시험지(유석이가 제작 0605) - 새로운 테스트 경로로 변경
-    test_original_image_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/신호및시스템-10/신호및시스템-10/신호및시스템-10_32202698.jpg'
-    test_answer_key_json_path = '/Users/downy/Documents/2025_DKU_Capstone/2025_DKU_Capstone/AI/test_data_signals/test_answer.json'
+    # 신호와 시스템 시험지(최종 테스트용) - 신호및시스템-14로 변경
+    test_original_image_path = '/home/jdh251425/2025_DKU_Capstone/AI/plzzzzz_home/신호및시스템-9_32202698.jpg'
+    test_answer_key_json_path = '/home/jdh251425/2025_DKU_Capstone/AI/test_data_signals/test_answer.json'
 
-    print(f"--- Running Preprocessing Test for {test_original_image_path} ---")
+    # JSON 파일을 딕셔너리로 로드
+    with open(test_answer_key_json_path, 'r', encoding='utf-8') as f:
+        answer_key_data = json.load(f)
+
+    final_ans_text_crop_dict = preprocess_answer_sheet(test_original_image_path, answer_key_data)
     
-    # PIL 이미지를 다루기 위해 Image import (이미 상단에 있을 수 있지만, 명시적으로 확인)
-    # from PIL import Image # 이미 파일 상단에 import 되어 있으므로 여기서는 주석 처리
-    # json 모듈 import (이미 상단에 있을 수 있지만, 명시적으로 확인)
-    # import json # 이미 파일 상단에 import 되어 있으므로 여기서는 주석 처리
-
-    # answer_key_data 미리 로드
-    try:
-        with open(test_answer_key_json_path, 'r', encoding='utf-8') as f:
-            test_answer_key_data = json.load(f)
-    except Exception as e:
-        print(f"Error loading answer key JSON: {e}")
-        print("\n--- Test Script Finished ---")
-        exit(1)
-
-    # extract_tail_question_counts 함수 정의 추가
-    from collections import defaultdict
-    
-    def extract_tail_question_counts(answer_key_data: dict) -> dict:
-        """
-        answer_key_data로부터 각 문제(qn)의 꼬리문제 개수(sub_question_number의 개수)를 계산합니다.
-
-        Returns:
-            tail_question_counts: Dict[str, int]
-                예: {"1": 28, "2": 1, "3": 1, ...}
-        """
-        tail_question_counts = defaultdict(int)
-
-        for q in answer_key_data.get("questions", []):
-            qn = str(q["question_number"])
-            tail_question_counts[qn] += 1
-
-        return dict(tail_question_counts)
-    
-    # tail_question_counts 생성
-    tail_question_counts = extract_tail_question_counts(test_answer_key_data)
-    print(f"Tail question counts: {tail_question_counts}")
-
-    processed_crops = preprocess_answer_sheet(test_original_image_path, test_answer_key_data)
-
-    # 🔍 디버그: processed_crops의 모든 이미지 저장
-    debug_processed_dir = os.path.join(os.getcwd(), "debug_processed_crops")
-    if not os.path.exists(debug_processed_dir):
-        os.makedirs(debug_processed_dir)
-    
-    if processed_crops:
-        print(f"\n--- 디버그: processed_crops 이미지 저장 중 ---")
-        for idx, (key, img_obj) in enumerate(processed_crops.items()):
-            # key에서 특수문자 제거하여 파일명으로 사용 가능하게 변환
-            safe_key = key.replace("/", "_").replace("\\", "_").replace(":", "_").replace("*", "_").replace("?", "_").replace('"', "_").replace("<", "_").replace(">", "_").replace("|", "_")
-            
-            # 이미지 파일명 생성 (순서번호_키정보.png)
-            filename = f"{idx:03d}_{safe_key}.png"
-            filepath = os.path.join(debug_processed_dir, filename)
-            
-            try:
-                # PIL Image 객체인지 확인하고 저장
-                if hasattr(img_obj, 'save'):
-                    img_obj.save(filepath)
-                    print(f"  저장됨: {filename} (크기: {img_obj.size})")
-                else:
-                    print(f"  오류: {filename} - PIL Image 객체가 아님 (타입: {type(img_obj)})")
-            except Exception as e:
-                print(f"  저장 실패: {filename} - {e}")
+    # 인식 단계 추가 - group별 결과를 보기 위해
+    if final_ans_text_crop_dict:
+        # tail_question_counts 계산
+        tail_question_counts = {}
+        for q_entry in answer_key_data.get('questions', []):
+            qn = q_entry.get('question_number')
+            if qn:
+                if qn not in tail_question_counts:
+                    tail_question_counts[qn] = 0
+                tail_question_counts[qn] += 1
         
-        print(f"총 {len(processed_crops)}개의 이미지가 {debug_processed_dir} 폴더에 저장되었습니다.")
-    else:
-        print("processed_crops가 비어있어 저장할 이미지가 없습니다.")
-
-    # 🔍 디버그: Key 분석 정보 텍스트 파일로 저장  
-    key_analysis_file = os.path.join(debug_processed_dir, "key_analysis.txt")
-    with open(key_analysis_file, 'w', encoding='utf-8') as f:
-        f.write("=== PROCESSED CROPS KEY 분석 ===\n\n")
-        f.write(f"총 이미지 개수: {len(processed_crops)}\n\n")
-        
-        for idx, (key, img_obj) in enumerate(processed_crops.items()):
-            f.write(f"{idx:03d}. {key}\n")
-            if hasattr(img_obj, 'size'):
-                f.write(f"     크기: {img_obj.size}\n")
-            
-            # Key 구성 요소 분석
-            parts = key.split('_')
-            f.write(f"     구성요소: {parts}\n")
-            
-            # 정규식으로 주요 정보 추출
-            import re
-            qn_match = re.search(r'_qn([a-zA-Z0-9\-]+)', key)
-            x_match = re.search(r'_x(\d+)', key)
-            y_match = re.search(r'_y(\d+)', key)
-            line_match = re.search(r'_L(\d+)', key)
-            
-            if qn_match:
-                f.write(f"     문제번호: {qn_match.group(1)}\n")
-            if x_match and y_match:
-                f.write(f"     좌표: x={x_match.group(1)}, y={y_match.group(1)}\n")
-            if line_match:
-                f.write(f"     라인: {line_match.group(1)}\n")
-            f.write("\n")
-    
-    print(f"Key 분석 정보가 {key_analysis_file}에 저장되었습니다.")
-
-    if not processed_crops:
-        print("Preprocessing returned no crops. Test did not generate any output.")
-    else:
-        print(f"\nPreprocessing finished. Number of cropped answer regions: {len(processed_crops)}")
-        print("Details of processed crops (Key and Image Size):")
-        for key, img_obj in processed_crops.items():
-            # img_obj가 PIL Image 객체인지 확인 후 size 속성 접근
-            if hasattr(img_obj, 'size'):
-                print(f"  Key: {key}, Image Size: {img_obj.size}")
-            else:
-                print(f"  Key: {key}, Image Object Type: {type(img_obj)} (Size not available)")
-
-        # --- recognize_answer_sheet_data 함수 테스트 (tail_question_counts 추가) ---
-        print("\n--- Running Recognition Test with tail_question_counts --- ")
-        # answer_key_data는 이미 위에서 로드됨
-        try:
-            recognition_step1_result = recognize_answer_sheet_data(processed_crops, test_answer_key_data, tail_question_counts)
-            print("\nRecognition Test Result:")
-            # 보기 쉽게 json.dumps를 사용하여 출력
-            print(json.dumps(recognition_step1_result, indent=2, ensure_ascii=False))
-        except Exception as e:
-            print(f"Error during recognition test: {e}")
-            import traceback
-            print(traceback.format_exc())
-
-    print("\n--- Test Script Finished ---")
+        # 인식 수행
+        recognition_results = recognize_answer_sheet_data(final_ans_text_crop_dict, answer_key_data, tail_question_counts)
+        print(f"\n인식 완료: {len(recognition_results.get('answer_json', {}).get('answers', []))}개 답변 처리")
