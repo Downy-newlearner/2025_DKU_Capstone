@@ -1,0 +1,61 @@
+{
+  "image_path": "/home/jdh251425/MLPA_auto_grading/2025_DKU_Capstone/checkmate/AI/Data/인공지능 중간고사 2023/캡스톤  23 인공지능 중간고사 - 111.jpg",
+  "image_size": [
+    2232,
+    3100
+  ],
+  "all_boxes": [
+    {
+      "class_id": 0,
+      "confidence": 0.9978048205375671,
+      "bbox": [
+        1141,
+        400,
+        1390,
+        471
+      ]
+    },
+    {
+      "class_id": 0,
+      "confidence": 0.16182827949523926,
+      "bbox": [
+        1166,
+        409,
+        1370,
+        476
+      ]
+    }
+  ],
+  "student_id_candidates": [
+    {
+      "class_id": 0,
+      "confidence": 0.9978048205375671,
+      "bbox": [
+        1141,
+        400,
+        1390,
+        471
+      ]
+    },
+    {
+      "class_id": 0,
+      "confidence": 0.16182827949523926,
+      "bbox": [
+        1166,
+        409,
+        1370,
+        476
+      ]
+    }
+  ],
+  "best_box": {
+    "class_id": 0,
+    "confidence": 0.9978048205375671,
+    "bbox": [
+      1141,
+      400,
+      1390,
+      471
+    ]
+  }
+}

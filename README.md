@@ -17,7 +17,7 @@
       <tr>
         <td style="padding: 10px; border: 1px solid #dfe2e5;">👑 <strong>팀장 / AI</strong></td>
         <td style="padding: 10px; border: 1px solid #dfe2e5;">정다훈</td>
-        <td style="padding: 10px; border: 1px solid #dfe2e5; text-align: left;">프로젝트 총괄 및 AI 모델 구성</td>
+        <td style="padding: 10px; border: 1px solid #dfe2e5; text-align: left;">프로젝트 총괄 및 AI 모델 아키텍처 구성</td>
         <td style="padding: 10px; border: 1px solid #dfe2e5;"><a href="https://github.com/Downy-newlearner">바로가기</a></td>
       </tr>
       <tr>

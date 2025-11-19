@@ -37,13 +37,24 @@ from reportlab.lib.pagesizes import letter
 # 애플리케이션 루트 경로를 기준으로 모듈 경로 추가
 # 이 방법은 모든 환경에서 권장되지는 않으며, Python 패키지 구조를 사용하는 것이 더 좋습니다.
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
-AI_MODULE_PATH = os.path.join(APP_ROOT, 'AI') # AI 폴더 경로
-if AI_MODULE_PATH not in sys.path:
-    sys.path.insert(0, AI_MODULE_PATH)
+
+# 설정 파일 import
+from config import (
+    KAFKA_BOOTSTRAP_SERVERS,
+    KAFKA_TOPICS,
+    FLASK_HOST,
+    FLASK_PORT,
+    FLASK_DEBUG,
+    UPLOAD_FOLDER_BASE,
+    SPRING_CALLBACK_PATH,
+    SPRING_CALLBACK_TIMEOUT,
+    ALLOWED_EXTENSIONS_ZIP,
+    ALLOWED_EXTENSIONS_XLSX,
+    ALLOWED_IMAGE_EXTENSIONS
+)
 
 # Student_id_recognition 모듈 import
 from student_id_recognition.main import main as process_student_ids
-from student_id_recognition.main import make_json as make_student_id_json # make_json도 가져오기
 from student_id_recognition.decompression_parsing.decompression import extract_archive
 from student_id_recognition.decompression_parsing.parsing_xlsx import parsing_xlsx # parsing_xlsx 임포트 추가
 
@@ -58,21 +69,19 @@ app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False # 한글을 ASCII로 이스케이프하지 않도록 설정
 
 # Kafka 프로듀서 설정 (Flask 초기화 시에 생성해두는 것을 권장)
-# bootstrap_servers는 실제 환경에 맞게 수정해야 합니다.
 producer = None
 try:
     producer = KafkaProducer(
-        bootstrap_servers='43.202.183.74:9092', # TODO: 실제 Kafka 서버 주소로 변경!
+        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
         value_serializer=lambda v: json.dumps(v).encode('utf-8')
     )
-    app.logger.info("Kafka Producer initialized successfully.")
+    app.logger.info(f"Kafka Producer initialized successfully. Bootstrap servers: {KAFKA_BOOTSTRAP_SERVERS}")
 except Exception as e:
     app.logger.error(f"Failed to initialize Kafka Producer: {e}. Background tasks might not send Kafka messages.")
     # Kafka 연결 실패 시 프로듀서가 None으로 유지됩니다.
     # 백그라운드 작업에서 producer 사용 전 None 체크 필요.
 
-# 위 방식 대신, 앱 초기화 시점에 생성
-UPLOAD_FOLDER_BASE = os.path.join(tempfile.gettempdir(), 'ocr_flask_uploads')
+# 파일 업로드 폴더 설정
 os.makedirs(UPLOAD_FOLDER_BASE, exist_ok=True)
 app.config['UPLOAD_FOLDER_BASE'] = UPLOAD_FOLDER_BASE
 
@@ -85,9 +94,6 @@ app.config['UPLOAD_FOLDER_BASE'] = UPLOAD_FOLDER_BASE
 import logging
 logging.basicConfig(level=logging.INFO) # INFO 레벨로 변경
 
-ALLOWED_EXTENSIONS_ZIP = {'zip'}
-ALLOWED_EXTENSIONS_XLSX = {'xlsx'}
-
 def allowed_file(filename, allowed_extensions):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in allowed_extensions
@@ -99,7 +105,7 @@ def health_check():
     if producer is not None:
         try:
             # Kafka 브로커와의 연결 상태를 확인하기 위해 빈 메시지를 전송
-            producer.send('low-confidence-images', value={"status": "check"})
+            producer.send(KAFKA_TOPICS['low_confidence_images'], value={"status": "check"})
             app.logger.info("Kafka broker is connected and healthy.")
             return jsonify({"status": "healthy", "message": "Kafka broker is connected and healthy."}), 200
         except Exception as e:
@@ -111,31 +117,29 @@ def health_check():
     return jsonify({"status": "healthy", "message": "OCR service is running."}), 200
 
 def background_task(subject_name, zip_path, xlsx_path, extracted_images_path, processing_folder_path, parent_logger):
-    logger = parent_logger # 전달받은 로거 사용
     try:
-        logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 작업 시작.")
+        parent_logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 작업 시작.")
         # 4. 압축 해제
         if not extract_archive(zip_path, extracted_images_path):
-            logger.error(f"[BG TASK - {os.path.basename(processing_folder_path)}] 압축 해제 실패: {zip_path}")
+            parent_logger.error(f"[BG TASK - {os.path.basename(processing_folder_path)}] 압축 해제 실패: {zip_path}")
             return
-        logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 압축 해제 완료: {zip_path} -> {extracted_images_path}")
+        parent_logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 압축 해제 완료: {zip_path} -> {extracted_images_path}")
 
         # 5. XLSX 파싱
         student_numbers_from_xlsx = []
         if os.path.exists(xlsx_path):
             try:
                 student_numbers_from_xlsx = parsing_xlsx(xlsx_file_path=xlsx_path)
-                logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] XLSX 파싱 완료. 학번 {len(student_numbers_from_xlsx)}개 로드.")
+                parent_logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] XLSX 파싱 완료. 학번 {len(student_numbers_from_xlsx)}개 로드.")
             except Exception as e:
-                logger.error(f"[BG TASK - {os.path.basename(processing_folder_path)}] XLSX 파싱 오류 ({xlsx_path}): {e}")
+                parent_logger.error(f"[BG TASK - {os.path.basename(processing_folder_path)}] XLSX 파싱 오류 ({xlsx_path}): {e}")
         else:
-            logger.warning(f"[BG TASK - {os.path.basename(processing_folder_path)}] XLSX 파일 없음: {xlsx_path}")
+            parent_logger.warning(f"[BG TASK - {os.path.basename(processing_folder_path)}] XLSX 파일 없음: {xlsx_path}")
 
         # 6. 학번 인식 (및 조건부 파일명 변경)
-        logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 학번 인식 모듈 호출 (subject_name: {subject_name})...")
+        parent_logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 학번 인식 모듈 호출 (subject_name: {subject_name})...")
         
-        # Define Kafka topic for student_id_recognition module
-        student_id_recognition_topic = "student-id-recognition-progress" # Or any other appropriate topic name
+        student_id_recognition_topic = KAFKA_TOPICS['student_id_recognition_progress']
         task_identifier = os.path.basename(processing_folder_path)
 
         # process_student_ids (main.main) 함수에 subject_name 인자 전달
@@ -154,32 +158,33 @@ def background_task(subject_name, zip_path, xlsx_path, extracted_images_path, pr
         
         # 1차 인식 결과에 session_id 추가 (추후 상태 추적 또는 결과 매칭에 사용 가능)
         result_from_module["processing_folder"] = os.path.basename(processing_folder_path)
-        logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 학번 인식 완료. Kafka 전송 대상 이미지 수: {len(result_from_module.get('lowConfidenceImages', []))}")
+        parent_logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 학번 인식 완료. Kafka 전송 대상 이미지 수: {len(result_from_module.get('lowConfidenceImages', []))}")
 
         # 7. Kafka로 결과 전송 (2차 수정이 필요한 이미지 정보만 전송됨)
         if producer:
             try:
-                topic_name = "student-id-image-requests" # 필요시 토픽명 변경
+                topic_name = KAFKA_TOPICS['student_id_image_requests']
                 producer.send(topic_name, result_from_module)
                 producer.flush()
-                logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] Kafka 전송 완료. Topic: {topic_name}, Message: {result_from_module}")
+                parent_logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] Kafka 전송 완료. Topic: {topic_name}")
             except Exception as e:
-                logger.error(f"[BG TASK - {os.path.basename(processing_folder_path)}] Kafka 메시지 전송 실패: {e}")
+                parent_logger.error(f"[BG TASK - {os.path.basename(processing_folder_path)}] Kafka 메시지 전송 실패: {e}")
         else:
-            logger.error(f"[BG TASK - {os.path.basename(processing_folder_path)}] Kafka Producer not available. Skipping message send.")
+            parent_logger.warning(f"[BG TASK - {os.path.basename(processing_folder_path)}] Kafka Producer not available. Skipping message send.")
 
     except Exception as e:
-        logger.error(f"[BG TASK - {os.path.basename(processing_folder_path)}] 백그라운드 작업 중 예외 발생: {traceback.format_exc()}")
+        parent_logger.error(f"[BG TASK - {os.path.basename(processing_folder_path)}] 백그라운드 작업 중 예외 발생: {traceback.format_exc()}")
     finally:
         if os.path.exists(processing_folder_path):
-            logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 백그라운드 작업 완료. 처리 폴더 ({processing_folder_path})는 유지됩니다.")
+            parent_logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 백그라운드 작업 완료. 처리 폴더 ({processing_folder_path})는 유지됩니다.")
         else:
-            logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 백그라운드 작업 완료. 처리 폴더가 존재하지 않습니다.")
+            parent_logger.info(f"[BG TASK - {os.path.basename(processing_folder_path)}] 백그라운드 작업 완료. 처리 폴더가 존재하지 않습니다.")
 
 @app.route('/recognize/student_id', methods=['POST'])
 def recognize_student_id_endpoint():
     session_temp_dir = None # finally 또는 except에서 사용하기 위해 try 바깥에 선언
     try:
+        # 1. 파라미터 검증
         subject_name = request.form.get('subject')
         app.logger.info(f"[recognize_student_id] Received subject_name from form: '{subject_name}'") # 로그 추가
         zip_file_obj = request.files.get('answerSheetZip')
@@ -205,13 +210,14 @@ def recognize_student_id_endpoint():
         # session_temp_dir = tempfile.mkdtemp(dir=current_app.config['UPLOAD_FOLDER_BASE']) # 기존 임시폴더 생성 코드 주석 처리
         # app.logger.info(f"세션 임시 폴더 생성: {session_temp_dir} (ID: {os.path.basename(session_temp_dir)})")
 
-        # 과목명으로 폴더 경로 설정 및 생성 (원본 subject_name 사용)
+        # 2. 과목명으로 폴더 경로 설정 및 생성 (원본 subject_name 사용)
         subject_name_for_path = subject_name if subject_name else uuid.uuid4().hex # subject_name이 비어있을 경우 대비
         app.logger.info(f"[recognize_student_id] subject_name_for_path: '{subject_name_for_path}'")
         subject_data_path = os.path.join(APP_ROOT, subject_name_for_path)
         os.makedirs(subject_data_path, exist_ok=True)
         app.logger.info(f"과목 데이터 폴더 생성/확인: {subject_data_path}")
 
+        # 3. 업로드된 파일을 서버에 저장하고 압축 해제 폴더 준비
         original_zip_filename = zip_file_obj.filename
         original_xlsx_filename = xlsx_file_obj.filename
         zip_name_part, zip_ext_part = os.path.splitext(original_zip_filename)
@@ -240,6 +246,7 @@ def recognize_student_id_endpoint():
         os.makedirs(extracted_images_path, exist_ok=True)
         app.logger.info(f"압축 해제 대상 폴더 생성/확인: {extracted_images_path}")
 
+        # 4. background_task 실행 및 상태 반환
         thread = threading.Thread(
             target=background_task,
             args=(subject_name, zip_path, xlsx_path, extracted_images_path, subject_data_path, app.logger),
@@ -274,8 +281,8 @@ def send_spring_notification(action, subject_name, additional_data=None, request
             app.logger.info(f"[Spring 알림] callback할 origin이 없어 알림을 건너뜁니다. Status: {action}, Subject: {subject_name}")
             return
         
-        # Origin에서 callback URL 구성 - Spring Boot 표준 API 경로로 수정
-        callback_url = f"{request_origin}/api/ocr/callback"  # 더 명확한 엔드포인트명
+        # Origin에서 callback URL 구성
+        callback_url = f"{request_origin}{SPRING_CALLBACK_PATH}"
         
         payload = {
             "status": action,  # "pending" 또는 "DONE"
@@ -290,7 +297,7 @@ def send_spring_notification(action, subject_name, additional_data=None, request
         app.logger.debug(f"[Spring 알림] Payload: {payload}")  # 디버깅용 로그 추가
         
         try:
-            response = requests.post(callback_url, json=payload, timeout=10)
+            response = requests.post(callback_url, json=payload, timeout=SPRING_CALLBACK_TIMEOUT)
             app.logger.info(f"[Spring 알림] 응답 상태: {response.status_code}")
             
             # 응답 내용도 로깅 (디버깅 시 유용)
@@ -300,7 +307,7 @@ def send_spring_notification(action, subject_name, additional_data=None, request
                 app.logger.info(f"[Spring 알림] 성공적으로 전송됨")
                 
         except requests.exceptions.Timeout:
-            app.logger.warning(f"[Spring 알림] 타임아웃 발생 (10초): {callback_url}")
+            app.logger.warning(f"[Spring 알림] 타임아웃 발생 ({SPRING_CALLBACK_TIMEOUT}초): {callback_url}")
         except requests.exceptions.ConnectionError:
             app.logger.warning(f"[Spring 알림] 연결 실패: {callback_url}")
         except requests.exceptions.RequestException as req_error:
@@ -381,7 +388,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
             return
 
         # 이미지 파일 목록 추출
-        image_extensions = ['.jpg', '.jpeg', '.png']
+        image_extensions = [ext for ext in ALLOWED_IMAGE_EXTENSIONS if ext in ['.jpg', '.jpeg', '.png']]
         image_files = []
         for ext in image_extensions:
             image_files.extend([f for f in os.listdir(dir_path) if f.lower().endswith(ext)])
@@ -440,7 +447,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
                 answer_json = recognition_result.get("answer_json", {})
                 if producer:
                     try:
-                        producer.send('student-responses', answer_json)
+                        producer.send(KAFKA_TOPICS['student_responses'], answer_json)
                         producer.flush()
                     except Exception as kafka_error:
                         logger.error(f"Kafka 전송 실패 ({image_file}): {kafka_error}")
@@ -468,7 +475,7 @@ def background_answer_recognition_task(subject_name, student_id_update_data, ans
 
         if producer:
             try:
-                producer.send('low-confidence-images', failure_json)
+                producer.send(KAFKA_TOPICS['low_confidence_images'], failure_json)
                 producer.flush()
             except Exception as kafka_error:
                 logger.error(f"Failure JSON Kafka 전송 실패: {kafka_error}")
@@ -795,7 +802,7 @@ def background_rename_files_task(subject_name, student_list, base_image_path, pa
     renamed_count = 0
     error_count = 0
     skipped_count = 0
-    known_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+    known_extensions = list(ALLOWED_IMAGE_EXTENSIONS)
 
     try:
         logger.info(f"[BG RENAME TASK - {task_id}] Attempting to list files in: {base_image_path}")
@@ -937,7 +944,6 @@ def get_status():
         return jsonify({"error": f"상태 조회 실패: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    # Spring과의 통신을 위해 0.0.0.0으로 호스트를 설정하고, 지정된 포트(예: 8080)를 사용합니다.
-    # Docker 환경에서는 이 포트가 외부로 노출됩니다.
-    app.run(host='0.0.0.0', port=5000, debug=True) # debug=True는 개발 중에만 사용
+    # 설정 파일에서 호스트, 포트, 디버그 모드 가져오기
+    app.run(host=FLASK_HOST, port=FLASK_PORT, debug=FLASK_DEBUG)
 
