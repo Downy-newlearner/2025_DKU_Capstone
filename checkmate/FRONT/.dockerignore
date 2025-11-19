@@ -16,8 +16,7 @@ yarn-error.log*
 .env
 .env.*
 
-# Docker files themselves are not needed in build context
-Dockerfile
+# Compose files (optional)
 docker-compose.yml
 compose.yml
 
