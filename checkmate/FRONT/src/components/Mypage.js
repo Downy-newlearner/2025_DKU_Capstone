@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
 import { useNavigate } from "react-router-dom";
+import config from "../config";
 
 export const Mypage = () => {
     const navigate = useNavigate();
@@ -15,7 +16,7 @@ export const Mypage = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const res = await fetch("http://13.209.197.61:8080/user", {
+        const res = await fetch(`${config.api.baseURL}/user`, {
           method: "GET",
           credentials: "include", // 쿠키 기반 인증
           headers: {

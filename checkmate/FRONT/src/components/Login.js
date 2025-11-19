@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import config from "../config";
 console.log(Button);
 
 const Login = () => {
@@ -22,7 +23,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch("http://13.209.197.61:8080/sign-in", {
+      const response = await fetch(`${config.api.baseURL}/sign-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // 필요 시

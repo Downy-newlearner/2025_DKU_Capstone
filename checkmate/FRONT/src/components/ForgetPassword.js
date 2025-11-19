@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
+import config from "../config";
 
 const ForgetPassword = () => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const ForgetPassword = () => {
       }
     
       try {
-        const response = await fetch("http://13.209.197.61:8080/reset-request", {
+        const response = await fetch(`${config.api.baseURL}/reset-request`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

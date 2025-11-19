@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import config from "../config";
 
 const AuthenticatePassword = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const AuthenticatePassword = () => {
     }
 
     try {
-      const response = await fetch("http://13.209.197.61:8080/reset-password", {
+      const response = await fetch(`${config.api.baseURL}/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

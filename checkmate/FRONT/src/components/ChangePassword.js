@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import config from "../config";
 
 const ChangePassword = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const ChangePassword = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://13.209.197.61:8080/change-password", {
+      const response = await fetch(`${config.api.baseURL}/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

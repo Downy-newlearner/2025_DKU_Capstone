@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 import { Button } from "./ui/button";
 import { Download } from "lucide-react";
+import config from "../config";
 
 const SubjectZipList = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const SubjectZipList = () => {
   }, [subject]);
 
   const handleDownload = (fileName) => {
-    const url = `http://13.209.197.61:8080/file/${encodeURIComponent(fileName)}`;
+    const url = config.endpoints.fileDownload(fileName);
     axios
       .get(url, {
         responseType: "blob",
@@ -53,12 +54,12 @@ const SubjectZipList = () => {
     };
 
   const handleDownloadReportPdf = () => {
-    const url = `http://13.209.197.61:8080/report/${subject}`;
+    const url = config.endpoints.reportDownload(subject);
     const fileName = `${subject}_통계.pdf`;
 
     axios
       .post(
-        `http://13.209.197.61:8080/report/${subject}`,
+        url,
         {}, 
         {
           responseType: "blob",
