@@ -5,7 +5,7 @@
 ### 1. Frontend → Backend API 호출
 
 **Frontend 기본 설정:**
-- Base URL: `http://13.209.197.61:8080`
+- Base URL: `http://3.35.87.73:8080`
 - 인증: Bearer Token 방식
 
 **주요 API 엔드포인트:**
@@ -234,7 +234,7 @@ PADDLE_OCR_CONFIG = {
 
 # Kafka 설정
 KAFKA_CONFIG = {
-    'bootstrap_servers': '43.202.183.74:9092',
+    'bootstrap_servers': '15.164.7.162:9092',
     'topics': {
         'student_id': 'student-id-image-requests',
         'answers': 'student-responses',

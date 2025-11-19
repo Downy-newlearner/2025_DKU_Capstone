@@ -1,0 +1,23 @@
+# Node / build artifacts
+node_modules
+build
+
+# Dependency / tooling
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Git / IDE
+.git
+.gitignore
+.DS_Store
+
+# Env files (handled outside image)
+.env
+.env.*
+
+# Docker files themselves are not needed in build context
+Dockerfile
+docker-compose.yml
+compose.yml
+

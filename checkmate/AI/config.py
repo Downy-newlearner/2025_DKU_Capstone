@@ -6,7 +6,7 @@ Flask 애플리케이션 설정 파일
 import os
 
 # ===== Kafka 설정 =====
-KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', '43.202.183.74:9092')
+KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', '15.164.7.162:9092')
 
 # Kafka 토픽 설정
 KAFKA_TOPICS = {

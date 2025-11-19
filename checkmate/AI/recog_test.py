@@ -57,7 +57,7 @@ app.config['JSON_AS_ASCII'] = False # 한글을 ASCII로 이스케이프하지 �
 producer = None
 try:
     producer = KafkaProducer(
-        bootstrap_servers='43.202.183.74:9092', # TODO: 실제 Kafka 서버 주소로 변경!
+        bootstrap_servers='15.164.7.162:9092', # TODO: 실제 Kafka 서버 주소로 변경!
         value_serializer=lambda v: json.dumps(v).encode('utf-8')
     )
     app.logger.info("Kafka Producer initialized successfully.")

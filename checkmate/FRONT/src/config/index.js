@@ -12,7 +12,7 @@ const getConfig = () => {
   // 개발 환경: localhost, 프로덕션: 실제 서버 주소
   const apiBaseURL = process.env.REACT_APP_API_BASE_URL || 
     (env === 'production' 
-      ? 'http://13.209.197.61:8080' 
+      ? 'http://3.35.87.73:8080' 
       : 'http://localhost:8080');
 
   return {

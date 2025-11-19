@@ -11,7 +11,7 @@ services:
       - SPRING_DATA_MONGODB_URI=mongodb://root:example@mongodb:27017/capstone?authSource=admin
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=43.202.183.74:9092
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=15.164.7.162:9092
 
     networks:
       - test_net
