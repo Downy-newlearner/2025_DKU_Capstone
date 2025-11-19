@@ -13,9 +13,9 @@ RUN npm ci
 COPY . .
 
 # Build arguments (can be overridden at build time)
-ARG REACT_APP_API_BASE_URL=http://3.35.87.73:8080
+ARG REACT_APP_API_BASE_URL=/api
 ARG REACT_APP_API_TIMEOUT=10000
-ARG REACT_APP_PROXY_PATH=/api2
+ARG REACT_APP_PROXY_PATH=/api
 ARG REACT_APP_PROXY_TARGET=http://3.35.87.73:8080
 
 # Expose args to React build
@@ -32,7 +32,7 @@ FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/build /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 3000
 
 CMD ["nginx", "-g", "daemon off;"]
 
